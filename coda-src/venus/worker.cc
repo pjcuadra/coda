@@ -1529,6 +1529,22 @@ inline void worker::op_coda_statfs(union inputArgs *in, union outputArgs *out,
     }
 }
 
+inline void worker::op_coda_access_intent(union inputArgs *in, union outputArgs *out,
+  int *msg_size)
+{
+    struct coda_access_intent_in * coda_access_intent = &in->coda_access_intent;
+    LOG(100, ("CODA_ACCESS_INTENT: u.u_pid = %d u.u_pgid = %d pos = %d count = %d \n",
+        u.u_pid,
+        u.u_pgid,
+        coda_access_intent->pos,
+        coda_access_intent->count));
+
+    // Check if it's VASTRO
+    if (false) {
+        return;
+    }
+}
+
 void worker::main(void)
 {
     struct venus_cnode vtarget;
@@ -1633,6 +1649,9 @@ void worker::main(void)
             break;
         case CODA_STATFS:
             op_coda_statfs(in, out, &size);
+            break;
+        case CODA_ACCESS_INTENT:
+            op_coda_access_intent(in, out, &size);
             break;
         default:	 /* Toned this down a bit, used to be a choke -- DCS */
             /* But make sure someone sees it! */
