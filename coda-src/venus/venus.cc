@@ -249,9 +249,9 @@ void MUX_add_callback(int fd, void (*cb)(int fd, void *udata), void *udata)
 }
 
 /*
- * Parse cachesize value and converts into amount of 1K-Blocks 
+ * Parse size value and converts into amount of 1K-Blocks 
  */
-static uint64_t ParseCacheSize(const char * CacheSize)
+static uint64_t ParseSizeWithUnits(const char * CacheSize)
 {
     const char * units = nullptr;
     int scale_factor = 1;
@@ -519,7 +519,7 @@ static void ParseCmdline(int argc, char **argv)
 	    else if (STREQ(argv[i], "-cf"))   /* number of cache files */
 		i++, CacheFiles = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-c"))    /* cache block size */
-		i++, CacheBlocks = ParseCacheSize(argv[i]);  
+		i++, CacheBlocks = ParseSizeWithUnits(argv[i]);  
 	    else if (STREQ(argv[i], "-hdbes")) /* hoard DB entries */
 		i++, HDBEs = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-d"))     /* debugging */
@@ -678,7 +678,7 @@ static void DefaultCmdlineParms()
 
     if (!CacheBlocks) {
         CODACONF_STR(CacheSize, "cachesize", MIN_CS);
-        CacheBlocks = ParseCacheSize(CacheSize);
+        CacheBlocks = ParseSizeWithUnits(CacheSize);
     }
 
     /* In case of user missconfiguration */
