@@ -493,6 +493,7 @@ static void Usage(char *argv0)
 " -onlytcp\t\t\tonly use TCP tunnel connections to servers\n"
 " -9pfs\t\t\tenable embedded 9pfs server (experimental, INSECURE!)\n"
 " -nofork\t\t\tdo not daemonize the process\n\n"
+" -wfmax\t\t\tmaximum file size to allow whole-file caching\n\n"
 "For more information see http://www.coda.cs.cmu.edu/\n"
 "Report bugs to <bugs@coda.cs.cmu.edu>.\n", argv0);
 }
@@ -635,6 +636,8 @@ static void ParseCmdline(int argc, char **argv)
 	    else if (STREQ(argv[i], "-nofork")) {
                 nofork = true;
 	    }
+        else if (STREQ(argv[i], "-wfmax"))    /* cache block size */
+		i++, WholeFileMaxSize = ParseSizeWithUnits(argv[i]);
 	    else {
 		eprint("bad command line option %-4s", argv[i]);
 		done = -1;
@@ -672,6 +675,7 @@ static void DefaultCmdlineParms()
 {
     int DontUseRVM = 0;
     const char *CacheSize;
+    const char *TmpWFMax;
 
     /* Load the "venus.conf" configuration file */
     codaconf_init("venus.conf");
@@ -693,6 +697,10 @@ static void DefaultCmdlineParms()
         eprint("Cannot start: minimum number of cache files is %d", MIN_CF);
         exit(EXIT_UNCONFIGURED);
     }
+    
+    
+    CODACONF_STR(TmpWFMax,	    "wholefilemaxsize", "50MB");
+    WholeFileMaxSize = ParseCacheSize(TmpWFMax);
     
     CODACONF_STR(CacheDir,	    "cachedir",      DFLT_CD);
     CODACONF_STR(SpoolDir,	    "checkpointdir", "/usr/coda/spool");
