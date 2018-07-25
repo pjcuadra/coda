@@ -179,27 +179,35 @@ int fsobj::LookAside(void)
     return lka_successful;
 }
 
+int fsobj::Fetch(uid_t uid) {
+    return Fetch(uid, 0, -1);
+}
 
-int fsobj::Fetch(uid_t uid)
+int fsobj::Fetch(uid_t uid, uint pos, int count)
 {
     int fd = -1;
 
-    LOG(10, ("fsobj::Fetch: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, ("fsobj::Fetch: (%s), uid = %d, pos = %d, count = %d\n",
+             GetComp(), uid, pos, count));
 
     CODA_ASSERT(!IsLocalObj() && !IsFake());
 
     /* Sanity checks. */
     {
-	/* Better not be disconnected or dirty! */
-	FSO_ASSERT(this, (REACHABLE(this) && !DIRTY(this)));
+        /* Better not be disconnected or dirty! */
+        FSO_ASSERT(this, (REACHABLE(this) && !DIRTY(this)));
 
-	/* We never fetch data if we don't already have status. */
-	if (!HAVESTATUS(this))
-	    { print(logFile); CHOKE("fsobj::Fetch: !HAVESTATUS"); }
+        /* We never fetch data if we don't already have status. */
+        if (!HAVESTATUS(this)) {
+            print(logFile);
+            CHOKE("fsobj::Fetch: !HAVESTATUS");
+        }
 
-	/* We never fetch data if we already have the file. */
-	if (HAVEALLDATA(this))
-	    { print(logFile); CHOKE("fsobj::Fetch: HAVEALLDATA"); }
+        /* We never fetch data if we already have the file. */
+        if (HAVEALLDATA(this) && !IsVastro()) {
+            print(logFile);
+            CHOKE("fsobj::Fetch: HAVEALLDATA");
+        }
     }
 
     int code = 0;
@@ -222,7 +230,22 @@ int fsobj::Fetch(uid_t uid)
     memset(&dummysed, 0, sizeof(SE_Descriptor));
     SE_Descriptor *sed = &dummysed;
 
-    long offset = IsFile() ? cf.ValidData() : 0;
+    uint64_t offset = 0;
+    int64_t len = -1;
+
+    if (IsVastro()) {
+        offset = pos;
+        len = count;
+    } else if (IsFile()) {
+        offset = cf.ValidData();
+        len = -1;
+    }
+
+    /* If reading out-of-bound read missing file part */
+    if (offset + len > Size()) {
+        len = -1;
+    }
+
     GotThisData = 0;
 
     /* C++ 3.0 whines if the following decls moved closer to use  -- Satya */
@@ -240,7 +263,7 @@ int fsobj::Fetch(uid_t uid)
 	    sei->TransmissionDirection = SERVERTOCLIENT;
 	    sei->hashmark = 0;
 	    sei->SeekOffset = offset;
-	    sei->ByteQuota = -1;
+	    sei->ByteQuota = len;
 	    switch(stat.VnodeType) {
 		case File:
                     /* and open the containerfile */
@@ -335,15 +358,15 @@ int fsobj::Fetch(uid_t uid)
             if (code != 0) goto RepExit;
 
             CFSOP_PRELUDE(prel_str, comp, fid);
-            UNI_START_MESSAGE(ViceFetch_OP);
-            code = ViceFetch(c->connid, MakeViceFid(&fid), &stat.VV, inconok,
-                             &status, ph, offset, &PiggyBS, sed);
-            UNI_END_MESSAGE(ViceFetch_OP);
+            UNI_START_MESSAGE(ViceFetchPartial_OP);
+            code = ViceFetchPartial(c->connid, MakeViceFid(&fid), &stat.VV,
+                             inconok, &status, ph, offset, len, &PiggyBS, sed);
+            UNI_END_MESSAGE(ViceFetchPartial_OP);
             CFSOP_POSTLUDE("fetch::fetch done\n");
 
 	    /* Examine the return code to decide what to do next. */
 	    code = vp->Collate(c, code);
-	    UNI_RECORD_STATS(ViceFetch_OP);
+	    UNI_RECORD_STATS(ViceFetchPartial_OP);
 
 	    if (IsFile()) {
 		Recov_BeginTrans();
