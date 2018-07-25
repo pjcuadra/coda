@@ -136,6 +136,7 @@ class fsdb {
 
     /* Size parameters. */
     uint64_t MaxFiles;
+    uint64_t WholeFileCachingMaxSize;
     /* "files" is kept as count member of htab */
     int FreeFileMargin;
     /*T*/uint64_t MaxBlocks;
@@ -619,6 +620,7 @@ class fsobj {
   public:
     /* The public CFS interface (Vice portion). */
     int Fetch(uid_t);
+    int Fetch(uid_t uid, uint pos, int count);
     int GetAttr(uid_t, RPC2_BoundedBS * =0);
     int GetACL(RPC2_BoundedBS *, uid_t);
     int Store(unsigned long, Date_t, uid_t);
@@ -677,6 +679,7 @@ class fsobj {
     int  MakeShadow();
     void RemoveShadow();
     void CacheReport(int, int);
+    bool IsVastro();
 
     void print() { print(stdout); }
     void print(FILE *fp) { fflush(fp); print(fileno(fp)); }
@@ -727,6 +730,7 @@ class fso_iterator : public rec_ohashtab_iterator {
 /*  *****  Variables  ***** */
 
 extern int CacheFiles;
+extern uint64_t WholeFileMaxSize;
 extern int FSO_SWT;
 extern int FSO_MWT;
 extern int FSO_SSF;

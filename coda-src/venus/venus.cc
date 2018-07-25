@@ -109,7 +109,6 @@ VenusFid ASRfid;
 uid_t ASRuid;
 int detect_reintegration_retry;
 int option_isr;
-int WholeFileMaxSize;
 /* exit codes (http://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic/iniscrptact.html) */
 // EXIT_SUCCESS             0   /* stdlib.h - success */
 // EXIT_FAILURE             1   /* stdlib.h - generic or unspecified error */
@@ -693,14 +692,16 @@ static void DefaultCmdlineParms()
 
     CODACONF_INT(CacheFiles, "cachefiles", CalculateCacheFiles(CacheBlocks));
     if (CacheFiles < MIN_CF) {
-        eprint("Cannot start: minimum number of cache files is %d", CalculateCacheFiles(CacheBlocks));
+        eprint("Cannot start: minimum number of cache files is %d",
+               CalculateCacheFiles(CacheBlocks));
         eprint("Cannot start: minimum number of cache files is %d", MIN_CF);
         exit(EXIT_UNCONFIGURED);
     }
-    
-    
-    CODACONF_STR(TmpWFMax,	    "wholefilemaxsize", "50MB");
-    WholeFileMaxSize = ParseSizeWithUnits(TmpWFMax);
+
+    if (!WholeFileMaxSize) {
+        CODACONF_STR(TmpWFMax, "wholefilemaxsize", "50MB");
+        WholeFileMaxSize = ParseSizeWithUnits(TmpWFMax);
+    }
     
     CODACONF_STR(CacheDir,	    "cachedir",      DFLT_CD);
     CODACONF_STR(SpoolDir,	    "checkpointdir", "/usr/coda/spool");
