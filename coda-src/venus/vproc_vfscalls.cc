@@ -1460,3 +1460,35 @@ FreeLocks:
     }
 }
 
+void vproc::read(struct venus_cnode * node, uint pos, int count)
+{
+    LOG(1, ("vproc::read: fid = %s, pos = %d, count = %d\n", FID_(&node->c_fid), pos, count));
+
+    fsobj *f = 0;
+
+    for (;;) {
+	Begin_VFS(&node->c_fid, CODA_ACCESS_INTENT);
+	if (u.u_error) break;
+    
+    /* Get the object. */
+	u.u_error = FSDB->Get(&f, &node->c_fid, u.u_uid, RC_STATUS);
+	if (u.u_error) goto FreeLocks;
+    
+    if (!f->IsVastro()) goto FreeLocks;
+    
+    if (pos >= f->Size()) goto FreeLocks;
+        
+    f->Fetch(u.u_uid, pos, count);
+    
+FreeLocks:
+	FSDB->Put(&f);
+	int retry_call = 0;
+	End_VFS(&retry_call);
+	if (!retry_call) break;
+    }
+
+    if (u.u_error == EINCONS) {
+	u.u_error = ENOENT;
+	k_Purge(&node->c_fid, 1);
+    }
+}

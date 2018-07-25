@@ -699,14 +699,16 @@ static void DefaultCmdlineParms()
 
     CODACONF_INT(CacheFiles, "cachefiles", (int)CalculateCacheFiles(CacheBlocks));
     if (CacheFiles < MIN_CF) {
-        eprint("Cannot start: minimum number of cache files is %d", CalculateCacheFiles(CacheBlocks));
+        eprint("Cannot start: minimum number of cache files is %d",
+               CalculateCacheFiles(CacheBlocks));
         eprint("Cannot start: minimum number of cache files is %d", MIN_CF);
         exit(EXIT_UNCONFIGURED);
     }
-    
-    
-    CODACONF_STR(TmpWFMax,	    "wholefilemaxsize", "50MB");
-    WholeFileMaxSize = ParseCacheSize(TmpWFMax);
+
+    if (!WholeFileMaxSize) {
+        CODACONF_STR(TmpWFMax, "wholefilemaxsize", "50MB");
+        WholeFileMaxSize = ParseSizeWithUnits(TmpWFMax);
+    }
     
     CODACONF_STR(CacheDir,	    "cachedir",      DFLT_CD);
     CODACONF_STR(SpoolDir,	    "checkpointdir", "/usr/coda/spool");

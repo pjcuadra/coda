@@ -64,6 +64,7 @@ extern "C" {
 #include "worker.h"
 
 int CacheFiles = 0;
+uint64_t WholeFileMaxSize = 0;
 int FSO_SWT = UNSET_SWT;
 int FSO_MWT = UNSET_MWT;
 int FSO_SSF = UNSET_SSF;
@@ -340,6 +341,7 @@ fsdb::fsdb() : htab(FSDB_NBUCKETS, FSO_HashFN) {
     RVMLIB_REC_OBJECT(*this);
     MagicNumber = FSDB_MagicNumber;
     MaxFiles = CacheFiles;
+    WholeFileCachingMaxSize = WholeFileMaxSize;
     FreeFileMargin = MaxFiles / FREE_FACTOR;
 
     LastRef = (long *)rvmlib_rec_malloc(MaxFiles * (int)sizeof(long));
@@ -751,7 +753,7 @@ RestartFind:
 		
 		code = 0;
 		/* first try the LookAside cache */
-		if (!f->LookAside()) {
+		if (!f->LookAside() && !f->IsVastro()) {
 		  /* Let fsobj::Fetch go ahead and fetch the object */
 		  code = f->Fetch(uid);
 		}

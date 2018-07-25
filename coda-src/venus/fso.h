@@ -137,6 +137,7 @@ class fsdb {
 
     /* Size parameters. */
     unsigned int MaxFiles;
+    uint64_t WholeFileCachingMaxSize;
     /* "files" is kept as count member of htab */
     int FreeFileMargin;
     /*T*/unsigned int MaxBlocks;
@@ -681,6 +682,7 @@ class fsobj {
     int  MakeShadow();
     void RemoveShadow();
     void CacheReport(int, int);
+    bool IsVastro();
 
     void print() { print(stdout); }
     void print(FILE *fp) { fflush(fp); print(fileno(fp)); }
@@ -731,6 +733,7 @@ class fso_iterator : public rec_ohashtab_iterator {
 /*  *****  Variables  ***** */
 
 extern int CacheFiles;
+extern uint64_t WholeFileMaxSize;
 extern int FSO_SWT;
 extern int FSO_MWT;
 extern int FSO_SSF;

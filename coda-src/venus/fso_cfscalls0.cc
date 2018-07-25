@@ -238,22 +238,27 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
     int code = 0;
     
 
-    LOG(10, ("fsobj::Fetch: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, ("fsobj::Fetch: (%s), uid = %d, pos = %d, count = %d\n",
+             GetComp(), uid, pos, count));
 
     CODA_ASSERT(!IsLocalObj() && !IsFake());
 
     /* Sanity checks. */
     {
-	/* Better not be disconnected or dirty! */
-	FSO_ASSERT(this, (REACHABLE(this) && !DIRTY(this)));
+        /* Better not be disconnected or dirty! */
+        FSO_ASSERT(this, (REACHABLE(this) && !DIRTY(this)));
 
-	/* We never fetch data if we don't already have status. */
-	if (!HAVESTATUS(this))
-	    { print(logFile); CHOKE("fsobj::Fetch: !HAVESTATUS"); }
+        /* We never fetch data if we don't already have status. */
+        if (!HAVESTATUS(this)) {
+            print(logFile);
+            CHOKE("fsobj::Fetch: !HAVESTATUS");
+        }
 
-	/* We never fetch data if we already have the file. */
-	if (HAVEALLDATA(this))
-	    { print(logFile); CHOKE("fsobj::Fetch: HAVEALLDATA"); }
+        /* We never fetch data if we already have the file. */
+        if (HAVEALLDATA(this) && !IsVastro()) {
+            print(logFile);
+            CHOKE("fsobj::Fetch: HAVEALLDATA");
+        }
     }
 
     /* Status parameters. */
@@ -271,8 +276,21 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
     memset(&dummysed, 0, sizeof(SE_Descriptor));
     SE_Descriptor *sed = &dummysed;
 
-    uint64_t offset = IsFile() ? cf.ValidData() : 0;
+    uint64_t offset = 0;
     int64_t len = -1;
+
+    if (IsVastro()) {
+        offset = pos;
+        len = count;
+    } else if (IsFile()) {
+        offset = cf.ValidData();
+        len = -1;
+    }
+
+    /* If reading out-of-bound read missing file part */
+    if (offset + len > Size()) {
+        len = -1;
+    }
 
     GotThisData = 0;
 
