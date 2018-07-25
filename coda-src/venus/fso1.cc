@@ -2375,6 +2375,16 @@ void fsobj::CacheReport(int fd, int level) {
     }
 }
 
+bool fsobj::IsVastro() {
+    if (!IsFile()) {
+        return false;
+    }
+    
+    LOG(1, ("fsobj::IsVastro (%s): size = %d, max_whole = %d.\n", GetComp(), Size(), FSDB->WholeFileCachingMaxSize));
+
+    return Size() >= FSDB->WholeFileCachingMaxSize * 1024;
+}
+
 /* local-repair modification */
 void fsobj::print(int fdes) {
     /* < address, fid, comp, vol > */
