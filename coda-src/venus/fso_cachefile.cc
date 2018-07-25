@@ -67,6 +67,7 @@ CacheFile::CacheFile(int i)
     length = validdata = 0;
     refcnt = 1;
     numopens = 0;
+    chuncks = new list<CacheChunck>();
     /* Container reset will be done by eventually by FSOInit()! */
     LOG(100, ("CacheFile::CacheFile(%d): %s (this=0x%x)\n", i, name, this));
 }
@@ -77,6 +78,7 @@ CacheFile::CacheFile()
     CODA_ASSERT(length == 0);
     refcnt = 1;
     numopens = 0;
+    chuncks = new list<CacheChunck>();
 }
 
 
@@ -84,6 +86,7 @@ CacheFile::~CacheFile()
 {
     LOG(10, ("CacheFile::~CacheFile: %s (this=0x%x)\n", name, this));
     CODA_ASSERT(length == 0);
+    delete(chuncks[]);
 }
 
 
@@ -291,6 +294,16 @@ void CacheFile::SetLength(long newlen)
     }
 }
 
+void CacheFile::AddChunck(uint64_t start, uint64_t end) 
+{
+    CacheChunck cc = new CacheChunck(start, end);
+    
+    for (list<CacheChunck>::iterator it=chuncks.begin(); it != chuncks.end(); ++it) {
+        
+    }
+    
+}
+
 /* MUST be called from within transaction! */
 void CacheFile::SetValidData(long newoffset)
 {
@@ -323,4 +336,3 @@ int CacheFile::Close(int fd)
     numopens--;
     return ::close(fd);
 }
-

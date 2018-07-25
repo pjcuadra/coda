@@ -41,6 +41,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <list>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -264,6 +265,49 @@ enum FsoState {	FsoRunt,
 
 #define CACHEFILENAMELEN 12
 
+class CacheChunck {
+private:
+    uint64_t start;
+    int64_t len;
+
+public:
+    CacheChunck(uint64_t start, int64_t len) : start(start), len(len);
+    
+    CacheChunck() : start(0), len(-1);
+    
+    bool CheckContiguous(CacheChunck that)
+    {
+        uint64_t this_end = this->start + len;
+        uint64_t that_end = that->start + len;
+        
+        if (start < that.start) {
+            if (len < 0 || that.len < 0) return true;  // Hold file
+            
+            
+        }
+        
+        
+                    
+        return that->len;
+    }
+    
+    int64_t GetLength()
+    {
+        return len;
+    }
+
+    bool Concat(const CacheChunck &that)
+    {
+        if (!CheckContiguous(that)) {
+            return false;
+        }
+        
+        this->end = that->end;
+        that->start = this->start;
+    }
+}
+
+
 class CacheFile {
     long length;
     long validdata; /* amount of successfully fetched data */
@@ -272,6 +316,8 @@ class CacheFile {
     int numopens;
 
     int ValidContainer();
+
+    list<CacheChunck> chuncks;
 
   public:
     CacheFile(int);
@@ -296,6 +342,7 @@ class CacheFile {
     void Truncate(long);
     void SetLength(long);
     void SetValidData(long);
+    void AddChunck(uint64_t start, uint64_t end);
 
     char *Name()         { return(name); }
     long Length()        { return(length); }
