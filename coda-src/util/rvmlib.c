@@ -181,12 +181,21 @@ void rvmlib_set_range(void *base, unsigned long size)
 	if (RvmType != VM) {
 		rvm_perthread_t *_rvm_data = rvmlib_thread_data();
 		rvm_return_t ret;
-		
+				
 		if (_rvm_data == 0) 
 			RVMLIB_ASSERT("SetRange: _rvm_data = 0");
 		if (_rvm_data->tid == 0 )
 			RVMLIB_ASSERT("SetRange: _rvm_data->tid = 0");
 		ret = rvm_set_range(_rvm_data->tid, (char *)(base), size);
+		if (ret == RVM_EINIT) 
+			RVMLIB_ASSERT("RVM_EINIT\n");
+			
+		if (ret == RVM_ETID) 
+			RVMLIB_ASSERT("RVM_ETID\n");
+				
+		if (ret == RVM_ENOT_MAPPED) 
+			RVMLIB_ASSERT("RVM_ENOT_MAPPED\n");
+			
 		if (ret != RVM_SUCCESS) 
 			RVMLIB_ASSERT("Error in rvm_set_range\n");
 	}

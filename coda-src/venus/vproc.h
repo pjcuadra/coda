@@ -65,6 +65,7 @@ extern "C" {
 #include <venusioctl.h>
 
 /* from venus */
+#include "fso_cachefile.h"
 #include "venus.private.h"
 
 
@@ -300,8 +301,6 @@ extern long FidToNodeid(VenusFid *);
    inputbuffer, which is the same pointer as the output buffer.
 */
 
-class CacheFile;
-
 struct venus_cnode {
 	u_short     c_flags;	/* flags (see below) */
 	VenusFid    c_fid;	/* file handle */
@@ -342,4 +341,3 @@ struct venus_cnode {
 #define VA_IGNORE_FLAGS		((u_long)-1)
 
 #endif /* _VENUS_PROC_H_ */
-
