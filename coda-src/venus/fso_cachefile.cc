@@ -46,6 +46,7 @@ extern "C" {
 /* from venus */
 #include "fso.h"
 #include "venus.private.h"
+#include "cache.h"
 
 #ifndef fdatasync
 #define fdatasync(fd) fsync(fd)
@@ -112,7 +113,7 @@ int CacheFile::ValidContainer()
 {
     struct stat tstat;
     int rc;
-    
+
     rc = ::stat(name, &tstat);
     if (rc) return 0;
 
@@ -217,7 +218,7 @@ int CacheFile::Copy(char *destname, int recovering)
 	CHOKE("CacheFile::Copy: fstat failed (%d)\n", errno);
     if (::close(tfd) < 0)
 	CHOKE("CacheFile::Copy: close failed (%d)\n", errno);
-    
+
     CODA_ASSERT(recovering || (off_t)length == tstat.st_size);
 
     return 0;
@@ -326,7 +327,7 @@ int CacheFile::Open(int flags)
 
     CODA_ASSERT (fd != -1);
     numopens++;
-    
+
     return fd;
 }
 
@@ -335,4 +336,143 @@ int CacheFile::Close(int fd)
     CODA_ASSERT(fd != -1 && numopens);
     numopens--;
     return ::close(fd);
+}
+
+/* CacheChunck */
+CacheChunck CacheChunck::operator=(CacheChunck cc) {
+    this->start = cc.start;
+    this->end = cc.end;
+    this->len = cc.len;
+    this->valid = cc.valid;
+}
+
+bool CacheChunck::operator&(const CacheChunck op2) {
+    if (this->start <= op2.start) {
+        if (this->end <= op2.start) {
+            return false;
+        }
+    } else {
+        if (this->start > op2.end) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+CacheChunck * CacheChunck::LowerDiff(CacheChunck cc)
+{
+    CacheChunck * tmp = NULL;
+    /* If they don't intersect  */
+
+    if (this->start < cc.start) {
+
+        tmp = new CacheChunck();
+
+        if (!(this->operator&(cc))) {
+            *tmp = cc;
+            return tmp;
+        }
+
+        tmp->start = cc.start;
+        tmp->end = this->start;
+    }
+
+    return tmp;
+}
+
+CacheChunck * CacheChunck::UpperDiff(CacheChunck cc)
+{
+    CacheChunck * tmp = NULL;
+    /* If they don't intersect  */
+
+    if (this->start > cc.start) {
+
+        tmp = new CacheChunck();
+
+        if (!(this->operator&(cc))) {
+            *tmp = cc;
+            return tmp;
+        }
+
+        tmp->start = this->end;
+        tmp->end = cc.end;
+    }
+
+    return tmp;
+}
+
+int CacheChunckRegistry::Register(CacheChunck cc)
+{
+    CacheChunck * tmp;
+    CacheChunck * curr;
+
+    /* If it's empty simply add it */
+    if (!count()) {
+        tmp = new CacheChunck();
+        *tmp = cc;
+        insert((dlink *)tmp);
+        return 0;
+    }
+
+    /* Look collisions */
+    dlist_iterator next(*this);
+    while ((curr = (CacheChunck *)next())) {
+        /* If they intersect */
+        if (!(cc & *curr)) {
+            /* Add lower difference if any */
+            tmp = curr->UpperDiff(cc);
+            if (tmp) {
+                insert((dlink *)tmp);
+            }
+
+            /* Add upper difference if any */
+            tmp = curr->LowerDiff(cc);
+            if (tmp) {
+                insert((dlink *)tmp);
+            }
+
+            return 0;
+        }
+    }
+
+    /* In case no collision is found */
+    tmp = new CacheChunck();
+    *tmp = cc;
+    insert((dlink *)tmp);
+    return 0;
+}
+
+bool CacheChunckRegistry::CheckExist(CacheChunck cc)
+{
+    CacheChunck * tmp;
+    CacheChunck * curr;
+
+    /* If it's empty simply add it */
+    if (!count()) {
+        return false;
+    }
+
+    /* Look collisions */
+    dlist_iterator next(*this);
+    while ((curr = (CacheChunck *)next())) {
+        /* If they intersect */
+        if (!(cc & *curr)) {
+            /* Add lower difference if any */
+            tmp = curr->UpperDiff(cc);
+            if (tmp) {
+                return true;
+            }
+
+            /* Add upper difference if any */
+            tmp = curr->LowerDiff(cc);
+            if (tmp) {
+                return true;
+            }
+
+        }
+    }
+
+    /* In case no collision is found */
+    return false;
 }

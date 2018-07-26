@@ -81,6 +81,7 @@ extern int global_kernfd;
 #include "venusrecov.h"
 #include "vproc.h"
 #include "venus.private.h"
+#include "cache.h"
 
 /* from coda include again, must appear AFTER venus.private.h */
 
@@ -234,7 +235,7 @@ class fsdb {
     int MarginPri()
       { return(marginpri); }
 
-    void GetStats(int *fa, int *fo, int *ba, int *bo) 
+    void GetStats(int *fa, int *fo, int *ba, int *bo)
       { *fa = MaxFiles; *fo = htab.count(); *ba = MaxBlocks; *bo = blocks; }
 
 
@@ -246,112 +247,6 @@ class fsdb {
 enum FsoState {	FsoRunt,
 		FsoNormal,
 		FsoDying
-};
-
-/* Representation of UFS file in cache directory. */
-/* Currently, CacheFiles and fsobjs are statically bound to each
-   other, one-to-one, by embedding */
-/* a single CacheFile in each fsobj.  An fsobj may use its CacheFile
-   in several ways (or not at all). */
-/* We guarantee that these uses are mutually exclusive (in time,
-   per-fsobj), hence the static allocation */
-/* policy works.  In the future we may choose not to make the uses
-   mutually exclusive, and will then */
-/* have to implement some sort of dynamic allocation/binding
-   scheme. */
-/* The different uses of CacheFile are: */
-/*    1. Copy of plain file */
-/*    2. Unix-format copy of directory */
-
-#define CACHEFILENAMELEN 12
-
-class CacheChunck {
-private:
-    uint64_t start;
-    int64_t len;
-
-public:
-    CacheChunck(uint64_t start, int64_t len) : start(start), len(len);
-    
-    CacheChunck() : start(0), len(-1);
-    
-    bool CheckContiguous(CacheChunck that)
-    {
-        uint64_t this_end = this->start + len;
-        uint64_t that_end = that->start + len;
-        
-        if (start < that.start) {
-            if (len < 0 || that.len < 0) return true;  // Hold file
-            
-            
-        }
-        
-        
-                    
-        return that->len;
-    }
-    
-    int64_t GetLength()
-    {
-        return len;
-    }
-
-    bool Concat(const CacheChunck &that)
-    {
-        if (!CheckContiguous(that)) {
-            return false;
-        }
-        
-        this->end = that->end;
-        that->start = this->start;
-    }
-}
-
-
-class CacheFile {
-    long length;
-    long validdata; /* amount of successfully fetched data */
-    int  refcnt;
-    char name[CACHEFILENAMELEN];		/* "xx/xx/xx/xx" */
-    int numopens;
-
-    int ValidContainer();
-
-    list<CacheChunck> chuncks;
-
-  public:
-    CacheFile(int);
-    CacheFile();
-    ~CacheFile();
-
-    /* for safely obtaining access to container files, USE THESE!!! */
-    void Create(int newlength = 0);
-    int Open(int flags);
-    int Close(int fd);
-
-    void Validate();
-    void Reset();
-    int  Copy(CacheFile *destination);
-    int  Copy(char *destname, int recovering = 0);
-
-    void IncRef() { refcnt++; } /* creation already does an implicit incref */
-    int  DecRef();             /* returns refcnt, unlinks if refcnt becomes 0 */
-
-    void Stat(struct stat *);
-    void Utimes(const struct timeval times[2]);
-    void Truncate(long);
-    void SetLength(long);
-    void SetValidData(long);
-    void AddChunck(uint64_t start, uint64_t end);
-
-    char *Name()         { return(name); }
-    long Length()        { return(length); }
-    long ValidData(void) { return(validdata); }
-    int  IsPartial(void) { return(length != validdata); }
-
-    void print() { print (stdout); }
-    void print(FILE *fp) { fflush(fp); print(fileno(fp)); }
-    void print(int);
 };
 
 /* Condensed version of ViceStatus. */
@@ -515,7 +410,7 @@ class fsobj {
     /*T*/short openers;				/* object openers */
     /*T*/short Writers;				/* object writers */
     /*T*/short Execers;				/* object execers (we don't know this under VFS!) */
-    /*T*/short refcnt;				/* readers + writers + openers + temporary_refs */   
+    /*T*/short refcnt;				/* readers + writers + openers + temporary_refs */
 
     // for asr invocation
     /*T*/long lastresolved;			// time when object was last resolved
