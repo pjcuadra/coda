@@ -1453,6 +1453,8 @@ void vproc::read(struct venus_cnode * node, uint pos, int count)
     LOG(1, ("vproc::read: fid = %s, pos = %d, count = %d\n", FID_(&node->c_fid), pos, count));
 
     fsobj *f = 0;
+    CacheChunckList * clist = NULL;
+    CacheChunck * currc = NULL;
 
     for (;;) {
 	Begin_VFS(&node->c_fid, CODA_ACCESS_INTENT);
@@ -1466,14 +1468,18 @@ void vproc::read(struct venus_cnode * node, uint pos, int count)
     
     if (pos >= f->Size()) goto FreeLocks;
     
-    if (f->CheckCachedSegment(pos, count)) {
-        LOG(0, ("vproc::read Cache Hit in range [%d %d]\n", pos, count));
-        goto FreeLocks;
+    clist = f->GetHoles(pos, count);
+    
+    /* Fetch all holes */
+    while (currc = clist->pop()) {
+        LOG(0, ("vproc::read Hole Found at [%d, %d]\n", currc->GetStart(), currc->GetLength()));
+        f->Fetch(u.u_uid, currc->GetStart(), currc->GetLength());
+        delete(currc);
     }
     
-    LOG(0, ("vproc::read Cache Missin range [%d %d]\n", pos, count));
-        
-    f->Fetch(u.u_uid, pos, count);
+    delete(clist);
+    
+    // LOG(0, ("vproc::read Cache Missin range [%d %d]\n", pos, count)
     
 FreeLocks:
 	FSDB->Put(&f);

@@ -371,18 +371,86 @@ int CacheFile::Close(int fd)
     numopens--;
     return ::close(fd);
 }
+// 
+// bool CacheFile::CheckCachedSegment(uint64_t start, uint64_t end) {
+//     uint64_t start_b = bytes_to_blocks_floor(start);
+//     uint64_t end_b = bytes_to_blocks_ceil(end);
+// 
+//     LOG(0, ("Cachefile::CheckCachedSegment Block Range [%d - %d]\n", start, end));
+// 
+//     for (uint64_t i = start_b; i < end_b; i++) {
+//         if (!cached_chuncks->Value(i)) {
+//             return false;
+//         }
+//     }
+// 
+//     return true;
+// }
 
-bool CacheFile::CheckCachedSegment(uint64_t start, uint64_t end) {
+CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len) {
     uint64_t start_b = bytes_to_blocks_floor(start);
-    uint64_t end_b = bytes_to_blocks_ceil(end);
+    uint64_t end_b = bytes_to_blocks_ceil(start + len);
+    uint64_t holesize = 0;
+    uint64_t holestart = start_b;
+    uint64_t length_b_f = bytes_to_blocks_floor(length); /* Floor length in blocks */
+    uint64_t length_b = bytes_to_blocks_ceil(length); /* Ceil length in blocks */
+    CacheChunckList * clist = new CacheChunckList();
     
-    LOG(0, ("Cachefile::CheckCachedSegment Block Range [%d - %d]\n", start, end));
+    if (len < 0) {
+        end_b = length_b;
+    }
+    
+    LOG(0, ("CacheFile::GetHoles Range [%d - %d]\n", start, start + len - 1));
+    LOG(0, ("CacheFile::GetHoles Block Range [%d - %d]/%d (%d)\n", start_b, end_b - 1, cached_chuncks->Size(), length));
 
     for (uint64_t i = start_b; i < end_b; i++) {
-        if (!cached_chuncks->Value(i)) {
-            return false;
+        if (cached_chuncks->Value(i)) {
+            holesize = 0;
+            holestart = i + 1;
+            continue;
+        }
+    
+
+        /* The last block might not be full */
+        if (i + 1 == length_b) {
+            holesize += length - (length_b_f << BITS_BLOCK_SIZE);
+            clist->AddChunck(holestart * BYTES_BLOCK_SIZE, holesize);
+            continue;
+        }
+
+        /* Add a full block */
+        holesize += BYTES_BLOCK_SIZE;
+        
+        if ((i + 1 == end_b) || cached_chuncks->Value(i + 1)) {
+            clist->AddChunck(holestart * BYTES_BLOCK_SIZE, holesize);
         }
     }
+    
+    return clist;
+}
 
-    return true;
+CacheChunckList::CacheChunckList()
+{
+    // Do nothing for now
+}
+
+CacheChunckList::~CacheChunckList()
+{
+    CacheChunck * curr = NULL;
+    
+    while ((curr = (CacheChunck *)this->first())) {
+        this->remove((dlink *)curr);
+    }
+}
+
+void CacheChunckList::AddChunck(uint64_t start, int64_t len)
+{
+    CacheChunck * new_chunck = new CacheChunck(start, len);
+    this->insert((dlink *) new_chunck);
+}
+
+CacheChunck * CacheChunckList::pop() {
+    dlink * curr_first = this->first();
+    this->remove(curr_first);
+    return (CacheChunck *) curr_first;
 }

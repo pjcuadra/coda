@@ -53,6 +53,7 @@ extern int global_kernfd;
 
 /* from util */
 #include <bitmap.h>
+#include <dlist.h>
 
 /* from lka */
 // #include <lka.h>
@@ -105,6 +106,27 @@ static inline uint64_t bytes_round_down_block_size(uint64_t bytes) {
     return bytes_to_blocks_floor(bytes) << BITS_BLOCK_SIZE;
 }
 
+class CacheChunck : private dlink {
+ private:
+    uint64_t start;
+    int64_t len;
+
+ public:
+    CacheChunck(uint64_t start, int64_t len) : start(start), len(len) {}
+    uint64_t GetStart() {return start;}
+    int64_t GetLength() {return len;}
+};
+
+class CacheChunckList : private dlist {
+ public:
+    CacheChunckList();
+    ~CacheChunckList();
+
+    void AddChunck(uint64_t start, int64_t len);
+    
+    CacheChunck * pop();
+};
+
 class CacheFile {
     long length;
     long validdata; /* amount of successfully fetched data */
@@ -115,7 +137,7 @@ class CacheFile {
 
     int ValidContainer();
 
-  public:
+ public:
     CacheFile(int);
     CacheFile();
     ~CacheFile();
@@ -139,7 +161,8 @@ class CacheFile {
     void SetLength(long);
     void SetValidData(uint64_t len);
     void SetValidData(uint64_t start, int64_t len);
-    bool CheckCachedSegment(uint64_t start, uint64_t end);
+    // bool CheckCachedSegment(uint64_t start, uint64_t end);
+    CacheChunckList * GetHoles(uint64_t start, int64_t len);
 
     char *Name()         { return(name); }
     long Length()        { return(length); }
