@@ -80,6 +80,31 @@ extern int global_kernfd;
 
 #define CACHEFILENAMELEN 12
 
+#define BYTES_BLOCK_SIZE 4096
+#define BITS_BLOCK_SIZE 12 /* 4096 = 2^12 */
+
+static inline uint64_t bytes_to_blocks_floor(uint64_t bytes) {
+    return bytes >> BITS_BLOCK_SIZE;
+}
+
+static inline uint64_t bytes_to_blocks_ceil(uint64_t bytes) {
+    uint64_t res = bytes_to_blocks_floor(bytes);
+
+    if ((res << BITS_BLOCK_SIZE) < bytes) {
+        res++;
+    }
+
+    return res;
+}
+
+static inline uint64_t bytes_round_up_block_size(uint64_t bytes) {
+    return bytes_to_blocks_ceil(bytes) << BITS_BLOCK_SIZE;
+}
+
+static inline uint64_t bytes_round_down_block_size(uint64_t bytes) {
+    return bytes_to_blocks_floor(bytes) << BITS_BLOCK_SIZE;
+}
+
 class CacheFile {
     long length;
     long validdata; /* amount of successfully fetched data */
