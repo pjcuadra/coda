@@ -58,19 +58,6 @@ extern "C" {
 /* always useful to have a page of zero's ready */
 static char zeropage[4096];
 
-#define BYTES_BLOCK_SIZE 4096
-#define BITS_BLOCK_SIZE 12 /* 4096 = 2^12 */
-
-static inline uint64_t bytes_to_blocks(uint64_t bytes) {
-    uint64_t res = bytes >> BITS_BLOCK_SIZE;
-
-    if ((res << BITS_BLOCK_SIZE) < bytes) {
-        res++;
-    }
-
-    return res;
-}
-
 /*  *****  CacheFile Members  *****  */
 
 /* Pre-allocation routine. */
@@ -181,7 +168,7 @@ void CacheFile::Create(int newlength)
     length = newlength;
     refcnt = 1;
     numopens = 0;
-    cached_chuncks->Grow(bytes_to_blocks(length));
+    cached_chuncks->Grow(bytes_to_blocks_ceil(length));
 }
 
 
@@ -298,7 +285,7 @@ void CacheFile::Truncate(long newlen)
     }
 
     CODA_ASSERT(::ftruncate(fd, length) == 0);
-    cached_chuncks->Resize(bytes_to_blocks(length));
+    cached_chuncks->Resize(bytes_to_blocks_ceil(length));
 
     close(fd);
 }
@@ -312,7 +299,7 @@ void CacheFile::SetLength(long newlen)
         RVMLIB_REC_OBJECT(*this);
         length = newlen;
         validdata = cached_chuncks->Count() * BYTES_BLOCK_SIZE;
-        cached_chuncks->Resize(bytes_to_blocks(length));
+        cached_chuncks->Resize(bytes_to_blocks_ceil(length));
     }
 }
 
@@ -325,14 +312,14 @@ void CacheFile::SetValidData(uint64_t len)
 /* MUST be called from within transaction! */
 void CacheFile::SetValidData(uint64_t start, int64_t len)
 {
-    uint64_t start_b = start >> BITS_BLOCK_SIZE;
-    uint64_t end_b = bytes_to_blocks(start + len);
+    uint64_t start_b = bytes_to_blocks_floor(start);
+    uint64_t end_b = bytes_to_blocks_ceil(start + len);
     uint64_t newvaliddata = 0;
-    uint64_t length_b_l = length >> BITS_BLOCK_SIZE; /* Floor length in blocks */
-    uint64_t length_b = bytes_to_blocks(length); /* Ceil length in blocks */
+    uint64_t length_b_f = bytes_to_blocks_floor(length); /* Floor length in blocks */
+    uint64_t length_b = bytes_to_blocks_ceil(length); /* Ceil length in blocks */
     
     if (len < 0) {
-        end_b = bytes_to_blocks(length);
+        end_b = bytes_to_blocks_ceil(length);
     }
     
     LOG(0, ("Cachefile::SetValidData Range [%d - %d]\n", start, start + len - 1));
@@ -349,7 +336,7 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
 
         /* The last block might not be full */
         if (i + 1 == length_b) {
-            newvaliddata += length - (length_b_l << BITS_BLOCK_SIZE);
+            newvaliddata += length - (length_b_f << BITS_BLOCK_SIZE);
             continue;
         }
 
@@ -386,8 +373,8 @@ int CacheFile::Close(int fd)
 }
 
 bool CacheFile::CheckCachedSegment(uint64_t start, uint64_t end) {
-    uint64_t start_b = start >> BITS_BLOCK_SIZE;
-    uint64_t end_b = bytes_to_blocks(end);
+    uint64_t start_b = bytes_to_blocks_floor(start);
+    uint64_t end_b = bytes_to_blocks_ceil(end);
     
     LOG(0, ("Cachefile::CheckCachedSegment Block Range [%d - %d]\n", start, end));
 

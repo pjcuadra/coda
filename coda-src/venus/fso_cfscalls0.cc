@@ -82,7 +82,7 @@ void fsobj::FetchProgressIndicator(unsigned long offset)
     }
 
     if (last != curr) {
-        MarinerLog("progress::fetching (%s) %lu%% (%lu/%lu)\n", GetComp(), curr, cf.ValidData(), stat.Length);
+        MarinerLog("progress::fetching (%s) %lu%% (%lu/%lu) %d\n", GetComp(), curr, cf.ValidData(), stat.Length);
     }
 	   
     last = curr;
@@ -230,19 +230,20 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
     int64_t len = -1;
 
     if (IsVastro()) {
-        offset = pos;
-        len = count;
+        offset = bytes_round_down_block_size(pos);
+        len = bytes_round_up_block_size(pos + count) - offset;
     } else if (IsFile()) {
-        offset = cf.ValidData();
+        offset = cf.ValidData();  // FIXME This has to change to consencutive
         len = -1;
     }
 
     /* If reading out-of-bound read missing file part */
-    if (offset + len > Size()) {
+    if (pos + count > Size()) {
         len = -1;
     }
 
-    GotThisData = 0;
+    LOG(10, ("fsobj::Fetch: (%s), uid = %d, Range [%d - %d]\n",
+             GetComp(), uid, offset, len));
 
     /* C++ 3.0 whines if the following decls moved closer to use  -- Satya */
     {
@@ -341,24 +342,24 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
 	/* The COP:Fetch call. */
 	{
 	    /* Make multiple copies of the IN/OUT and OUT parameters. */
-            int ph_ix;
-            struct in_addr *phost;
-            unsigned long ph;
+        int ph_ix;
+        struct in_addr *phost;
+        unsigned long ph;
 
-            phost = m->GetPrimaryHost(&ph_ix);
-            ph = ntohl(phost->s_addr);
+        phost = m->GetPrimaryHost(&ph_ix);
+        ph = ntohl(phost->s_addr);
 
-            srvent *s = GetServer(phost, vol->GetRealmId());
-            code = s->GetConn(&c, uid);
-            PutServer(&s);
-            if (code != 0) goto RepExit;
+        srvent *s = GetServer(phost, vol->GetRealmId());
+        code = s->GetConn(&c, uid);
+        PutServer(&s);
+        if (code != 0) goto RepExit;
 
-            CFSOP_PRELUDE(prel_str, comp, fid);
-            UNI_START_MESSAGE(ViceFetchPartial_OP);
-            code = ViceFetchPartial(c->connid, MakeViceFid(&fid), &stat.VV,
-                             inconok, &status, ph, offset, len, &PiggyBS, sed);
-            UNI_END_MESSAGE(ViceFetchPartial_OP);
-            CFSOP_POSTLUDE("fetch::fetch done\n");
+        CFSOP_PRELUDE(prel_str, comp, fid);
+        UNI_START_MESSAGE(ViceFetchPartial_OP);
+        code = ViceFetchPartial(c->connid, MakeViceFid(&fid), &stat.VV,
+                         inconok, &status, ph, offset, len, &PiggyBS, sed);
+        UNI_END_MESSAGE(ViceFetchPartial_OP);
+        CFSOP_POSTLUDE("fetch::fetch done\n");
 
 	    /* Examine the return code to decide what to do next. */
 	    code = vp->Collate(c, code);
