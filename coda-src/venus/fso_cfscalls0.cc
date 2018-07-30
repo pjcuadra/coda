@@ -246,7 +246,7 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
                  GetComp(), uid, offset, len > 0 ? offset + len : Size()));
 
     } else if (IsFile()) {
-        offset = cf.ValidData();  // FIXME This has to change to consencutive
+        offset = cf.ConsecutiveValidData();
         len = -1;
     }
 
