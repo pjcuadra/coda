@@ -1454,7 +1454,7 @@ void vproc::read(struct venus_cnode * node, uint pos, int count)
 
     fsobj *f = 0;
     CacheChunckList * clist = NULL;
-    CacheChunck * currc = NULL;
+    CacheChunck currc = {};
 
     for (;;) {
 	Begin_VFS(&node->c_fid, CODA_ACCESS_INTENT);
@@ -1470,14 +1470,18 @@ void vproc::read(struct venus_cnode * node, uint pos, int count)
     
     clist = f->GetHoles(pos, count);
     
+    currc = clist->pop();
+    
     /* Fetch all holes */
-    while (currc = clist->pop()) {
-        LOG(0, ("vproc::read Hole Found at [%d, %d]\n", currc->GetStart(), currc->GetLength()));
-        f->Fetch(u.u_uid, currc->GetStart(), currc->GetLength());
-        delete(currc);
+    while (currc.isValid()) {
+        LOG(0, ("vproc::read Hole Found at [%d, %d]\n", currc.GetStart(), currc.GetLength()));
+        f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
+        // delete currc;
+        
+        currc = clist->pop();
     }
     
-    delete(clist);
+    delete clist;
     
     // LOG(0, ("vproc::read Cache Missin range [%d %d]\n", pos, count)
     
