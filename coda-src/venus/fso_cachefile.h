@@ -136,6 +136,8 @@ class CacheFile {
     bitmap *cached_chuncks;
 
     int ValidContainer();
+    
+    CacheChunck * GetNextHole(uint64_t start_b, uint64_t end_b);
 
  public:
     CacheFile(int);
@@ -166,7 +168,8 @@ class CacheFile {
 
     char *Name()         { return(name); }
     long Length()        { return(length); }
-    long ValidData(void) { return(validdata); }
+    uint64_t ValidData(void) { return(validdata); }
+    uint64_t ConsecutiveValidData(void);
     int  IsPartial(void) { return(length != validdata); }
 
     void print() { print (stdout); }
