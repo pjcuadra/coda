@@ -1450,50 +1450,45 @@ FreeLocks:
 
 void vproc::read(struct venus_cnode * node, uint pos, int count)
 {
-    LOG(1, ("vproc::read: fid = %s, pos = %d, count = %d\n", FID_(&node->c_fid), pos, count));
+    LOG(1, ("vproc::read: fid = %s, pos = %d, count = %d\n",
+            FID_(&node->c_fid), pos, count));
 
     fsobj *f = 0;
     CacheChunckList * clist = NULL;
     CacheChunck currc = {};
 
     for (;;) {
-	Begin_VFS(&node->c_fid, CODA_ACCESS_INTENT);
-	if (u.u_error) break;
-    
-    /* Get the object. */
-	u.u_error = FSDB->Get(&f, &node->c_fid, u.u_uid, RC_STATUS);
-	if (u.u_error) goto FreeLocks;
-    
-    if (!f->IsVastro()) goto FreeLocks;
-    
-    if (pos >= f->Size()) goto FreeLocks;
-    
-    clist = f->GetHoles(pos, count);
-    
-    currc = clist->pop();
-    
-    /* Fetch all holes */
-    while (currc.isValid()) {
-        LOG(0, ("vproc::read Hole Found at [%d, %d]\n", currc.GetStart(), currc.GetLength()));
-        f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
-        // delete currc;
-        
+        Begin_VFS(&node->c_fid, CODA_ACCESS_INTENT);
+        if (u.u_error) break;
+
+        /* Get the object. */
+        u.u_error = FSDB->Get(&f, &node->c_fid, u.u_uid, RC_STATUS);
+        if (u.u_error) goto FreeLocks;
+
+        if (!f->IsVastro()) goto FreeLocks;
+
+        if (pos >= f->Size()) goto FreeLocks;
+
+        clist = f->GetHoles(pos, count);
+
+        /* Fetch all holes */
         currc = clist->pop();
-    }
-    
-    delete clist;
-    
-    // LOG(0, ("vproc::read Cache Missin range [%d %d]\n", pos, count)
-    
+        while (currc.isValid()) {
+            f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
+            currc = clist->pop();
+        }
+
+        delete clist;
+
 FreeLocks:
-	FSDB->Put(&f);
-	int retry_call = 0;
-	End_VFS(&retry_call);
-	if (!retry_call) break;
+        FSDB->Put(&f);
+        int retry_call = 0;
+        End_VFS(&retry_call);
+        if (!retry_call) break;
     }
 
     if (u.u_error == EINCONS) {
-	u.u_error = ENOENT;
-	k_Purge(&node->c_fid, 1);
+        u.u_error = ENOENT;
+        k_Purge(&node->c_fid, 1);
     }
 }
