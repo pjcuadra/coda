@@ -107,14 +107,18 @@ static inline uint64_t bytes_round_down_block_size(uint64_t bytes) {
 }
 
 class CacheChunck : private dlink {
- private:
+ protected:
     uint64_t start;
     int64_t len;
+    bool valid;
 
  public:
-    CacheChunck(uint64_t start, int64_t len) : start(start), len(len) {}
+    CacheChunck(uint64_t start, int64_t len) : start(start), len(len),
+        valid(true) {}
+    CacheChunck() : start(0), len(0), valid(false) {}
     uint64_t GetStart() {return start;}
     int64_t GetLength() {return len;}
+    bool isValid() {return valid;}
 };
 
 class CacheChunckList : private dlist {
@@ -124,10 +128,11 @@ class CacheChunckList : private dlist {
 
     void AddChunck(uint64_t start, int64_t len);
     
-    CacheChunck * pop();
+    CacheChunck pop();
 };
 
 class CacheFile {
+    friend class CacheChunck;
     long length;
     long validdata; /* amount of successfully fetched data */
     int  refcnt;
@@ -137,7 +142,7 @@ class CacheFile {
 
     int ValidContainer();
     
-    CacheChunck * GetNextHole(uint64_t start_b, uint64_t end_b);
+    CacheChunck GetNextHole(uint64_t start_b, uint64_t end_b);
 
  public:
     CacheFile(int);
