@@ -72,19 +72,23 @@ static void FetchProgressIndicator_stub(void *up, unsigned int offset)
 
 void fsobj::FetchProgressIndicator(unsigned long offset)
 {
-    static unsigned long last = 0;
-    unsigned long curr;
-    
-    if (stat.Length != 0) {
-        curr = (100.0f * cf.ValidData()) / stat.Length;
+    static uint64_t last = 0;
+    uint64_t curr;
+    uint64_t total_data = GotThisDataEnd - GotThisDataStart;
+    uint64_t curr_data = offset - GotThisDataStart;
+
+    if (total_data != 0) {
+        curr = (100.0f * curr_data) / total_data;
     } else {
         curr = 0;
     }
 
     if (last != curr) {
-        MarinerLog("progress::fetching (%s) %lu%% (%lu/%lu) %d\n", GetComp(), curr, cf.ValidData(), stat.Length);
+        MarinerLog("progress::fetching (%s) %lu%% (%luBs/%luBs) [%lu - %lu]\n",
+                   GetComp(), curr, curr_data, total_data, GotThisDataStart,
+                   GotThisDataEnd);
     }
-	   
+
     last = curr;
 }
 
@@ -183,10 +187,10 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
 {
     int fd = -1;
 
-    LOG(10, ("fsobj::Fetch: (%s), uid = %d, pos = %d, count = %d\n",
-             GetComp(), uid, pos, count));
-
     CODA_ASSERT(!IsLocalObj() && !IsFake());
+    
+    LOG(10, ("fsobj::Fetch: (%s), uid = %d\n",
+             GetComp(), uid));
 
     /* Sanity checks. */
     {
@@ -232,18 +236,22 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
     if (IsVastro()) {
         offset = bytes_round_down_block_size(pos);
         len = bytes_round_up_block_size(pos + count) - offset;
+
+        /* If reading out-of-bound read missing file part */
+        if (pos + count > Size()) {
+            len = -1;
+        }
+
+        LOG(10, ("fsobj::Fetch: (%s), uid = %d, Range [%d - %d]\n",
+                 GetComp(), uid, offset, len > 0 ? offset + len : Size()));
+
     } else if (IsFile()) {
         offset = cf.ValidData();  // FIXME This has to change to consencutive
         len = -1;
     }
 
-    /* If reading out-of-bound read missing file part */
-    if (pos + count > Size()) {
-        len = -1;
-    }
-
-    LOG(10, ("fsobj::Fetch: (%s), uid = %d, Range [%d - %d]\n",
-             GetComp(), uid, offset, len));
+    GotThisDataStart = offset;
+    GotThisDataEnd = len > 0 ? offset + len : Size();
 
     /* C++ 3.0 whines if the following decls moved closer to use  -- Satya */
     {
@@ -366,9 +374,9 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
 	    UNI_RECORD_STATS(ViceFetchPartial_OP);
 
 	    if (IsFile()) {
-		Recov_BeginTrans();
-		cf.SetValidData(offset, len);
-		Recov_EndTrans(CMFP);
+    		Recov_BeginTrans();
+    		cf.SetValidData(offset, len);
+    		Recov_EndTrans(CMFP);
 	    }
 
 	    if (code != 0) goto RepExit;
