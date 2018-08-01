@@ -1148,6 +1148,7 @@ void fsobj::LocalStore(Date_t Mtime, unsigned long NewLength)
     stat.DataVersion++;
     stat.Length = NewLength;
     stat.Date = Mtime;
+    cf.SetValidData(NewLength);
     memset(VenusSHA, 0, SHA_DIGEST_LENGTH);
 
     UpdateCacheStats((IsDir() ? &FSDB->DirAttrStats : &FSDB->FileAttrStats),
@@ -1195,6 +1196,7 @@ int fsobj::Store(unsigned long NewLength, Date_t Mtime, uid_t uid)
 	Kill();
 	Recov_EndTrans(DMFP);
     }
+    
     return(code);
 }
 
