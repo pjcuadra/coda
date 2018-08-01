@@ -291,16 +291,26 @@ void CacheFile::Truncate(long newlen)
 }
 
 /* MUST be called from within transaction! */
-void CacheFile::SetLength(long newlen)
+void CacheFile::SetLength(uint64_t newlen)
 {
-    LOG(60, ("Cachefile::SetLength %d\n", newlen));
-
+    uint64_t length_b_f = bytes_to_blocks_floor(length); /* Floor length in blocks */
+    
     if (length != newlen) {
         RVMLIB_REC_OBJECT(*this);
-        length = newlen;
+
         validdata = cached_chuncks->Count() * BYTES_BLOCK_SIZE;
-        cached_chuncks->Resize(bytes_to_blocks_ceil(length));
+
+        /* In case the the last block is set */
+        if (cached_chuncks->Value(bytes_to_blocks_ceil(length) - 1)) {
+            validdata -= BYTES_BLOCK_SIZE;
+            validdata += length - (length_b_f << BITS_BLOCK_SIZE);
+        }
+        
+        cached_chuncks->Resize(bytes_to_blocks_ceil(newlen));
+        length = newlen;
     }
+    
+    LOG(60, ("CacheFile::SetLength: New Length: %d, Validata %d\n", newlen, validdata));
 }
 
 /* MUST be called from within transaction! */
