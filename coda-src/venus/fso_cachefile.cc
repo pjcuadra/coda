@@ -443,7 +443,12 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len) {
 uint64_t CacheFile::ConsecutiveValidData(void)
 {
     /* Use the start of the first hole */
-    return GetNextHole(0, bytes_to_blocks_ceil(length)).GetStart() - 1;
+    uint64_t start = GetNextHole(0, bytes_to_blocks_ceil(length)).GetStart();
+    
+    if (start != 0)
+        start--;
+        
+    return start;
 }
 
 CacheChunckList::CacheChunckList()
