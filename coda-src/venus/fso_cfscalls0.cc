@@ -186,11 +186,14 @@ int fsobj::Fetch(uid_t uid) {
 int fsobj::Fetch(uid_t uid, uint pos, int count)
 {
     int fd = -1;
+    static const char partial[8] = "Partial";
+    static const char nonpartial[1] = "";
+    const char * partial_sel = nonpartial;
+    int code = 0;
+    char prel_str[256];
 
     CODA_ASSERT(!IsLocalObj() && !IsFake());
     
-    LOG(10, ("fsobj::Fetch: (%s), uid = %d\n",
-             GetComp(), uid));
 
     /* Sanity checks. */
     {
@@ -209,10 +212,7 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
             CHOKE("fsobj::Fetch: HAVEALLDATA");
         }
     }
-
-    int code = 0;
-    char prel_str[256];
-    sprintf(prel_str, "fetch::Fetch %%s [%ld]\n", BLOCKS(this));
+    
     int inconok = !vol->IsReplicated();
 
     /* Status parameters. */
@@ -242,13 +242,17 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
             len = -1;
         }
 
-        LOG(10, ("fsobj::Fetch: (%s), uid = %d, Range [%d - %d]\n",
-                 GetComp(), uid, offset, len > 0 ? offset + len : Size()));
+        partial_sel = partial;
 
     } else if (IsFile()) {
         offset = cf.ConsecutiveValidData();
         len = -1;
     }
+
+    LOG(10, ("fsobj::Fetch%s: (%s), uid = %d, pos = %d, count = %d \n",
+             partial_sel, GetComp(), uid, offset, len));
+    snprintf(prel_str, sizeof(256), "fetch::Fetch%s %%s [%ld]\n", partial_sel,
+             BLOCKS(this));
 
     GotThisDataStart = offset;
     GotThisDataEnd = len > 0 ? offset + len : Size();
@@ -367,7 +371,7 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
         code = ViceFetchPartial(c->connid, MakeViceFid(&fid), &stat.VV,
                          inconok, &status, ph, offset, len, &PiggyBS, sed);
         UNI_END_MESSAGE(ViceFetchPartial_OP);
-        CFSOP_POSTLUDE("fetch::fetch done\n");
+        CFSOP_POSTLUDE("fetch::Fetch done\n");
 
 	    /* Examine the return code to decide what to do next. */
 	    code = vp->Collate(c, code);
