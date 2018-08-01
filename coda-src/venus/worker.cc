@@ -1537,10 +1537,11 @@ inline void worker::op_coda_access_intent(union inputArgs *in, union outputArgs 
     
     size_t count = coda_access_intent->count;
     
-    LOG(100, ("CODA_ACCESS_INTENT: u.u_pid = %d u.u_pgid = %d pos = %d count = %d \n",
+    LOG(100, ("CODA_ACCESS_INTENT: u.u_pid = %d u.u_pgid = %d pos = %d count = %d, mode = %d \n",
         u.u_pid,
         u.u_pgid,
         coda_access_intent->pos,
+        coda_access_intent->mode,
         static_cast<int>(count)));
         
     MAKE_CNODE(vtarget, coda_access_intent->Fid, 0);
