@@ -1541,8 +1541,8 @@ inline void worker::op_coda_access_intent(union inputArgs *in, union outputArgs 
         u.u_pid,
         u.u_pgid,
         coda_access_intent->pos,
-        coda_access_intent->mode,
-        static_cast<int>(count)));
+        static_cast<int>(count),
+        coda_access_intent->mode));
         
     MAKE_CNODE(vtarget, coda_access_intent->Fid, 0);
 
