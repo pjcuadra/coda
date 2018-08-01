@@ -1,8 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = ${subdirs} configs lib-src coda-src tools
+SUBDIRS = ${subdirs} configs lib-src coda-src tools test
 
 ACLOCAL_AMFLAGS = -I m4
+
+AM_PROG_AR
 
 EXTRA_DIST = LICENSE README.BSD README.Solaris README.nt \
 	     bootstrap.sh configure README.md
