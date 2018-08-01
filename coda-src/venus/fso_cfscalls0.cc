@@ -220,7 +220,7 @@ int fsobj::FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
 
     if (IsFile()) {
         Recov_BeginTrans();
-        cf.SetValidData(GotThisData);
+        cf.SetValidData(offset, len);
         Recov_EndTrans(CMFP);
     }
 
@@ -236,12 +236,9 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 {
     int fd = -1;
     int code = 0;
-    
 
     CODA_ASSERT(!IsLocalObj() && !IsFake());
     
-    LOG(10, ("fsobj::Fetch: (%s), uid = %d\n",
-             GetComp(), uid));
 
     /* Sanity checks. */
     {
@@ -287,9 +284,6 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
         if (pos + count > Size()) {
             len = -1;
         }
-
-        LOG(10, ("fsobj::Fetch: (%s), uid = %d, Range [%d - %d]\n",
-                 GetComp(), uid, offset, len > 0 ? offset + len : Size()));
 
     } else if (IsFile()) {
         offset = cf.ConsecutiveValidData();
