@@ -287,7 +287,8 @@ struct FsoFlags {
     /*T*/unsigned fetching : 1;			/* fetch in progress? */
     unsigned expanded : 1;			/* are we an expanded object */
     unsigned modified : 1;			/* modified for expansion? */
-    unsigned padding : 8;
+    unsigned vastro : 1;             /* is the file vastro?  */
+    unsigned padding : 7;
 };
 
 enum MountStatus {  NORMAL,
@@ -418,6 +419,7 @@ class fsobj {
 
     // for asr invocation
     /*T*/long lastresolved;			// time when object was last resolved
+    
 
     /* Constructors, destructors. */
     void *operator new(size_t, fso_alloc_t, int); /* for allocation from freelist */
@@ -564,6 +566,7 @@ class fsobj {
     int LookAside(void);
     int FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
                   int64_t len, RPC2_CountedBS * PiggyBS, SE_Descriptor * sed);
+    void CheckVastro(void);
 
   public:
     /* The public CFS interface (Vice portion). */
@@ -627,8 +630,6 @@ class fsobj {
     int  MakeShadow();
     void RemoveShadow();
     void CacheReport(int, int);
-    bool IsVastro();
-    bool CheckCachedSegment(uint64_t start, int64_t len);
     CacheChunckList * GetHoles(uint64_t start, int64_t len);
 
     void print() { print(stdout); }
@@ -732,6 +733,7 @@ void FSOD_ReclaimFSOs(void);
 #define	FLUSHABLE(f)	((DYING(f) || REPLACEABLE(f)) && \
                          !DIRTY(f) && !BUSY(f))
 #define	BLOCKS(f)	(NBLOCKS((f)->stat.Length))
+#define	ISVASTRO(f)	((f)->flags.vastro)
 
 
 #define	FSO_ASSERT(f, ex)\
