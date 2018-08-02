@@ -722,15 +722,16 @@ void FSOD_ReclaimFSOs(void);
 #define	ACTIVE(f)	(WRITING(f) || READING(f)) // was EXECUTING(f)
 #define	BUSY(f)		((f)->refcnt > 0 || EXECUTING(f))
 #define	HOARDABLE(f)	((f)->HoardPri > 0)
+#define	ISVASTRO(f)	((f)->flags.vastro)
 #define	FETCHABLE(f)	(!DYING(f) && REACHABLE(f) && !DIRTY(f) && \
-			 (!HAVESTATUS(f) || !ACTIVE(f)) && !f->IsLocalObj())
+			 (!HAVESTATUS(f) || !WRITING(f) || \
+             (!READING(f) && !ISVASTRO(f))) && !f->IsLocalObj())
 /* we are replaceable whenever we are linked into FSDB->prioq */
 #define	REPLACEABLE(f)	((f)->prio_handle.tree() != 0)
 #define	GCABLE(f)	(DYING(f) && !DIRTY(f) && !BUSY(f))
 #define	FLUSHABLE(f)	((DYING(f) || REPLACEABLE(f)) && \
                          !DIRTY(f) && !BUSY(f))
 #define	BLOCKS(f)	(NBLOCKS((f)->stat.Length))
-#define	ISVASTRO(f)	((f)->flags.vastro)
 
 
 #define	FSO_ASSERT(f, ex)\
