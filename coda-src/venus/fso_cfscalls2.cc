@@ -325,8 +325,8 @@ int fsobj::Access(int rights, int modes, uid_t uid)
     int code = 0, connected;
 
 #define PRSFS_MUTATE (PRSFS_WRITE | PRSFS_DELETE | PRSFS_INSERT | PRSFS_LOCK)
-    /* Disallow mutation of backup, rw-replica, and zombie volumes. */
-    if (vol->IsBackup() || vol->IsReadWriteReplica()) {
+    /* Disallow mutation of backup, rw-replica, zombie volumes and Vastros. */
+    if (vol->IsBackup() || vol->IsReadWriteReplica() || ISVASTRO(this)) {
 	if (rights & PRSFS_MUTATE)
 	    return(EROFS);
 	/* But don't allow reading unless the acl allows us to. */
