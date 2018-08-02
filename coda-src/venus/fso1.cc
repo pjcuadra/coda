@@ -714,6 +714,8 @@ void fsobj::UpdateStatus(ViceStatus *vstat, ViceVersionVector *UpdateSet, uid_t 
 	SetAcRights(uid, vstat->MyAccess, vstat->AnyAccess);
 
     SetParent(vstat->vparent, vstat->uparent);
+    
+    CheckVastro();
 }
 
 
@@ -2375,14 +2377,14 @@ void fsobj::CacheReport(int fd, int level) {
     }
 }
 
-bool fsobj::IsVastro() {
+void fsobj::CheckVastro()
+{
     if (!IsFile()) {
-        return false;
+        flags.vastro = 0x0;
+        return;
     }
     
-    LOG(1, ("fsobj::IsVastro (%s): size = %d, max_whole = %d.\n", GetComp(), Size(), FSDB->WholeFileCachingMaxSize));
-
-    return Size() >= FSDB->WholeFileCachingMaxSize * 1024;
+    flags.vastro = Size() >= FSDB->WholeFileCachingMaxSize * 1024 ? 0x1 : 0x0;
 }
 
 /* local-repair modification */

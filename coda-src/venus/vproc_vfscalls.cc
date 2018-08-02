@@ -1465,7 +1465,7 @@ void vproc::read(struct venus_cnode * node, uint pos, int count)
         u.u_error = FSDB->Get(&f, &node->c_fid, u.u_uid, RC_STATUS);
         if (u.u_error) goto FreeLocks;
 
-        if (!f->IsVastro()) goto FreeLocks;
+        if (!ISVASTRO(f)) goto FreeLocks;
 
         if (pos >= f->Size()) goto FreeLocks;
 

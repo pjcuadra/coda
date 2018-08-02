@@ -511,7 +511,8 @@ int fsdb::Get(fsobj **f_addr, VenusFid *key, uid_t uid, int rights,
      *  NotifyUserOfProgramAccess(uid, vp->u.u_pid, vp->u.u_pgid, key); */
 
     /* Volume state synchronization. */
-    /* If a thread is already "in" one volume, we must switch contexts before entering another. */
+    /* If a thread is already "in" one volume, we must switch contexts 
+     * before entering another. */
     if (vp->u.u_vol &&
 	!(vp->u.u_vol->GetRealmId() == key->Realm &&
 	  vp->u.u_vol->GetVolumeId() == key->Volume))
@@ -753,7 +754,7 @@ RestartFind:
 		
 		code = 0;
 		/* first try the LookAside cache */
-		if (!f->LookAside() && !f->IsVastro()) {
+		if (!f->LookAside() && !ISVASTRO(f)) {
 		  /* Let fsobj::Fetch go ahead and fetch the object */
 		  code = f->Fetch(uid);
 		}
