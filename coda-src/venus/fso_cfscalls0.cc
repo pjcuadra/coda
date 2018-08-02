@@ -207,7 +207,7 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
         }
 
         /* We never fetch data if we already have the file. */
-        if (HAVEALLDATA(this) && !IsVastro()) {
+        if (HAVEALLDATA(this) && !ISVASTRO(this)) {
             print(logFile);
             CHOKE("fsobj::Fetch: HAVEALLDATA");
         }
@@ -233,7 +233,7 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
     uint64_t offset = 0;
     int64_t len = -1;
 
-    if (IsVastro()) {
+    if (ISVASTRO(this)) {
         offset = bytes_round_down_block_size(pos);
         len = bytes_round_up_block_size(pos + count) - offset;
 
