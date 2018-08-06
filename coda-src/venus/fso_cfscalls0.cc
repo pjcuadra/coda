@@ -50,7 +50,6 @@ extern "C" {
 #endif
 
 /* from venus */
-#include "comm.h"
 #include "fso.h"
 #include "mariner.h"
 #include "mgrp.h"
@@ -59,7 +58,10 @@ extern "C" {
 #include "venus.private.h"
 #include "venusrecov.h"
 #include "venusvol.h"
-#include "worker.h" 
+#include "worker.h"
+
+static const char partial[8] = "Partial";
+static const char nonpartial[1] = "";
 
 
 /*  *****  Fetch  *****  */
@@ -179,18 +181,65 @@ int fsobj::LookAside(void)
     return lka_successful;
 }
 
-int fsobj::Fetch(uid_t uid) {
-    return Fetch(uid, 0, -1);
-}
-
-int fsobj::Fetch(uid_t uid, uint pos, int count)
+int fsobj::FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
+                        int64_t len, RPC2_CountedBS * PiggyBS,
+                        SE_Descriptor * sed)
 {
-    int fd = -1;
+    int code = 0;
+    char prel_str[256];
     static const char partial[8] = "Partial";
     static const char nonpartial[1] = "";
     const char * partial_sel = nonpartial;
+    int inconok = !vol->IsReplicated();
+    repvol *vp = (repvol *)vol;
+    uint viceop = 0;
+    bool vastro_support = true;
+
+    if (ISVASTRO(this)) partial_sel = partial;
+
+    viceop = vastro_support ? ViceFetchPartial_OP : ViceFetch_OP;
+
+    snprintf(prel_str, sizeof(256), "fetch::Fetch%s %%s [%ld]\n", partial_sel,
+             BLOCKS(this));
+
+    CFSOP_PRELUDE(prel_str, comp, fid);
+    UNI_START_MESSAGE(viceop);
+
+    if (vastro_support) {
+        code = ViceFetchPartial(con->connid, MakeViceFid(&fid), &stat.VV,
+                         inconok, status, 0, offset, len, PiggyBS, sed);
+    } else {
+        code = ViceFetch(con->connid, MakeViceFid(&fid), &stat.VV,
+                         inconok, status, 0, offset, PiggyBS, sed);
+    }
+
+    UNI_END_MESSAGE(viceop);
+    CFSOP_POSTLUDE("fetch::Fetch done\n");
+
+    /* Examine the return code to decide what to do next. */
+    code = vp->Collate(con, code);
+    UNI_RECORD_STATS(viceop);
+
+    if (IsFile()) {
+        Recov_BeginTrans();
+        cf.SetValidData(offset, len);
+        Recov_EndTrans(CMFP);
+    }
+
+    return code;
+}
+
+int fsobj::Fetch(uid_t uid)
+{
+    return Fetch(uid, 0, -1);
+}
+
+int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
+{
+    int fd = -1;
+    const char * partial_sel = nonpartial;
     int code = 0;
-    char prel_str[256];
+    
 
     CODA_ASSERT(!IsLocalObj() && !IsFake());
     
@@ -213,8 +262,6 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
         }
     }
     
-    int inconok = !vol->IsReplicated();
-
     /* Status parameters. */
     ViceStatus status;
     memset((void *)&status, 0, (int)sizeof(ViceStatus));
@@ -241,9 +288,9 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
         if (pos + count > Size()) {
             len = -1;
         }
-
+        
         partial_sel = partial;
-
+        
     } else if (IsFile()) {
         offset = cf.ConsecutiveValidData();
         len = -1;
@@ -251,8 +298,7 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
 
     LOG(10, ("fsobj::Fetch%s: (%s), uid = %d, pos = %d, count = %d \n",
              partial_sel, GetComp(), uid, offset, len));
-    snprintf(prel_str, sizeof(256), "fetch::Fetch%s %%s [%ld]\n", partial_sel,
-             BLOCKS(this));
+    
 
     GotThisDataStart = offset;
     GotThisDataEnd = len > 0 ? offset + len : Size();
@@ -336,9 +382,9 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
         connent *c = 0;
         repvol *vp = (repvol *)vol;
 
-	/* Acquire an Mgroup. */
+        /* Acquire an Mgroup. */
         code = vp->GetMgrp(&m, uid, (PIGGYCOP2 ? &PiggyBS : 0));
-	if (code != 0) goto RepExit;
+        if (code != 0) goto RepExit;
 
         /* We do not piggy the COP2 entries in PiggyBS when we intentionally
          * talk to only a single server when performing weak reintegration or
@@ -351,49 +397,32 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
             PiggyBS.SeqLen = 0;
         }
 
-	/* The COP:Fetch call. */
-	{
-	    /* Make multiple copies of the IN/OUT and OUT parameters. */
+    /* The COP:Fetch call. */
+    {
+        /* Make multiple copies of the IN/OUT and OUT parameters. */
         int ph_ix;
         struct in_addr *phost;
-        unsigned long ph;
 
         phost = m->GetPrimaryHost(&ph_ix);
-        ph = ntohl(phost->s_addr);
 
         srvent *s = GetServer(phost, vol->GetRealmId());
         code = s->GetConn(&c, uid);
         PutServer(&s);
         if (code != 0) goto RepExit;
 
-        CFSOP_PRELUDE(prel_str, comp, fid);
-        UNI_START_MESSAGE(ViceFetchPartial_OP);
-        code = ViceFetchPartial(c->connid, MakeViceFid(&fid), &stat.VV,
-                         inconok, &status, ph, offset, len, &PiggyBS, sed);
-        UNI_END_MESSAGE(ViceFetchPartial_OP);
-        CFSOP_POSTLUDE("fetch::Fetch done\n");
-
-	    /* Examine the return code to decide what to do next. */
-	    code = vp->Collate(c, code);
-	    UNI_RECORD_STATS(ViceFetchPartial_OP);
-
-	    if (IsFile()) {
-    		Recov_BeginTrans();
-    		cf.SetValidData(offset, len);
-    		Recov_EndTrans(CMFP);
-	    }
-
-	    if (code != 0) goto RepExit;
+        /* Fetch the file from the server */
+        code = FetchFileRPC(c, &status, offset, len, &PiggyBS, sed);
+        if (code != 0) goto RepExit;
 
 	    {
-		unsigned long bytes = (unsigned long)sed->Value.SmartFTPD.BytesTransferred;
-		LOG(10, ("(Multi)ViceFetch: fetched %lu bytes\n", bytes));
-		if ((offset + bytes) != status.Length) {
-		    // print(logFile);
-		    LOG(0, ("fsobj::Fetch: fetched file length mismatch (%lu, %lu)",
-			    offset + bytes, status.Length));
-		    code = ERETRY;
-		}
+            unsigned long bytes = (unsigned long)sed->Value.SmartFTPD.BytesTransferred;
+            LOG(10, ("(Multi)ViceFetch: fetched %lu bytes\n", bytes));
+            if ((offset + bytes) != status.Length) {
+                // print(logFile);
+                LOG(0, ("fsobj::Fetch: fetched file length mismatch (%lu, %lu)",
+                        offset + bytes, status.Length));
+                code = ERETRY;
+            }
 	    }
 
 	    /* Handle failed validations. */
@@ -448,23 +477,8 @@ RepExit:
 	if (code != 0) goto NonRepExit;
 
 	/* Make the RPC call. */
-	CFSOP_PRELUDE(prel_str, comp, fid);
-	UNI_START_MESSAGE(ViceFetchPartial_OP);
-	code = (int) ViceFetchPartial(c->connid, MakeViceFid(&fid), &stat.VV, inconok,
-				  &status, 0, offset, len, &PiggyBS, sed);
-	UNI_END_MESSAGE(ViceFetchPartial_OP);
-	CFSOP_POSTLUDE("fetch::fetch done\n");
-
-	/* Examine the return code to decide what to do next. */
-	code = vp->Collate(c, code);
-	UNI_RECORD_STATS(ViceFetchPartial_OP);
-	if (IsFile()) {
-	    Recov_BeginTrans();
-	    cf.SetValidData(offset, len);
-	    Recov_EndTrans(CMFP);
-	}
-
-	if (code != 0) goto NonRepExit;
+    code = FetchFileRPC(c, &status, offset, len, &PiggyBS, sed);
+    if (code != 0) goto NonRepExit;
 
 	{
 	    unsigned long bytes = sed->Value.SmartFTPD.BytesTransferred;
