@@ -2733,6 +2733,16 @@ failure:
   return 0;
 }
 
+bool fsobj::CheckCachedSegment(uint64_t start, int64_t len) {
+    uint64_t end = start + len;
+    
+    if (len < 0) {
+        end = Size() - 1;
+    }
+    
+    return cf.CheckCachedSegment(start, end);
+}
+
 /* *****  Iterator  ***** */
 
 fso_iterator::fso_iterator(LockLevel level, const VenusFid *key) : rec_ohashtab_iterator(FSDB->htab, key) {

@@ -621,6 +621,7 @@ class fsobj {
     void RemoveShadow();
     void CacheReport(int, int);
     bool IsVastro();
+    bool CheckCachedSegment(uint64_t start, int64_t len);
 
     void print() { print(stdout); }
     void print(FILE *fp) { fflush(fp); print(fileno(fp)); }

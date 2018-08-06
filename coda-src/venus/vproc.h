@@ -341,4 +341,3 @@ struct venus_cnode {
 #define VA_IGNORE_FLAGS		((u_long)-1)
 
 #endif /* _VENUS_PROC_H_ */
-
