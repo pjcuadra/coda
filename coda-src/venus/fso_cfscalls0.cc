@@ -72,24 +72,20 @@ static void FetchProgressIndicator_stub(void *up, unsigned int offset)
 
 void fsobj::FetchProgressIndicator(unsigned long offset)
 {
-    unsigned long last;
+    static unsigned long last = 0;
     unsigned long curr;
     
-    if (stat.Length > 100000) {
-        last = GotThisData / (stat.Length / 100) ; 
-	curr = offset / (stat.Length / 100) ;
-    } else if (stat.Length > 0) {
-        last = 100 * GotThisData / stat.Length ; 
-	curr = 100 * offset / stat.Length ;
+    if (stat.Length != 0) {
+        curr = (100.0f * cf.ValidData()) / stat.Length;
     } else {
-	last = 0;
-	curr = 100;
+        curr = 0;
     }
 
-    if (last != curr)
-	MarinerLog("progress::fetching (%s) %lu%%\n", GetComp(), curr);
-
-    GotThisData = (unsigned long)offset;
+    if (last != curr) {
+        MarinerLog("progress::fetching (%s) %lu%% (%lu/%lu)\n", GetComp(), curr, cf.ValidData(), stat.Length);
+    }
+	   
+    last = curr;
 }
 
 /* MUST be called from within a transaction */
@@ -370,7 +366,7 @@ int fsobj::Fetch(uid_t uid, uint pos, int count)
 
 	    if (IsFile()) {
 		Recov_BeginTrans();
-		cf.SetValidData(GotThisData);
+		cf.SetValidData(offset, len);
 		Recov_EndTrans(CMFP);
 	    }
 
@@ -440,18 +436,18 @@ RepExit:
 
 	/* Make the RPC call. */
 	CFSOP_PRELUDE(prel_str, comp, fid);
-	UNI_START_MESSAGE(ViceFetch_OP);
-	code = (int) ViceFetch(c->connid, MakeViceFid(&fid), &stat.VV, inconok,
-				  &status, 0, offset, &PiggyBS, sed);
-	UNI_END_MESSAGE(ViceFetch_OP);
+	UNI_START_MESSAGE(ViceFetchPartial_OP);
+	code = (int) ViceFetchPartial(c->connid, MakeViceFid(&fid), &stat.VV, inconok,
+				  &status, 0, offset, len, &PiggyBS, sed);
+	UNI_END_MESSAGE(ViceFetchPartial_OP);
 	CFSOP_POSTLUDE("fetch::fetch done\n");
 
 	/* Examine the return code to decide what to do next. */
 	code = vp->Collate(c, code);
-	UNI_RECORD_STATS(ViceFetch_OP);
+	UNI_RECORD_STATS(ViceFetchPartial_OP);
 	if (IsFile()) {
 	    Recov_BeginTrans();
-	    cf.SetValidData(GotThisData);
+	    cf.SetValidData(offset, len);
 	    Recov_EndTrans(CMFP);
 	}
 
