@@ -1477,6 +1477,13 @@ void vproc::read(struct venus_cnode * node, uint pos, int count)
     if (!f->IsVastro()) goto FreeLocks;
     
     if (pos >= f->Size()) goto FreeLocks;
+    
+    if (f->CheckCachedSegment(pos, count)) {
+        LOG(0, ("vproc::read Cache Hit in range [%d %d]\n", pos, count));
+        goto FreeLocks;
+    }
+    
+    LOG(0, ("vproc::read Cache Missin range [%d %d]\n", pos, count));
         
     f->Fetch(u.u_uid, pos, count);
     
