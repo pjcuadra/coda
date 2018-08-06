@@ -58,6 +58,19 @@ extern "C" {
 /* always useful to have a page of zero's ready */
 static char zeropage[4096];
 
+#define BYTES_BLOCK_SIZE 4096
+#define BITS_BLOCK_SIZE 12 /* 4096 = 2^12 */
+
+static inline uint64_t bytes_to_blocks(uint64_t bytes) {
+    uint64_t res = bytes >> BITS_BLOCK_SIZE;
+
+    if ((res << BITS_BLOCK_SIZE) < bytes) {
+        res++;
+    }
+
+    return res;
+}
+
 /*  *****  CacheFile Members  *****  */
 
 /* Pre-allocation routine. */
@@ -71,6 +84,7 @@ CacheFile::CacheFile(int i)
     length = validdata = 0;
     refcnt = 1;
     numopens = 0;
+    cached_chuncks = new bitmap(1, 0);
     /* Container reset will be done by eventually by FSOInit()! */
     LOG(100, ("CacheFile::CacheFile(%d): %s (this=0x%x)\n", i, name, this));
 }
@@ -81,6 +95,7 @@ CacheFile::CacheFile()
     CODA_ASSERT(length == 0);
     refcnt = 1;
     numopens = 0;
+    cached_chuncks = new bitmap(1, 0);
 }
 
 
@@ -88,6 +103,7 @@ CacheFile::~CacheFile()
 {
     LOG(10, ("CacheFile::~CacheFile: %s (this=0x%x)\n", name, this));
     CODA_ASSERT(length == 0);
+    delete(cached_chuncks);
 }
 
 
@@ -165,6 +181,7 @@ void CacheFile::Create(int newlength)
     length = newlength;
     refcnt = 1;
     numopens = 0;
+    cached_chuncks->Grow(bytes_to_blocks(length));
 }
 
 
@@ -177,6 +194,7 @@ int CacheFile::Copy(CacheFile *destination)
 
     destination->length = length;
     destination->validdata = validdata;
+    destination->cached_chuncks = cached_chuncks;
     return 0;
 }
 
@@ -280,6 +298,7 @@ void CacheFile::Truncate(long newlen)
     }
 
     CODA_ASSERT(::ftruncate(fd, length) == 0);
+    cached_chuncks->Resize(bytes_to_blocks(length));
 
     close(fd);
 }
@@ -290,20 +309,58 @@ void CacheFile::SetLength(long newlen)
     LOG(0, ("Cachefile::SetLength %d\n", newlen));
 
     if (length != newlen) {
-	RVMLIB_REC_OBJECT(*this);
-	length = validdata = newlen;
+        RVMLIB_REC_OBJECT(*this);
+        length = newlen;
+        validdata = cached_chuncks->Count() * BYTES_BLOCK_SIZE;
+        cached_chuncks->Resize(bytes_to_blocks(length));
     }
 }
 
 /* MUST be called from within transaction! */
-void CacheFile::SetValidData(long newoffset)
+void CacheFile::SetValidData(uint64_t len)
 {
-    LOG(0, ("Cachefile::SetValidData %d\n", newoffset));
+    SetValidData(0, len);
+}
 
-    if (validdata != newoffset) {
-	RVMLIB_REC_OBJECT(validdata);
-	validdata = newoffset;
+/* MUST be called from within transaction! */
+void CacheFile::SetValidData(uint64_t start, int64_t len)
+{
+    uint64_t start_b = start >> BITS_BLOCK_SIZE;
+    uint64_t end_b = bytes_to_blocks(start + len);
+    uint64_t newvaliddata = 0;
+    uint64_t length_b_l = length >> BITS_BLOCK_SIZE; /* Floor length in blocks */
+    uint64_t length_b = bytes_to_blocks(length); /* Ceil length in blocks */
+    
+    if (len < 0) {
+        end_b = bytes_to_blocks(length);
     }
+    
+    LOG(0, ("Cachefile::SetValidData Range [%d - %d]\n", start, start + len - 1));
+    LOG(0, ("Cachefile::SetValidData Block Range [%d - %d]/%d (%d)\n", start_b, end_b - 1, cached_chuncks->Size(), length));
+
+    RVMLIB_REC_OBJECT(validdata);
+
+    for (uint64_t i = start_b; i < end_b; i++) {
+        if (cached_chuncks->Value(i)) {
+            continue;
+        }
+
+        cached_chuncks->SetIndex(i);
+
+        /* The last block might not be full */
+        if (i + 1 == length_b) {
+            newvaliddata += length - (length_b_l << BITS_BLOCK_SIZE);
+            continue;
+        }
+
+        /* Add a full block */
+        newvaliddata += BYTES_BLOCK_SIZE;
+    }
+    
+    validdata += newvaliddata;
+
+    LOG(0, ("Cachefile::SetValidData newvaliddata %d, validdata %d\n", newvaliddata, validdata));
+    LOG(0, ("Cachefile::SetValidData fetchedblocks %d, totalblocks %d\n", cached_chuncks->Count(), length_b));
 }
 
 void CacheFile::print(int fdes)
@@ -328,3 +385,17 @@ int CacheFile::Close(int fd)
     return ::close(fd);
 }
 
+bool CacheFile::CheckCachedSegment(uint64_t start, uint64_t end) {
+    uint64_t start_b = start >> BITS_BLOCK_SIZE;
+    uint64_t end_b = bytes_to_blocks(end);
+    
+    LOG(0, ("Cachefile::CheckCachedSegment Block Range [%d - %d]\n", start, end));
+
+    for (uint64_t i = start_b; i < end_b; i++) {
+        if (!cached_chuncks->Value(i)) {
+            return false;
+        }
+    }
+
+    return true;
+}
