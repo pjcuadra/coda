@@ -195,8 +195,6 @@ int fsobj::FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
 
     viceop = fetchpartial_support ? ViceFetchPartial_OP : ViceFetch_OP;
 
-    // TODO: Check if file will be partially cached
-
     snprintf(prel_str, sizeof(256), "fetch::Fetch%s %%s [%ld]\n", partial_sel,
              BLOCKS(this));
 
@@ -213,6 +211,9 @@ int fsobj::FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
 
     UNI_END_MESSAGE(viceop);
     CFSOP_POSTLUDE("fetch::Fetch done\n");
+
+    LOG(10, ("fsobj::FetchFileRPC: (%s), pos = %d, count = %d, ret = %d \n",
+             GetComp(), offset, len, code));
 
     /* Examine the return code to decide what to do next. */
     code = vp->Collate(con, code);
