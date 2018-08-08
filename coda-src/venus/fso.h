@@ -564,7 +564,7 @@ class fsobj {
 			     char *, unsigned short, int, int prepend=0);
     int GetContainerFD(void);
     int LookAside(void);
-    void CheckVastro(void);
+    void CheckVastro(uid_t uid);
     int FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
                   int64_t len, RPC2_CountedBS * PiggyBS, SE_Descriptor * sed);
 

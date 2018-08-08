@@ -193,11 +193,11 @@ int fsobj::FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
     int inconok = !vol->IsReplicated();
     repvol *vp = (repvol *)vol;
     uint viceop = 0;
-    bool vastro_support = true;
+    bool fetchpartial_support = con->srv->fetchpartial_support;
 
     if (ISVASTRO(this)) partial_sel = partial;
 
-    viceop = vastro_support ? ViceFetchPartial_OP : ViceFetch_OP;
+    viceop = fetchpartial_support ? ViceFetchPartial_OP : ViceFetch_OP;
 
     snprintf(prel_str, sizeof(256), "fetch::Fetch%s %%s [%ld]\n", partial_sel,
              BLOCKS(this));
@@ -205,7 +205,7 @@ int fsobj::FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
     CFSOP_PRELUDE(prel_str, comp, fid);
     UNI_START_MESSAGE(viceop);
 
-    if (vastro_support) {
+    if (fetchpartial_support) {
         code = ViceFetchPartial(con->connid, MakeViceFid(&fid), &stat.VV,
                          inconok, status, 0, offset, len, PiggyBS, sed);
     } else {
@@ -215,6 +215,9 @@ int fsobj::FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
 
     UNI_END_MESSAGE(viceop);
     CFSOP_POSTLUDE("fetch::Fetch done\n");
+
+    LOG(10, ("fsobj::FetchFileRPC: (%s), pos = %d, count = %d, ret = %d \n",
+             GetComp(), offset, len, code));
 
     /* Examine the return code to decide what to do next. */
     code = vp->Collate(con, code);
