@@ -1544,9 +1544,17 @@ inline void worker::op_coda_access_intent(union inputArgs *in, union outputArgs 
         
     MAKE_CNODE(vtarget, coda_access_intent->Fid, 0);
 
-    // Read
-    if (coda_access_intent->mode == 1) {
-        return read(&vtarget, coda_access_intent->pos, coda_access_intent->count);
+    switch (coda_access_intent->mode) {
+    case CODA_ACCESS_TYPE_READ:
+        read(&vtarget, coda_access_intent->pos, coda_access_intent->count);
+        break;
+    case CODA_ACCESS_TYPE_WRITE:
+    case CODA_ACCESS_TYPE_MMAP:
+        // Unimplemented
+        break;
+    default:
+        // Do nothing
+        break;
     }
 }
 

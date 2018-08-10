@@ -295,6 +295,10 @@ struct coda_statfs {
 #define UPCALL(opcode) (opcode >= CODA_ROOT && \
                         opcode < CODA_OPCODE_MAX && \
                         !DOWNCALL(opcode))
+                        
+#define CODA_ACCESS_TYPE_READ 1
+#define CODA_ACCESS_TYPE_WRITE 2
+#define CODA_ACCESS_TYPE_MMAP 3
 
 #define VC_MAXDATASIZE	    8192
 #define VC_MAXMSGSIZE      sizeof(union inputArgs)+sizeof(union outputArgs) +\
