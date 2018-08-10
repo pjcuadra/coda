@@ -1460,7 +1460,7 @@ FreeLocks:
     }
 }
 
-void vproc::read(struct venus_cnode * node, uint pos, int count)
+void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
 {
     LOG(1, ("vproc::read: fid = %s, pos = %d, count = %d\n",
             FID_(&node->c_fid), pos, count));
