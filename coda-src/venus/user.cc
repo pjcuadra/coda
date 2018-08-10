@@ -432,7 +432,6 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv, int * retry_
 
     /* If it's not clear retry */
     if (code < 0) {
-        LOG(100, ("userent::CheckFetchPartialSupport: ViceFetchPartial retrying\n"));
         if (--*retry_cnt) return ERETRY;
         return code;
     }

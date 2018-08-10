@@ -715,8 +715,6 @@ void fsobj::UpdateStatus(ViceStatus *vstat, ViceVersionVector *UpdateSet, uid_t 
 	SetAcRights(uid, vstat->MyAccess, vstat->AnyAccess);
 
     SetParent(vstat->vparent, vstat->uparent);
-
-    CheckVastro(uid);
 }
 
 
@@ -2378,21 +2376,29 @@ void fsobj::CacheReport(int fd, int level) {
     }
 }
 
-void fsobj::CheckVastro(uid_t uid)
+void fsobj::UpdateVastroFlag(uid_t uid)
 {
     int ph_ix = 0;
     struct in_addr *phost = NULL;
     srvent *s = NULL;
     mgrpent *m = NULL;
-    bool tmp_check = false;
     connent *c = NULL;
     int code = 0;
     repvol *rv = NULL;
     volrep *vr = NULL;
-
+    /* Limit the VASTRO flagging to first opener only*/
+    if (openers > 0) {
+        return;
+    }
+    
     /* Only files might be VASTROS */
     if (!IsFile()) {
         flags.vastro = 0x0;
+        return;
+    }
+    
+    if (!REACHABLE(this)) {
+        LOG(0, ("fsobj::UpdateVastroFlag: %s is unreachable\n", GetComp()));
         return;
     }
 
@@ -2434,10 +2440,12 @@ void fsobj::CheckVastro(uid_t uid)
 
     }
 
-    flags.vastro &= Size() >= FSDB->WholeFileCachingMaxSize * 1024 ? 0x1 : 0x0;
+    flags.vastro = Size() >= FSDB->WholeFileCachingMaxSize * 1024 ? 0x1 : 0x0;
+    
     return;
 
 PutAll:
+    if (s) PutServer(&s);
     if (c) PutConn(&c);
     if (m) m->Put();
 }

@@ -564,6 +564,7 @@ class fsobj {
 			     char *, unsigned short, int, int prepend=0);
     int GetContainerFD(void);
     int LookAside(void);
+    void UpdateVastroFlag(uid_t uid);
     int FetchFileRPC(connent * con, ViceStatus * status, uint64_t offset,
                   int64_t len, RPC2_CountedBS * PiggyBS, SE_Descriptor * sed);
     void CheckVastro(void);
@@ -728,7 +729,7 @@ void FSOD_ReclaimFSOs(void);
 #define	ISVASTRO(f)	((f)->flags.vastro)
 #define	FETCHABLE(f)	(!DYING(f) && REACHABLE(f) && !DIRTY(f) && \
 			 (!HAVESTATUS(f) || !WRITING(f) || \
-             (!READING(f) && !ISVASTRO(f))) && !f->IsLocalObj())
+             ISVASTRO(f)) && !f->IsLocalObj())
 /* we are replaceable whenever we are linked into FSDB->prioq */
 #define	REPLACEABLE(f)	((f)->prio_handle.tree() != 0)
 #define	GCABLE(f)	(DYING(f) && !DIRTY(f) && !BUSY(f))
