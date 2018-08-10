@@ -293,7 +293,7 @@ void CacheFile::Truncate(long newlen)
 /* MUST be called from within transaction! */
 void CacheFile::SetLength(uint64_t newlen)
 {
-    uint64_t length_b_f = bytes_to_blocks_floor(length); /* Floor length in blocks */
+    uint64_t length_b = bytes_to_blocks_ceil(length); /* Floor length in blocks */
     
     if (length != newlen) {
         RVMLIB_REC_OBJECT(*this);
@@ -301,9 +301,8 @@ void CacheFile::SetLength(uint64_t newlen)
         validdata = cached_chuncks->Count() * BYTES_BLOCK_SIZE;
 
         /* In case the the last block is set */
-        if (cached_chuncks->Value(bytes_to_blocks_ceil(length) - 1)) {
-            validdata -= BYTES_BLOCK_SIZE;
-            validdata += length - (length_b_f << BITS_BLOCK_SIZE);
+        if (cached_chuncks->Value(length_b - 1)) {
+            validdata -= (length_b << BITS_BLOCK_SIZE) - length;
         }
         
         cached_chuncks->Resize(bytes_to_blocks_ceil(newlen));
@@ -329,7 +328,11 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
     uint64_t length_b = bytes_to_blocks_ceil(length); /* Ceil length in blocks */
     
     if (len < 0) {
-        end_b = bytes_to_blocks_ceil(length);
+        end_b = length_b;
+    }
+    
+    if (end_b > length_b) {
+        end_b = length_b;
     }
 
     RVMLIB_REC_OBJECT(validdata);
@@ -340,15 +343,15 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
         }
 
         cached_chuncks->SetIndex(i);
-
-        /* The last block might not be full */
-        if ((i + 1 == length_b) && (length_b != length_b_f)) {
-            newvaliddata += length - (length_b_f << BITS_BLOCK_SIZE);
-            continue;
-        }
-
+        
         /* Add a full block */
         newvaliddata += BYTES_BLOCK_SIZE;
+
+        /* The last block might not be full */
+        if (i + 1 == length_b) {
+            newvaliddata -= (length_b << BITS_BLOCK_SIZE) - length;
+            continue;
+        }
     }
 
     validdata += newvaliddata;
@@ -386,7 +389,8 @@ CacheChunck CacheFile::GetNextHole(uint64_t start_b, uint64_t end_b) {
     /* Ceil length in blocks */
     uint64_t length_b = bytes_to_blocks_ceil(length);
     uint64_t holestart = start_b;
-    int64_t holesize = 0;
+    uint64_t holesize = 0;
+    
 
 
     for (uint64_t i = start_b; i < end_b; i++) {
@@ -395,15 +399,15 @@ CacheChunck CacheFile::GetNextHole(uint64_t start_b, uint64_t end_b) {
             holestart = i + 1;
             continue;
         }
+        
+        /* Add a full block */
+        holesize += BYTES_BLOCK_SIZE;
 
         /* The last block might not be full */
         if (i + 1 == length_b) {
-            holesize += length - (length_b_f << BITS_BLOCK_SIZE);
+            holesize -= (length_b << BITS_BLOCK_SIZE) - length;
             return (CacheChunck(holestart * BYTES_BLOCK_SIZE, holesize));
         }
-
-        /* Add a full block */
-        holesize += BYTES_BLOCK_SIZE;
 
         if ((i + 1 == end_b) || cached_chuncks->Value(i + 1)) {
             return (CacheChunck(holestart * BYTES_BLOCK_SIZE, holesize));
@@ -426,6 +430,10 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len) {
     if (len < 0) {
         end_b = length_b;
     }
+    
+    if (end_b > length_b) {
+        end_b = length_b;
+    }
 
     LOG(50, ("CacheFile::GetHoles Range [%d - %d]\n", start_b, end_b - 1));
 
@@ -444,7 +452,7 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len) {
         clist->AddChunck(currc.GetStart(), currc.GetLength());
 
         /* Jump the hole */
-        i = currc.GetStart() + currc.GetLength() + 1;
+        i = bytes_to_blocks_ceil(currc.GetStart() + currc.GetLength());
     }
 
     return clist;
