@@ -341,7 +341,6 @@ fsdb::fsdb() : htab(FSDB_NBUCKETS, FSO_HashFN) {
     RVMLIB_REC_OBJECT(*this);
     MagicNumber = FSDB_MagicNumber;
     MaxFiles = CacheFiles;
-    WholeFileCachingMaxSize = WholeFileMaxSize;
     FreeFileMargin = MaxFiles / FREE_FACTOR;
 
     LastRef = (long *)rvmlib_rec_malloc(MaxFiles * (int)sizeof(long));
