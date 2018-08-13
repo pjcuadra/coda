@@ -138,7 +138,6 @@ class fsdb {
 
     /* Size parameters. */
     uint64_t MaxFiles;
-    uint64_t WholeFileCachingMaxSize;
     /* "files" is kept as count member of htab */
     int FreeFileMargin;
     /*T*/uint64_t MaxBlocks;
