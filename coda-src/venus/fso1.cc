@@ -2447,8 +2447,6 @@ void fsobj::UpdateVastroFlag(uid_t uid)
     }
 
     flags.vastro = Size() >= (WholeFileMaxSize * 1024) ? 0x1 : 0x0;
-    
-    return;
 
 PutAll:
     if (s) PutServer(&s);
