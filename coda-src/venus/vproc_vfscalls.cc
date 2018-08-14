@@ -1469,38 +1469,31 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     CacheChunckList * clist = NULL;
     CacheChunck currc = {};
 
-    for (;;) {
-        Begin_VFS(&node->c_fid, CODA_ACCESS_INTENT);
-        if (u.u_error) break;
-
-        /* Get the object. */
-        u.u_error = FSDB->Get(&f, &node->c_fid, u.u_uid, RC_STATUS);
-        if (u.u_error) goto FreeLocks;
-
-        if (!ISVASTRO(f)) goto FreeLocks;
-
-        if (pos >= f->Size()) goto FreeLocks;
-
-        clist = f->GetHoles(pos, count);
-
-        /* Fetch all holes */
-        currc = clist->pop();
-        while (currc.isValid()) {
-            f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
-            currc = clist->pop();
-        }
-
-        delete clist;
-
-FreeLocks:
-        FSDB->Put(&f);
-        int retry_call = 0;
-        End_VFS(&retry_call);
-        if (!retry_call) break;
-    }
-
-    if (u.u_error == EINCONS) {
+    /* Get the object. */
+    f = FSDB->Find(&node->c_fid);
+    if (!f) {
         u.u_error = ENOENT;
-        k_Purge(&node->c_fid, 1);
+        return;
     }
+
+    if (!ISVASTRO(f)) {
+        return;
+    };
+
+    if (pos >= f->Size()) {
+        u.u_error = EINVAL;
+        return;
+    }
+
+    clist = f->GetHoles(pos, count);
+
+    /* Fetch all holes */
+    currc = clist->pop();
+    while (currc.isValid()) {
+        f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
+        currc = clist->pop();
+    }
+
+    delete clist;
+
 }
