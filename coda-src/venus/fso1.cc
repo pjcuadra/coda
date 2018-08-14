@@ -2386,6 +2386,12 @@ void fsobj::UpdateVastroFlag(uid_t uid)
     int code = 0;
     repvol *rv = NULL;
     volrep *vr = NULL;
+    
+    if (GetKernelModuleVersion() < 5) {
+        flags.vastro = 0x0;
+        return;
+    }
+    
     /* Limit the VASTRO flagging to first opener only*/
     if (openers > 0) {
         return;
