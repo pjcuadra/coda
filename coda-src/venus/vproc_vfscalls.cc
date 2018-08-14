@@ -1464,6 +1464,10 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
 {
     LOG(1, ("vproc::read: fid = %s, pos = %d, count = %d\n",
             FID_(&node->c_fid), pos, count));
+            
+    int code = 0;
+    static const int retry_max = 3;
+    int retry_cnt = retry_max;
 
     fsobj *f = 0;
     CacheChunckList * clist = NULL;
@@ -1472,7 +1476,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     /* Get the object. */
     f = FSDB->Find(&node->c_fid);
     if (!f) {
-        u.u_error = ENOENT;
+        u.u_error = EIO;
         return;
     }
 
@@ -1481,7 +1485,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     };
 
     if (pos >= f->Size()) {
-        u.u_error = EINVAL;
+        u.u_error = EIO;
         return;
     }
 
@@ -1489,9 +1493,30 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
 
     /* Fetch all holes */
     currc = clist->pop();
-    while (currc.isValid()) {
-        f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
+    while (currc.isValid() && retry_cnt) {
+        code = f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
+        
+        if (code == EAGAIN) {
+            u.u_error = EIO;
+            break;
+        }
+        
+        if (code == ERETRY) {
+            retry_cnt--;
+            continue;
+        }
+        
+        if (code < 0) {
+            u.u_error = EIO;
+            break;
+        }
+        
         currc = clist->pop();
+        retry_cnt = retry_max;
+    }
+    
+    if (code == ERETRY) {
+        u.u_error = EIO;
     }
 
     delete clist;
