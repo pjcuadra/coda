@@ -1808,7 +1808,7 @@ void fsobj::DetachMleBinding(binding *b) {
 void fsobj::DiscardData() {
     if (!HAVEDATA(this))
 	{ print(logFile); CHOKE("fsobj::DiscardData: !HAVEDATA"); }
-    if (ACTIVE(this))
+    if (ACTIVE(this) && !ISVASTRO(this))
 	{ print(logFile); CHOKE("fsobj::DiscardData: ACTIVE"); }
 
     LOG(10, ("fsobj::DiscardData: (%s)\n", FID_(&fid)));
