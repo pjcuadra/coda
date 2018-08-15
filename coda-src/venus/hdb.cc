@@ -698,6 +698,12 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched) {
 	    int blocks = BLOCKS(f);
 
 	    if (!HOARDABLE(f)) continue;
+        
+        if (ISVASTRO(f)) {
+            LOG(200, ("Warning (%s) flagged as VASTRO, not being hoarded.\n", 
+  		      f->comp));
+            continue;
+        }
 
 	    if (DATAVALID(f)) {
 	      LOG(200, ("AVAILABLE:  fid=<%s> comp=%s priority=%d blocks=%d\n", 
@@ -2186,9 +2192,15 @@ void namectxt::printsuspect(int fd, int verbosity)
     else {
 	binding *b = strbase(binding, d, binder_handle);
 	fsobj *f = (fsobj *)b->bindee;
+    
+    
 
 	if (!f || !STATUSVALID(f) || !DATAVALID(f)) {
-	    putmsg(fd, "*** Missing/Invalid ***", 1);
+        if (ISVASTRO(f)) {
+            putmsg(fd, "*** Skipped ***", 1);
+        } else {
+            putmsg(fd, "*** Missing/Invalid ***", 1);    
+        }
 	    return;
 	}
     }
@@ -2243,5 +2255,3 @@ hdb_key::hdb_key(VolumeId Vid, char *Realm, char *Name)
     realm = Realm;
     name = Name;
 }
-
-
