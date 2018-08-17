@@ -145,6 +145,7 @@ class CacheFile {
     int ValidContainer();
     
     CacheChunck GetNextHole(uint64_t start_b, uint64_t end_b);
+    int UpdateValidData();
 
  public:
     CacheFile(int);
