@@ -142,6 +142,8 @@ static inline uint64_t length_align_to_cblock(uint64_t b_pos, int64_t b_count)
 #define FS_BLOCKS_ALIGN(size) (((size + 4095) >> 12) << 12)
 
 class CacheChunck : private dlink {
+    friend class fsobj;
+    friend class vproc;
  protected:
     uint64_t start;
     int64_t len;
@@ -168,6 +170,9 @@ class CacheChunckList : private dlist {
 
 class CacheFile {
     friend class CacheChunck;
+    friend class CacheSegmentFile;
+    
+protected:
     long length;
     long validdata; /* amount of successfully fetched data */
     int  refcnt;
@@ -216,6 +221,18 @@ class CacheFile {
     void print() { print (stdout); }
     void print(FILE *fp) { fflush(fp); print(fileno(fp)); }
     void print(int);
+};
+
+class CacheSegmentFile : public CacheFile {
+    CacheFile * cf;
+
+    // char sname[CACHEFILENAMELEN];		/* "xx/xx/xx/xx" */
+public:
+    CacheSegmentFile(int i);
+
+    void Create(CacheFile *cf);
+    int64_t ExtractSegment(uint64_t pos, int64_t count);
+    void InjectSegment(uint64_t pos, int64_t count);
 };
 
 #endif	/* _VENUS_FSO_CACHEFILE_H_ */

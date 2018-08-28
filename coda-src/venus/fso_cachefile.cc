@@ -513,3 +513,116 @@ CacheChunck CacheChunckList::pop() {
     
     return CacheChunck(cp);
 }
+
+/* MUST be called from within transaction! */
+CacheSegmentFile::CacheSegmentFile(int i) : CacheFile(-(i + 1)) {}
+
+void CacheSegmentFile::Create(CacheFile *cf)
+{
+    CacheFile::Create(cf->length);
+    this->cf = cf;
+}
+
+int64_t CacheSegmentFile::ExtractSegment(uint64_t pos, int64_t count)
+{
+    
+    uint32_t byte_start = pos_align_to_cblock(pos);
+    uint32_t block_start = bytes_to_cblocks(byte_start);
+    uint32_t byte_len = length_align_to_cblock(pos, count);
+    uint32_t block_end = bytes_to_cblocks(byte_start + byte_len);
+    int tfd, ffd;
+    struct stat tstat;
+    
+    LOG(10, ("CacheSegmentFile::ExtractSegment: from %s [%d, %d], to %s\n",
+             cf->name, byte_start, byte_len, name));
+
+    if (mkpath(name, V_MODE | 0100) < 0) {
+        LOG(0, ("CacheSegmentFile::ExtractSegment: could not make path for %s\n", name));
+        return -1;
+    }
+    
+    tfd = Open(O_RDWR|O_CREAT);
+    
+    ::fchmod(tfd, V_MODE);
+    
+#ifdef __CYGWIN32__
+    ::chown(name, (uid_t)V_UID, (gid_t)V_GID);
+#else
+    ::fchown(tfd, (uid_t)V_UID, (gid_t)V_GID);
+#endif
+
+    ffd = cf->Open(O_RDONLY);
+    
+
+    if (copyfile_seg(ffd, tfd, byte_start, byte_len) < 0) {
+    	LOG(0, ("CacheSegmentFile::ExtractSegment failed! (%d)\n", errno));
+    	cf->Close(ffd);
+    	Close(tfd);
+    	return -1;
+    }
+    
+    if (cf->Close(ffd) < 0)
+        CHOKE("CacheFile::Copy: source close failed (%d)\n", errno);
+
+    if (::fstat(tfd, &tstat) < 0)
+        CHOKE("CacheFile::Copy: fstat failed (%d)\n", errno);
+    if (Close(tfd) < 0)
+        CHOKE("CacheFile::Copy: close failed (%d)\n", errno);
+    
+    CODA_ASSERT((off_t)length == tstat.st_size);
+    
+    /* TODO: Replace this with bitmap::CopyRange */
+    cf->cached_chuncks->CopyRange(block_start, block_end + 1, *cached_chuncks);
+    
+    UpdateValidData();
+    
+    return byte_len;
+}
+
+void CacheSegmentFile::InjectSegment(uint64_t pos, int64_t count)
+{
+    uint32_t byte_start = pos_align_to_cblock(pos);
+    uint32_t block_start = bytes_to_cblocks(byte_start);
+    uint32_t byte_len = length_align_to_cblock(pos, count);
+    uint32_t block_end = bytes_to_cblocks(byte_start + byte_len);
+    int tfd, ffd;
+    struct stat tstat;
+    
+    LOG(10, ("CacheSegmentFile::InjectSegment: from %s [%d, %d], to %s\n",
+	     name, byte_start, byte_len, cf->name));
+
+    tfd = cf->Open(O_RDWR|O_CREAT);
+    
+    ::fchmod(tfd, V_MODE);
+    
+#ifdef __CYGWIN32__
+    ::chown(name, (uid_t)V_UID, (gid_t)V_GID);
+#else
+    ::fchown(tfd, (uid_t)V_UID, (gid_t)V_GID);
+#endif
+
+    ffd = Open(O_RDONLY);
+
+    if (copyfile_seg(ffd, tfd, byte_start, byte_len) < 0) {
+        LOG(0, ("CacheSegmentFile::ExtractSegment failed! (%d)\n", errno));
+        cf->Close(ffd);
+        Close(tfd);
+        return;
+    }
+    
+    if (Close(ffd) < 0)
+        CHOKE("CacheFile::Copy: source close failed (%d)\n", errno);
+
+    if (::fstat(tfd, &tstat) < 0)
+        CHOKE("CacheFile::Copy: fstat failed (%d)\n", errno);
+    if (cf->Close(tfd) < 0)
+        CHOKE("CacheFile::Copy: close failed (%d)\n", errno);
+    
+    CODA_ASSERT((off_t)length == tstat.st_size);
+    
+    /* TODO: Replace this with bitmap::CopyRange */
+    cached_chuncks->CopyRange(block_start, block_end + 1, *cf->cached_chuncks);
+    
+    cf->UpdateValidData();
+
+}
