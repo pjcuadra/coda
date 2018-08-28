@@ -79,7 +79,7 @@ extern int global_kernfd;
 /*    1. Copy of plain file */
 /*    2. Unix-format copy of directory */
 
-#define CACHEFILENAMELEN 12
+#define CACHEFILENAMELEN 12 + 4
 
 #define CBLOCK_BITS_SIZE 15 /* 32768 = 2^15 */
 #define CBLOCK_SIZE (1 << 15)
@@ -179,6 +179,7 @@ protected:
     char name[CACHEFILENAMELEN];		/* "xx/xx/xx/xx" */
     int numopens;
     bitmap *cached_chuncks;
+    int recoverable;
 
     int ValidContainer();
     
@@ -186,7 +187,7 @@ protected:
     int UpdateValidData();
 
  public:
-    CacheFile(int);
+    CacheFile(int i, int recoverable = 1);
     CacheFile();
     ~CacheFile();
 
@@ -225,8 +226,7 @@ protected:
 
 class CacheSegmentFile : public CacheFile {
     CacheFile * cf;
-
-    // char sname[CACHEFILENAMELEN];		/* "xx/xx/xx/xx" */
+    
 public:
     CacheSegmentFile(int i);
 
