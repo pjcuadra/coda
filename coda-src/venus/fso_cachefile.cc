@@ -524,6 +524,11 @@ CacheSegmentFile::CacheSegmentFile(int i) : CacheFile(i, 0)
 	    (i>>24) & 0xff, (i>>16) & 0xff, (i>>8) & 0xff, i & 0xff);
 }
 
+CacheSegmentFile::~CacheSegmentFile() {
+    this->Truncate(0);
+    DecRef();
+}
+
 void CacheSegmentFile::Create(CacheFile *cf)
 {
     CacheFile::Create(cf->length);

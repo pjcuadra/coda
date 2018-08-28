@@ -1852,8 +1852,6 @@ void fsobj::DiscardData() {
 
                 tmpcpy->InjectSegment(last_used.start, last_used.len);
 
-                tmpcpy->Truncate(0);
-
                 delete tmpcpy;
 
             } else {
