@@ -210,7 +210,6 @@ protected:
     void SetLength(uint64_t len);
     void SetValidData(uint64_t len);
     void SetValidData(uint64_t start, int64_t len);
-    // bool CheckCachedSegment(uint64_t start, uint64_t end);
     CacheChunckList * GetHoles(uint64_t start, int64_t len);
 
     char *Name()         { return(name); }

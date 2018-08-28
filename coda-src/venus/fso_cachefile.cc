@@ -400,13 +400,12 @@ int CacheFile::Close(int fd)
     return ::close(fd);
 }
 
-CacheChunck CacheFile::GetNextHole(uint64_t start_cb, uint64_t end_cb) {
+CacheChunck CacheFile::GetNextHole(uint64_t start_cb, uint64_t end_cb) 
+{
     /* Ceil length in blocks */
     uint64_t length_cb = bytes_to_cblocks_ceil(length);
     uint64_t holestart = start_cb;
     uint64_t holesize = 0;
-    
-
 
     for (uint64_t i = start_cb; i < end_cb; i++) {
         if (cached_chuncks->Value(i)) {
@@ -414,7 +413,7 @@ CacheChunck CacheFile::GetNextHole(uint64_t start_cb, uint64_t end_cb) {
             holestart = i + 1;
             continue;
         }
-        
+
         /* Add a full block */
         holesize += CBLOCK_SIZE;
 
@@ -433,7 +432,8 @@ CacheChunck CacheFile::GetNextHole(uint64_t start_cb, uint64_t end_cb) {
 }
 
 
-CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len) {
+CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len) 
+{
     uint64_t start_cb = cblock_start(start);
     uint64_t end_cb = cblock_end(start, len);
     uint64_t length_cb = bytes_to_cblocks_ceil(length);  // Ceil length in blocks
@@ -445,7 +445,7 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len) {
     if (len < 0) {
         end_cb = length_cb;
     }
-    
+
     if (end_cb > length_cb) {
         end_cb = length_cb;
     }
@@ -477,10 +477,10 @@ uint64_t CacheFile::ConsecutiveValidData(void)
 {
     /* Use the start of the first hole */
     uint64_t start = GetNextHole(0, bytes_to_cblocks_ceil(length)).GetStart();
-    
+
     if (start != 0)
         start--;
-        
+
     return start;
 }
 
@@ -492,7 +492,7 @@ CacheChunckList::CacheChunckList()
 CacheChunckList::~CacheChunckList()
 {
     CacheChunck * curr = NULL;
-    
+
     while ((curr = (CacheChunck *)this->first())) {
         this->remove((dlink *)curr);
     }
@@ -572,22 +572,26 @@ int64_t CacheSegmentFile::ExtractSegment(uint64_t pos, int64_t count)
     	Close(tfd);
     	return -1;
     }
-    
-    if (cf->Close(ffd) < 0)
-        CHOKE("CacheFile::Copy: source close failed (%d)\n", errno);
 
-    if (::fstat(tfd, &tstat) < 0)
-        CHOKE("CacheFile::Copy: fstat failed (%d)\n", errno);
-    if (Close(tfd) < 0)
-        CHOKE("CacheFile::Copy: close failed (%d)\n", errno);
-    
+    if (cf->Close(ffd) < 0) {
+        CHOKE("CacheSegmentFile::ExtractSegment: source close failed (%d)\n", 
+              errno);
+    }
+
+    if (::fstat(tfd, &tstat) < 0) {
+        CHOKE("CacheSegmentFile::ExtractSegment: fstat failed (%d)\n", errno);
+    }
+
+    if (Close(tfd) < 0){
+        CHOKE("CacheSegmentFile::ExtractSegment: close failed (%d)\n", errno);
+    }
+
     CODA_ASSERT((off_t)length == tstat.st_size);
-    
-    /* TODO: Replace this with bitmap::CopyRange */
+
     cf->cached_chuncks->CopyRange(block_start, block_end + 1, *cached_chuncks);
-    
+
     UpdateValidData();
-    
+
     return byte_len;
 }
 
@@ -621,20 +625,24 @@ void CacheSegmentFile::InjectSegment(uint64_t pos, int64_t count)
         Close(tfd);
         return;
     }
-    
-    if (Close(ffd) < 0)
-        CHOKE("CacheFile::Copy: source close failed (%d)\n", errno);
 
-    if (::fstat(tfd, &tstat) < 0)
-        CHOKE("CacheFile::Copy: fstat failed (%d)\n", errno);
-    if (cf->Close(tfd) < 0)
-        CHOKE("CacheFile::Copy: close failed (%d)\n", errno);
-    
+    if (Close(ffd) < 0) {
+        CHOKE("CacheSegmentFile::InjectSegment: source close failed (%d)\n", 
+              errno);
+    }
+
+    if (::fstat(tfd, &tstat) < 0) {
+        CHOKE("CacheSegmentFile::InjectSegment: fstat failed (%d)\n", errno);
+    }
+
+    if (cf->Close(tfd) < 0) {
+        CHOKE("CacheSegmentFile::InjectSegment: close failed (%d)\n", errno);
+    }
+
     CODA_ASSERT((off_t)length == tstat.st_size);
-    
-    /* TODO: Replace this with bitmap::CopyRange */
+
     cached_chuncks->CopyRange(block_start, block_end + 1, *cf->cached_chuncks);
-    
+
     cf->UpdateValidData();
 
 }
