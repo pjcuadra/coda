@@ -319,8 +319,8 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
     int64_t len = -1;
 
     if (ISVASTRO(this)) {
-        offset = bytes_round_down_block_size(pos);
-        len = bytes_round_up_block_size(pos + count) - offset;
+        offset = pos_align_to_cblock(pos);
+        len = length_align_to_cblock(pos, count);
 
         /* If reading out-of-bound read missing file part */
         if (pos + count > Size()) {
