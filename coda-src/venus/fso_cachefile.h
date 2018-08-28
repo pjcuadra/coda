@@ -229,6 +229,7 @@ class CacheSegmentFile : public CacheFile {
     
 public:
     CacheSegmentFile(int i);
+    ~CacheSegmentFile();
 
     void Create(CacheFile *cf);
     int64_t ExtractSegment(uint64_t pos, int64_t count);
