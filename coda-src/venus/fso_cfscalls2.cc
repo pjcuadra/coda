@@ -93,7 +93,9 @@ int fsobj::Open(int writep, int truncp, struct venus_cnode *cp, uid_t uid)
         PromoteLock();
 
     /* Update usage counts here. */
-    DisableReplacement();
+    if (!ISVASTRO(this)) {
+        DisableReplacement();
+    }
     FSO_HOLD(this);			/* Pin object until close arrives. */
     openers++;
     if (writep) {

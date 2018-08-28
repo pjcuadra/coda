@@ -341,6 +341,8 @@ class fsobj {
   friend void RecoverPathName(char *, VenusFid *, ClientModifyLog *, cmlent *);
 
     int MagicNumber;
+    
+    CacheChunck last_used;
 
     /* Keys. */
     VenusFid fid;				/* unique id for object */

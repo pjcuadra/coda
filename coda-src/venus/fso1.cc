@@ -487,7 +487,7 @@ void fsobj::Recover()
 	if (!HAVEDATA(this) && cf.Length() != 0) {
 	    eprint("\t(%s, %s) cache file validation failed",
 		   comp, FID_(&fid));
-	    FSDB->FreeBlocks(NBLOCKS(cf.Length()));
+	    FSDB->FreeBlocks(NBLOCKS(cf.ValidData()));
 	    cf.Reset();
 	}
 	break;
@@ -501,8 +501,8 @@ void fsobj::Recover()
 	 * version of the object.  The stuff in RVM is the ``Vice format''
 	 * version.
 	 */
-	if (cf.Length() != 0) {
-	    FSDB->FreeBlocks(NBLOCKS(cf.Length()));
+	if (cf.ValidData() != 0) {
+	    FSDB->FreeBlocks(NBLOCKS(cf.ValidData()));
 	    cf.Reset();
 	}
 	break;
@@ -545,9 +545,9 @@ Failure:
 		DiscardData();
 		Recov_EndTrans(MAXFP);
 	    }
-	    if (cf.Length()) {
+	    if (cf.ValidData()) {
 		/* Reclaim cache-file blocks. */
-		FSDB->FreeBlocks(NBLOCKS(cf.Length()));
+		FSDB->FreeBlocks(NBLOCKS(cf.ValidData()));
 		cf.Reset();
 	    }
 	}
@@ -1806,6 +1806,8 @@ void fsobj::DetachMleBinding(binding *b) {
 /* Call with object write-locked. */
 /* If there are readers of this file, they will have it change from underneath them! */
 void fsobj::DiscardData() {
+    uint64_t len = 0;
+    uint64_t free_blocks = 0;
     if (!HAVEDATA(this))
 	{ print(logFile); CHOKE("fsobj::DiscardData: !HAVEDATA"); }
     if (ACTIVE(this) && !ISVASTRO(this))
@@ -1819,11 +1821,47 @@ void fsobj::DiscardData() {
     switch(stat.VnodeType) {
 	case File:
 	    {
-	    /* stat.Length() might have been changed, only data.file->Length()
-	     * can be trusted */
-	    FSDB->FreeBlocks(NBLOCKS(data.file->Length()));
-	    data.file->Truncate(0);
-	    data.file = 0;
+            /* stat.Length() might have been changed, only data.file->Length()
+            * can be trusted */
+            if (ISVASTRO(this) && ACTIVE(this)) {
+
+                CacheSegmentFile * tmpcpy = new CacheSegmentFile(ix);
+
+                len = data.file->Length();
+                tmpcpy->Create(&cf);
+
+                tmpcpy->ExtractSegment(last_used.start, 
+                                       last_used.len);
+                
+                free_blocks = FS_BLOCKS_ALIGN(data.file->ValidData());
+                
+                /* Remove the data that will be kept */
+                free_blocks -= FS_BLOCKS_ALIGN(tmpcpy->ValidData());
+
+                FSDB->FreeBlocks(NBLOCKS(free_blocks));
+
+                // /* As we only call MakeShadow during the freezing, and there is only one
+                //  * reintegration at a time, we can sync the shadow copy with the lastest
+                //  * version of the real file. -JH */
+                // /* As an optimization (to avoi  d blocking the reintegration too much) we
+                //  * might want to do this only when we just created the shadow file or when
+                //  * there are no writers to the real container file... Maybe later. -JH */
+
+                data.file->Truncate(0);
+                data.file->Truncate(len);
+
+                tmpcpy->InjectSegment(last_used.start, last_used.len);
+
+                tmpcpy->Truncate(0);
+
+                delete tmpcpy;
+
+            } else {
+                FSDB->FreeBlocks(NBLOCKS(data.file->ValidData()));
+                data.file->Truncate(0);
+                data.file = 0;
+            }
+
 	    }
 	    break;
 

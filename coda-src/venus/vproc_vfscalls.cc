@@ -1482,7 +1482,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
 
     if (!ISVASTRO(f)) {
         return;
-    };
+    }
 
     if (pos >= f->Size()) {
         u.u_error = EIO;
@@ -1494,6 +1494,13 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     /* Fetch all holes */
     currc = clist->pop();
     while (currc.isValid() && retry_cnt) {
+        
+        code = FSDB->AllocBlocks(u.u_priority, NBLOCKS(currc.GetLength()));
+        if (code < 0) {
+            u.u_error = code;
+            break;
+        }
+        
         code = f->Fetch(u.u_uid, currc.GetStart(), currc.GetLength());
         
         if (code == EAGAIN) {
@@ -1503,6 +1510,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
         
         if (code == ERETRY) {
             retry_cnt--;
+            FSDB->FreeBlocks(NBLOCKS(currc.GetLength()));
             continue;
         }
         
@@ -1510,6 +1518,8 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
             u.u_error = EIO;
             break;
         }
+        
+        
         
         currc = clist->pop();
         retry_cnt = retry_max;
@@ -1520,5 +1530,8 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     }
 
     delete clist;
+    
+    f->last_used.start = pos;
+    f->last_used.len = count;
 
 }
