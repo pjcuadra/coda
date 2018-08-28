@@ -2121,10 +2121,6 @@ void fsobj::UnLock(LockLevel level) {
 
 void fsobj::GetVattr(struct coda_vattr *vap)
 {
-    struct stat tstat;
-    
-    cf.Stat(&tstat);
-    
     /* Most attributes are derived from the VenusStat structure. */
     vap->va_type = FTTOVT(stat.VnodeType);
     vap->va_mode = stat.Mode;
@@ -2148,8 +2144,11 @@ void fsobj::GetVattr(struct coda_vattr *vap)
 
     /* If the object is currently open for writing we must physically 
        stat it to get its size and time info. */
-    if (WRITING(this))  
+    if (WRITING(this))
     {
+	struct stat tstat;
+	cf.Stat(&tstat);
+
 	vap->va_size = tstat.st_size;
 	vap->va_mtime.tv_sec = tstat.st_mtime;
 	vap->va_mtime.tv_nsec = 0;
@@ -2162,7 +2161,7 @@ void fsobj::GetVattr(struct coda_vattr *vap)
     }
 
     /* Convert size of file to bytes of storage after getting size! */
-    vap->va_bytes = tstat.st_blocks * 512;
+    vap->va_bytes = NBLOCKS_BYTES(vap->va_size);
 
     /* We don't keep track of atime/ctime, so keep them identical to mtime */
     vap->va_atime = vap->va_ctime = vap->va_mtime;
