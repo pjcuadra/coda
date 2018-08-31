@@ -238,6 +238,7 @@ class vproc : public olink {
     void readlink(struct venus_cnode *, struct coda_string *);
     void fsync(struct venus_cnode *);
     void read(struct venus_cnode * node, uint64_t pos, int64_t count);
+    void read_finish(struct venus_cnode * node, uint64_t pos, int64_t count);
 
     /* Pathname translation. */
     int namev(char *, int, struct venus_cnode *);

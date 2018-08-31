@@ -342,7 +342,7 @@ class fsobj {
 
     int MagicNumber;
     
-    CacheChunck last_used;
+    CacheChunckList active_read_segments;
 
     /* Keys. */
     VenusFid fid;				/* unique id for object */

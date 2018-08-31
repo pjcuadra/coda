@@ -1808,6 +1808,8 @@ void fsobj::DetachMleBinding(binding *b) {
 void fsobj::DiscardData() {
     uint64_t len = 0;
     uint64_t free_blocks = 0;
+    CacheChunck * curr_cc = NULL;
+    dlist_iterator * next = NULL;
     if (!HAVEDATA(this))
 	{ print(logFile); CHOKE("fsobj::DiscardData: !HAVEDATA"); }
     if (ACTIVE(this) && !ISVASTRO(this))
@@ -1819,8 +1821,8 @@ void fsobj::DiscardData() {
 
     RVMLIB_REC_OBJECT(data);
     switch(stat.VnodeType) {
-	case File:
-	    {
+    case File:
+        {
             /* stat.Length() might have been changed, only data.file->Length()
             * can be trusted */
             if (ISVASTRO(this) && ACTIVE(this)) {
@@ -1830,11 +1832,19 @@ void fsobj::DiscardData() {
                 len = data.file->Length();
                 tmpcpy->Create(&cf);
 
-                tmpcpy->ExtractSegment(last_used.start, 
-                                       last_used.len);
-                
+                active_read_segments.ReadLock();
+
+                next = new dlist_iterator(active_read_segments);
+
+                while (curr_cc = (CacheChunck *)(*next)()) {
+                    tmpcpy->ExtractSegment(curr_cc->GetStart(), 
+                                           curr_cc->GetLength());
+                }
+
+                delete next;
+
                 free_blocks = FS_BLOCKS_ALIGN(data.file->ValidData());
-                
+
                 /* Remove the data that will be kept */
                 free_blocks -= FS_BLOCKS_ALIGN(tmpcpy->ValidData());
 
@@ -1850,7 +1860,16 @@ void fsobj::DiscardData() {
                 data.file->Truncate(0);
                 data.file->Truncate(len);
 
-                tmpcpy->InjectSegment(last_used.start, last_used.len);
+                next = new dlist_iterator(active_read_segments);
+
+                while (curr_cc = (CacheChunck *)(*next)()) {
+                    tmpcpy->InjectSegment(curr_cc->GetStart(), 
+                                           curr_cc->GetLength());
+                }
+
+                delete next;
+
+                active_read_segments.ReadUnlock();
 
                 delete tmpcpy;
 
