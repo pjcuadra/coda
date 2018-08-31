@@ -512,9 +512,9 @@ uint64_t CacheFile::ConsecutiveValidData(void)
     return start;
 }
 
-CacheChunckList::CacheChunckList()
+CacheChunckList::CacheChunckList() 
 {
-    // Do nothing for now
+    Lock_Init(&rd_wr_lock);
 }
 
 CacheChunckList::~CacheChunckList()
@@ -528,19 +528,104 @@ CacheChunckList::~CacheChunckList()
 
 void CacheChunckList::AddChunck(uint64_t start, int64_t len)
 {
+    WriteLock();
     CacheChunck * new_chunck = new CacheChunck(start, len);
     this->insert((dlink *) new_chunck);
+    WriteUnlock();
+}
+
+void CacheChunckList::ReadLock() 
+{
+    ObtainReadLock(&rd_wr_lock);
+}
+
+void CacheChunckList::WriteLock() 
+{
+    ObtainWriteLock(&rd_wr_lock);
+}
+
+
+void CacheChunckList::ReadUnlock() 
+{
+    ReleaseReadLock(&rd_wr_lock);
+}
+
+void CacheChunckList::WriteUnlock() 
+{
+    ReleaseWriteLock(&rd_wr_lock);
+}
+
+bool CacheChunckList::ReverseCheck(uint64_t start, int64_t len) {
+    dlink * curr = NULL;
+    CacheChunck * curr_cc = NULL;
+    
+    ReadLock();
+    
+    dlist_iterator previous(*this, DlDescending);
+    
+    while (curr = previous()) {
+        curr_cc = (CacheChunck *)curr;
+        
+        if (!curr_cc->isValid()) continue;
+        
+        if (start != curr_cc->GetStart()) continue;
+        
+        if (len != curr_cc->GetLength()) continue;
+        
+        ReadUnlock();
+        
+        return true;
+    }
+    
+    ReadUnlock();
+    
+    return false;
+}
+
+void CacheChunckList::ReverseRemove(uint64_t start, int64_t len)
+{
+    dlink * curr = NULL;
+    CacheChunck * curr_cc = NULL;
+    
+    WriteLock();
+    
+    dlist_iterator previous(*this, DlDescending);
+    
+    while (curr = previous()) {
+        curr_cc = (CacheChunck *)curr;
+        
+        if (!curr_cc->isValid()) continue;
+        
+        if (start != curr_cc->GetStart()) continue;
+        
+        if (len != curr_cc->GetLength()) continue;
+        
+        this->remove(curr);
+        break;
+    }
+    
+    WriteUnlock();
 }
 
 CacheChunck CacheChunckList::pop() {
-    dlink * curr_first = this->first();
-    CacheChunck * tmp = (CacheChunck *)curr_first; 
+    dlink * curr_first = NULL;
+    CacheChunck * tmp = NULL;
+    
+    WriteLock();
+    
+    curr_first = this->first();
+    tmp = (CacheChunck *)curr_first; 
 
-    if (!curr_first) return CacheChunck();
+    if (!curr_first) {
+        WriteUnlock();
+        return CacheChunck();
+    }
 
     CacheChunck cp = CacheChunck(*tmp);
     this->remove(curr_first);
     delete tmp;
+    
+    WriteUnlock();
 
     return CacheChunck(cp);
 }
@@ -565,7 +650,6 @@ void CacheSegmentFile::Create(CacheFile *cf)
 
 int64_t CacheSegmentFile::ExtractSegment(uint64_t pos, int64_t count)
 {
-    
     uint32_t byte_start = pos_align_to_cblock(pos);
     uint32_t block_start = bytes_to_cblocks(byte_start);
     uint32_t byte_len = length_align_to_cblock(pos, count);
@@ -592,7 +676,6 @@ int64_t CacheSegmentFile::ExtractSegment(uint64_t pos, int64_t count)
 #endif
 
     ffd = cf->Open(O_RDONLY);
-    
 
     if (copyfile_seg(ffd, tfd, byte_start, byte_len) < 0) {
     	LOG(0, ("CacheSegmentFile::ExtractSegment failed! (%d)\n", errno));
