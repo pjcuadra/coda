@@ -2410,7 +2410,7 @@ void fsobj::CacheReport(int fd, int level) {
 	    fsobj *cf = strbase(fsobj, d, child_link);
 
 	    slots++;
-	    blocks += NBLOCKS(cf->cf.Length());
+	    blocks += NBLOCKS(cf->cf.ValidData());
 	}
     }
     fdprint(fd, "[ %3d  %5d ]      ", slots, blocks);
