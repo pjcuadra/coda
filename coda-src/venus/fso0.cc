@@ -755,22 +755,14 @@ RestartFind:
                  * (only used for vmon statistical stuff later on, but
                  * the fetch will modify f->cf.ValidData) */
                 nblocks -= NBLOCKS(f->cf.ValidData());
-            } else {
-                if (f->IsFile() && !HAVEDATA(f)) {
-                  code = AllocBlocks(vp->u.u_priority, NBLOCKS(CBLOCK_SIZE));
-                  if (code != 0) {
-                    Put(&f);
-                    return(code);
-                  }
-                }
             }
             
             
             code = 0;
             /* first try the LookAside cache */
-            if (!f->LookAside()) {
+            if (!f->LookAside() && !ISVASTRO(f)) {
               /* Let fsobj::Fetch go ahead and fetch the object */
-              code = ISVASTRO(f) ? f->Fetch(uid, 0, CBLOCK_SIZE) : f->Fetch(uid);
+              code = f->Fetch(uid);
             }
             
             /* Restart operation in case of inconsistency. */
