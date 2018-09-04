@@ -690,7 +690,6 @@ RestartFind:
 	     * ALWAYS know how many blocks to allocate when fetching data. */
 	    if (!STATUSVALID(f)) {
 		code = f->GetAttr(uid);
-        f->UpdateVastroFlag(uid);
 
 		if (rcode) *rcode = code;	/* added for local-repair */
 
@@ -728,6 +727,8 @@ RestartFind:
 		    return(code);
 		}
 	   }
+       
+       f->UpdateVastroFlag(uid);
 
 	    /* If we want data and we don't have any then fetch new stuff. */
 	    /* we have to re-check FETCHABLE because it may have changed as
