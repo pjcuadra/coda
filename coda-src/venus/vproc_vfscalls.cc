@@ -1468,6 +1468,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     int code = 0;
     static const int retry_max = 3;
     int retry_cnt = retry_max;
+    int alloc_retry_cnt = 2;
 
     fsobj *f = 0;
     CacheChunckList * clist = NULL;
@@ -1493,6 +1494,8 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
 
     /* Fetch all holes */
     currc = clist->pop();
+    
+retry_alloc:
     while (currc.isValid() && retry_cnt) {
 
         code = FSDB->AllocBlocks(u.u_priority, NBLOCKS(currc.GetLength()));
@@ -1528,6 +1531,23 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     }
 
     delete clist;
+
+    alloc_retry_cnt--;
+
+    clist = f->GetHoles(pos, count);
+    currc = clist->pop();
+
+    if (currc.isValid()) {
+
+        if (alloc_retry_cnt <= 0) {
+            u.u_error = EIO;
+            return;
+        }
+        
+        retry_cnt = retry_max;
+        goto retry_alloc;
+
+    }
 
     f->active_read_segments.AddChunck(pos, count);
 
