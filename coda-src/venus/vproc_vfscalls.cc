@@ -1490,30 +1490,12 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
         return;
     }
 
-retry_alloc:
     clist = f->GetHoles(pos, count);
-    alloc_retry_cnt--;
-    
-    /* Get the amount of blocks needed for the hold read */
-    total_len = 0;
-    clist->ForEach(sum_chuncks_len, &total_len);
-
-    if (NBLOCKS(total_len) > FSDB->FreeBlockCount()) {
-
-        if (alloc_retry_cnt <= 0) {
-            delete clist;
-            u.u_error = EIO;
-            return;
-        }
-        Recov_BeginTrans();
-        f->DiscardData();
-        Recov_EndTrans(0);
-        delete clist;
-        goto retry_alloc;
-    }
 
     /* Fetch all holes */
     currc = clist->pop();
+    
+retry_alloc:
     while (currc.isValid() && retry_cnt) {
 
         /* Note that, CacheChuncks are aligned with cblocks and thus with 
@@ -1551,6 +1533,23 @@ retry_alloc:
     }
 
     delete clist;
+
+    alloc_retry_cnt--;
+
+    clist = f->GetHoles(pos, count);
+    currc = clist->pop();
+
+    if (currc.isValid()) {
+
+        if (alloc_retry_cnt <= 0) {
+            u.u_error = EIO;
+            return;
+        }
+        
+        retry_cnt = retry_max;
+        goto retry_alloc;
+
+    }
 
     f->active_read_segments.AddChunck(pos, count);
 
