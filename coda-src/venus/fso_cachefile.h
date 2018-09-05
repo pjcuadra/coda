@@ -140,8 +140,6 @@ static inline uint64_t length_align_to_cblock(uint64_t b_pos, int64_t b_count)
     return cblocks_to_bytes(cblock_length(b_pos, b_count));
 }
 
-#define FS_BLOCKS_ALIGN(size) (((size + 4095) >> 12) << 12)
-
 class CacheChunck : private dlink {
     friend class fsobj;
     friend class vproc;
