@@ -148,8 +148,20 @@ const int GETDATA = 1;
 typedef void (*PROC_V_UL)(unsigned long);
 #define	STREQ(a, b)		(strcmp((a), (b)) == 0)
 #define	STRNEQ(a, b, n)		(strncmp((a), (b), (n)) == 0)
-#define	NBLOCKS(bytes)		((bytes + 1023) >> 10)
-#define	NBLOCKS_BYTES(bytes)	(NBLOCKS(bytes) << 10)
+
+/* Blocks size definition */
+#define BLOCK_SIZE_BITS 10
+#define BLOCK_SIZE 1024
+#define BLOCK_MAX 1023
+#define FS_BLOCK_SIZE_BITS 12
+#define FS_BLOCK_SIZE 4096
+#define FS_BLOCK_MAX 4095
+
+/* Blocks Convertions*/
+#define FS_NBLOCKS(bytes) ((bytes + FS_BLOCK_MAX) >> FS_BLOCK_SIZE_BITS) 
+#define FS_NBLOCKS_BYTES(bytes) FS_NBLOCKS(bytes) << FS_BLOCK_SIZE_BITS
+#define	NBLOCKS(bytes)		(FS_NBLOCKS_BYTES(bytes) >> BLOCK_SIZE_BITS)
+#define	NBLOCKS_BYTES(bytes)	(NBLOCKS(bytes) << BLOCK_SIZE_BITS)
 
 /* Flags for the various vproc/fsobj name/object lookup routines. */
 #define	FOLLOW_SYMLINKS	0x1	    /* should lookup follow symlinks for last component? */

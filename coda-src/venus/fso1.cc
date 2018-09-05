@@ -1848,9 +1848,9 @@ void fsobj::DiscardData() {
                 active_read_segments.ReadLock();
                 active_read_segments.ForEach(ExtractSegmentCallback, tmpcpy);
 
-                free_blocks = FS_BLOCKS_ALIGN(data.file->ValidData());
+                free_blocks = FS_NBLOCKS_BYTES(data.file->ValidData());
                 /* Remove the data that will be kept */
-                free_blocks -= FS_BLOCKS_ALIGN(tmpcpy->ValidData());
+                free_blocks -= FS_NBLOCKS_BYTES(tmpcpy->ValidData());
 
                 FSDB->FreeBlocks(NBLOCKS(free_blocks));
 
