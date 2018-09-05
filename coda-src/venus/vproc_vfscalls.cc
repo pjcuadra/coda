@@ -1469,6 +1469,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     static const int retry_max = 3;
     int retry_cnt = retry_max;
     int alloc_retry_cnt = 2;
+    uint64_t a_count = 0;
 
     fsobj *f = 0;
     CacheChunckList * clist = NULL;
@@ -1486,6 +1487,13 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
     }
 
     if (pos > f->Size()) {
+        u.u_error = EIO;
+        return;
+    }
+    
+    a_count = count < 0 ? f->Size() - pos : count;
+    
+    if (NBLOCKS(a_count) > (FSDB->MaxBlocks - FSDB->FreeBlockMargin)) {
         u.u_error = EIO;
         return;
     }
