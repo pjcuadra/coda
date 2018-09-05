@@ -607,6 +607,27 @@ void CacheChunckList::ReverseRemove(uint64_t start, int64_t len)
     WriteUnlock();
 }
 
+void CacheChunckList::ForEach(void (*foreachcb)(uint64_t start, int64_t len, 
+    void * usr_data_cb), void * usr_data)
+{
+    dlink * curr = NULL;
+    CacheChunck * curr_cc = NULL;
+    
+    if (!foreachcb) return;
+    
+    ReadLock();
+    
+    dlist_iterator next(*this);
+    
+    while (curr = next()) {
+        curr_cc = (CacheChunck *)curr;
+        foreachcb(curr_cc->GetStart(), curr_cc->GetLength(), usr_data);
+    }
+    
+    ReadUnlock();
+}
+
+
 CacheChunck CacheChunckList::pop() {
     dlink * curr_first = NULL;
     CacheChunck * tmp = NULL;
