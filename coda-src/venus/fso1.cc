@@ -1799,6 +1799,20 @@ void fsobj::DetachMleBinding(binding *b) {
     }
 }
 
+void ExtractSegmentCallback(uint64_t start, int64_t len, 
+    void * usr_data_cb)
+{
+    CacheSegmentFile * tmpcpy = (CacheSegmentFile *)usr_data_cb;
+    tmpcpy->ExtractSegment(start, len);
+}
+
+void InjectSegmentCallback(uint64_t start, int64_t len, 
+    void * usr_data_cb)
+{
+    CacheSegmentFile * tmpcpy = (CacheSegmentFile *)usr_data_cb;
+    tmpcpy->InjectSegment(start, len);
+}
+
 
 /*  *****  Data Contents  *****  */
 
@@ -1808,8 +1822,6 @@ void fsobj::DetachMleBinding(binding *b) {
 void fsobj::DiscardData() {
     uint64_t len = 0;
     uint64_t free_blocks = 0;
-    CacheChunck * curr_cc = NULL;
-    dlist_iterator * next = NULL;
     if (!HAVEDATA(this))
 	{ print(logFile); CHOKE("fsobj::DiscardData: !HAVEDATA"); }
     if (ACTIVE(this) && !ISVASTRO(this))
@@ -1833,18 +1845,9 @@ void fsobj::DiscardData() {
                 tmpcpy->Create(&cf);
 
                 active_read_segments.ReadLock();
-
-                next = new dlist_iterator(active_read_segments);
-
-                while (curr_cc = (CacheChunck *)(*next)()) {
-                    tmpcpy->ExtractSegment(curr_cc->GetStart(), 
-                                           curr_cc->GetLength());
-                }
-
-                delete next;
+                active_read_segments.ForEach(ExtractSegmentCallback, tmpcpy);
 
                 free_blocks = FS_BLOCKS_ALIGN(data.file->ValidData());
-
                 /* Remove the data that will be kept */
                 free_blocks -= FS_BLOCKS_ALIGN(tmpcpy->ValidData());
 
@@ -1860,15 +1863,7 @@ void fsobj::DiscardData() {
                 data.file->Truncate(0);
                 data.file->Truncate(len);
 
-                next = new dlist_iterator(active_read_segments);
-
-                while (curr_cc = (CacheChunck *)(*next)()) {
-                    tmpcpy->InjectSegment(curr_cc->GetStart(), 
-                                           curr_cc->GetLength());
-                }
-
-                delete next;
-
+                active_read_segments.ForEach(InjectSegmentCallback, tmpcpy);
                 active_read_segments.ReadUnlock();
 
                 delete tmpcpy;

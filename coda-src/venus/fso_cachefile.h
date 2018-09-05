@@ -159,7 +159,7 @@ class CacheChunck : private dlink {
     bool isValid() {return valid;}
 };
 
-class CacheChunckList : public dlist {
+class CacheChunckList : private dlist {
     Lock rd_wr_lock;
  public:
     CacheChunckList();
@@ -169,6 +169,9 @@ class CacheChunckList : public dlist {
 
     bool ReverseCheck(uint64_t start, int64_t len);
     void ReverseRemove(uint64_t start, int64_t len);
+    
+    void ForEach(void (*foreachcb)(uint64_t start, int64_t len, 
+        void * usr_data_cb), void * usr_data = NULL);
     
     void ReadLock();
     void ReadUnlock();
