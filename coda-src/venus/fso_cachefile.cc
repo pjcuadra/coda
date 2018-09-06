@@ -58,6 +58,11 @@ extern "C" {
 /* always useful to have a page of zero's ready */
 static char zeropage[4096];
 
+uint64_t CacheChunckBlockSize = 0;
+uint64_t CacheChunckBlockSizeMax = 0;
+uint64_t CacheChunckBlockSizeBits = 0;
+uint64_t CacheChunckBlockBitmapSize = 0;
+
 /*  *****  CacheFile Members  *****  */
 
 /* Pre-allocation routine. */
@@ -73,7 +78,7 @@ CacheFile::CacheFile(int i, int recoverable)
     refcnt = 1;
     numopens = 0;
     this->recoverable = recoverable;
-    cached_chuncks = new (recoverable) bitmap(LARGEST_BITMAP_SIZE, recoverable);
+    cached_chuncks = new (recoverable) bitmap(CacheChunckBlockBitmapSize, recoverable);
     /* Container reset will be done by eventually by FSOInit()! */
     LOG(100, ("CacheFile::CacheFile(%d): %s (this=0x%x)\n", i, name, this));
 }
@@ -85,7 +90,7 @@ CacheFile::CacheFile()
     refcnt = 1;
     numopens = 0;
     this->recoverable = 1;
-    cached_chuncks = new (recoverable) bitmap(LARGEST_BITMAP_SIZE, recoverable);
+    cached_chuncks = new (recoverable) bitmap(CacheChunckBlockBitmapSize, recoverable);
 }
 
 
@@ -382,7 +387,7 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
         cached_chuncks->SetIndex(i);
 
         /* Add a full block */
-        newvaliddata += CBLOCK_SIZE;
+        newvaliddata += CacheChunckBlockSize;
 
         /* The last block might not be full */
         if (i + 1 == length_cb) {
@@ -437,7 +442,7 @@ CacheChunck CacheFile::GetNextHole(uint64_t start_cb, uint64_t end_cb)
         }
 
         /* Add a full block */
-        holesize += CBLOCK_SIZE;
+        holesize += CacheChunckBlockSize;
 
         /* The last block might not be full */
         if (i + 1 == length_cb) {
