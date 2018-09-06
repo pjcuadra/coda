@@ -74,7 +74,6 @@ CacheFile::CacheFile(int i, int recoverable)
     numopens = 0;
     this->recoverable = recoverable;
     cached_chuncks = new (recoverable) bitmap(LARGEST_BITMAP_SIZE, recoverable);
-    Lock_Init(&rw_lock);
     /* Container reset will be done by eventually by FSOInit()! */
     LOG(100, ("CacheFile::CacheFile(%d): %s (this=0x%x)\n", i, name, this));
 }
@@ -86,7 +85,6 @@ CacheFile::CacheFile()
     refcnt = 1;
     numopens = 0;
     this->recoverable = 1;
-    Lock_Init(&rw_lock);
     cached_chuncks = new (recoverable) bitmap(LARGEST_BITMAP_SIZE, recoverable);
 }
 
@@ -185,11 +183,11 @@ int CacheFile::Copy(CacheFile *destination)
 
     destination->length = length;
     destination->validdata = validdata;
-    ObtainReadLock(&rw_lock);
-    ObtainWriteLock(&destination->rw_lock);
+    ReadLock();
+    destination->WriteLock();
     *(destination->cached_chuncks) = *cached_chuncks;
-    ReleaseWriteLock(&destination->rw_lock);
-    ReleaseReadLock(&rw_lock);
+    destination->WriteUnlock();
+    ReadUnlock();
     return 0;
 }
 
@@ -293,12 +291,12 @@ void CacheFile::Truncate(long newlen)
         
 
         if (newlen < length) {
-            ObtainWriteLock(&rw_lock);
+            WriteLock();
             
             cached_chuncks->FreeRange(bytes_to_cblocks_floor(newlen), 
                 bytes_to_cblocks_ceil(length - newlen));
                 
-            ReleaseWriteLock(&rw_lock);
+            WriteUnlock();
         } 
 
         length = newlen;
@@ -315,7 +313,7 @@ void CacheFile::Truncate(long newlen)
 int CacheFile::UpdateValidData() {
     uint64_t length_cb = bytes_to_cblocks_ceil(length); /* Floor length in blocks */
     
-    ObtainReadLock(&rw_lock);
+    ReadLock();
 
     validdata = cblocks_to_bytes(cached_chuncks->Count());
 
@@ -324,7 +322,7 @@ int CacheFile::UpdateValidData() {
         validdata -= cblocks_to_bytes(length_cb) - length;
     }
     
-    ReleaseReadLock(&rw_lock);
+    ReadUnlock();
 }
 
 /* MUST be called from within transaction! */
@@ -334,12 +332,12 @@ void CacheFile::SetLength(uint64_t newlen)
         if (recoverable) RVMLIB_REC_OBJECT(*this);
 
         if (newlen < length) {
-            ObtainWriteLock(&rw_lock);
+            WriteLock();
             
             cached_chuncks->FreeRange(bytes_to_cblocks_floor(newlen), 
                 bytes_to_cblocks_ceil(length - newlen));
                 
-            ReleaseWriteLock(&rw_lock);
+            WriteUnlock();
         }
 
         UpdateValidData();
@@ -374,7 +372,7 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
 
     if (recoverable) RVMLIB_REC_OBJECT(validdata);
     
-    ObtainWriteLock(&rw_lock);
+    WriteLock();
 
     for (uint64_t i = start_cb; i < end_cb; i++) {
         if (cached_chuncks->Value(i)) {
@@ -393,7 +391,7 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
         }
     }
     
-    ReleaseWriteLock(&rw_lock);
+    WriteUnlock();
 
     validdata += newvaliddata;
 
@@ -476,7 +474,7 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len)
 
     LOG(50, ("CacheFile::GetHoles Range [%d - %d]\n", start_cb, end_cb - 1));
     
-    ObtainReadLock(&rw_lock);
+    ReadLock();
 
     for (uint64_t i = start_cb; i < end_cb; i++) {
         currc = GetNextHole(i, end_cb);
@@ -496,7 +494,7 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len)
         i = bytes_to_cblocks_ceil(currc.GetStart() + currc.GetLength());
     }
     
-    ReleaseReadLock(&rw_lock);
+    ReadUnlock();
 
     return clist;
 }
@@ -510,11 +508,6 @@ uint64_t CacheFile::ConsecutiveValidData(void)
         start--;
 
     return start;
-}
-
-CacheChunckList::CacheChunckList() 
-{
-    Lock_Init(&rd_wr_lock);
 }
 
 CacheChunckList::~CacheChunckList()
@@ -534,23 +527,23 @@ void CacheChunckList::AddChunck(uint64_t start, int64_t len)
     WriteUnlock();
 }
 
-void CacheChunckList::ReadLock() 
+void rd_rw_lockable::ReadLock() 
 {
     ObtainReadLock(&rd_wr_lock);
 }
 
-void CacheChunckList::WriteLock() 
+void rd_rw_lockable::WriteLock() 
 {
     ObtainWriteLock(&rd_wr_lock);
 }
 
 
-void CacheChunckList::ReadUnlock() 
+void rd_rw_lockable::ReadUnlock() 
 {
     ReleaseReadLock(&rd_wr_lock);
 }
 
-void CacheChunckList::WriteUnlock() 
+void rd_rw_lockable::WriteUnlock() 
 {
     ReleaseWriteLock(&rd_wr_lock);
 }
@@ -720,13 +713,13 @@ int64_t CacheSegmentFile::ExtractSegment(uint64_t pos, int64_t count)
 
     CODA_ASSERT((off_t)length == tstat.st_size);
 
-    ObtainReadLock(&cf->rw_lock);
-    ObtainWriteLock(&rw_lock);
+    cf->ReadLock();
+    WriteLock();
 
     cf->cached_chuncks->CopyRange(block_start, block_end + 1, *cached_chuncks);
 
-    ReleaseWriteLock(&rw_lock);
-    ReleaseReadLock(&cf->rw_lock);
+    WriteUnlock();
+    cf->ReadUnlock();
 
     UpdateValidData();
 
@@ -779,13 +772,13 @@ void CacheSegmentFile::InjectSegment(uint64_t pos, int64_t count)
 
     CODA_ASSERT((off_t)length == tstat.st_size);
     
-    ObtainReadLock(&rw_lock);
-    ObtainWriteLock(&cf->rw_lock);
+    ReadLock();
+    cf->WriteLock();
 
     cached_chuncks->CopyRange(block_start, block_end + 1, *cf->cached_chuncks);
     
-    ReleaseWriteLock(&cf->rw_lock);
-    ReleaseReadLock(&rw_lock);
+    cf->WriteUnlock();
+    ReadUnlock();
 
     cf->UpdateValidData();
 
