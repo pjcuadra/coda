@@ -275,8 +275,23 @@ void fsobj::Release(int writep)
     LOG(10, ("fsobj::Release: (%s, %d)\n", GetComp(), writep));
 
     FSO_ASSERT(this, openers != 0);
+    CacheChunck currc = {};
 
     openers--;
+    
+    
+    
+    if (!openers) {
+        
+        currc = active_read_segments.pop();
+        /* Remove all active read segments in case there are some left 
+         * behind */
+        while (currc.isValid()) {
+            LOG(0, ("fsobj::Release: Warning read segments [%d, %d] is still active (%s)\n",
+                    currc.GetStart(), currc.GetLength(), FID_(&fid)));
+            currc = active_read_segments.pop();
+        }
+    }
 
     if (writep) {
 	PromoteLock();    
