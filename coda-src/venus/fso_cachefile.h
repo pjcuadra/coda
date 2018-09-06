@@ -140,6 +140,17 @@ static inline uint64_t length_align_to_cblock(uint64_t b_pos, int64_t b_count)
     return cblocks_to_bytes(cblock_length(b_pos, b_count));
 }
 
+class rd_rw_lockable {
+    Lock rd_wr_lock;
+public:
+    rd_rw_lockable() {Lock_Init(&rd_wr_lock);}
+    
+    void ReadLock();
+    void ReadUnlock();
+    void WriteLock();
+    void WriteUnlock();
+};
+
 class CacheChunck : private dlink {
     friend class fsobj;
     friend class vproc;
@@ -157,10 +168,9 @@ class CacheChunck : private dlink {
     bool isValid() {return valid;}
 };
 
-class CacheChunckList : private dlist {
-    Lock rd_wr_lock;
+class CacheChunckList : private dlist, public rd_rw_lockable {
+    
  public:
-    CacheChunckList();
     ~CacheChunckList();
 
     void AddChunck(uint64_t start, int64_t len);
@@ -170,16 +180,11 @@ class CacheChunckList : private dlist {
     
     void ForEach(void (*foreachcb)(uint64_t start, int64_t len, 
         void * usr_data_cb), void * usr_data = NULL);
-    
-    void ReadLock();
-    void ReadUnlock();
-    void WriteLock();
-    void WriteUnlock();
 
     CacheChunck pop();
 };
 
-class CacheFile {
+class CacheFile: protected rd_rw_lockable {
     friend class CacheChunck;
     friend class CacheSegmentFile;
     
@@ -191,7 +196,6 @@ protected:
     int numopens;
     bitmap *cached_chuncks;
     int recoverable;
-    Lock rw_lock;
 
     int ValidContainer();
     
