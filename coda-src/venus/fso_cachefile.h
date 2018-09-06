@@ -82,27 +82,25 @@ extern int global_kernfd;
 
 #define CACHEFILENAMELEN 12 + 4
 
-#define CBLOCK_BITS_SIZE 15 /* 32768 = 2^15 */
-#define CBLOCK_SIZE (1 << 15)
-#define CBLOCK_SIZE_MAX (CBLOCK_SIZE - 1)
-
-#define LARGEST_SUPPORTED_FILE_SIZE (2^32)
-#define LARGEST_BITMAP_SIZE 131072 /* 2^32 / CBLOCK_SIZE */
+extern uint64_t CacheChunckBlockSize;
+extern uint64_t CacheChunckBlockSizeBits;
+extern uint64_t CacheChunckBlockSizeMax;
+extern uint64_t CacheChunckBlockBitmapSize;
 
 static inline uint64_t ccblocks_to_bytes(uint64_t ccblocks) {
-    return cblocks << CBLOCK_BITS_SIZE;
+    return ccblocks << CacheChunckBlockSizeBits;
 }
 
 static inline uint64_t bytes_to_ccblocks(uint64_t bytes) {
-    return bytes >> CBLOCK_BITS_SIZE;
+    return bytes >> CacheChunckBlockSizeBits;
 }
 
 static inline uint64_t bytes_to_ccblocks_floor(uint64_t bytes) {
-    return bytes_to_cblocks(bytes);
+    return bytes_to_ccblocks(bytes);
 }
 
 static inline uint64_t bytes_to_ccblocks_ceil(uint64_t bytes) {
-    return bytes_to_cblocks(bytes + CBLOCK_SIZE_MAX);
+    return bytes_to_ccblocks(bytes + CacheChunckBlockSizeMax);
 }
 
 static inline uint64_t align_to_cblock_ceil(uint64_t bytes)
