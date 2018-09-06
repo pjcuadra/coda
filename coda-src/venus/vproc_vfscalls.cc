@@ -1506,7 +1506,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
 retry_alloc:
     while (currc.isValid() && retry_cnt) {
 
-        /* Note that, CacheChuncks are aligned with cblocks and thus with 
+        /* Note that, CacheChuncks are aligned with ccblocks and thus with 
          * fs blocks*/
         code = FSDB->AllocBlocks(u.u_priority, NBLOCKS(currc.GetLength()));
         if (code < 0) {

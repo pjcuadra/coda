@@ -293,8 +293,8 @@ void CacheFile::Truncate(long newlen)
         if (newlen < length) {
             WriteLock();
             
-            cached_chuncks->FreeRange(bytes_to_cblocks_floor(newlen), 
-                bytes_to_cblocks_ceil(length - newlen));
+            cached_chuncks->FreeRange(bytes_to_ccblocks_floor(newlen), 
+                bytes_to_ccblocks_ceil(length - newlen));
                 
             WriteUnlock();
         } 
@@ -311,15 +311,15 @@ void CacheFile::Truncate(long newlen)
 
 /* Update the valid data*/
 int CacheFile::UpdateValidData() {
-    uint64_t length_cb = bytes_to_cblocks_ceil(length); /* Floor length in blocks */
+    uint64_t length_cb = bytes_to_ccblocks_ceil(length); /* Floor length in blocks */
     
     ReadLock();
 
-    validdata = cblocks_to_bytes(cached_chuncks->Count());
+    validdata = ccblocks_to_bytes(cached_chuncks->Count());
 
     /* In case the the last block is set */
     if (cached_chuncks->Value(length_cb - 1)) {
-        validdata -= cblocks_to_bytes(length_cb) - length;
+        validdata -= ccblocks_to_bytes(length_cb) - length;
     }
     
     ReadUnlock();
@@ -334,8 +334,8 @@ void CacheFile::SetLength(uint64_t newlen)
         if (newlen < length) {
             WriteLock();
             
-            cached_chuncks->FreeRange(bytes_to_cblocks_floor(newlen), 
-                bytes_to_cblocks_ceil(length - newlen));
+            cached_chuncks->FreeRange(bytes_to_ccblocks_floor(newlen), 
+                bytes_to_ccblocks_ceil(length - newlen));
                 
             WriteUnlock();
         }
@@ -360,7 +360,7 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
     uint64_t start_cb = cblock_start(start);
     uint64_t end_cb = cblock_end(start, len);
     uint64_t newvaliddata = 0;
-    uint64_t length_cb = bytes_to_cblocks_ceil(length);
+    uint64_t length_cb = bytes_to_ccblocks_ceil(length);
 
     if (len < 0) {
         end_cb = length_cb;
@@ -386,7 +386,7 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
 
         /* The last block might not be full */
         if (i + 1 == length_cb) {
-            newvaliddata -= cblocks_to_bytes(length_cb) - length;
+            newvaliddata -= ccblocks_to_bytes(length_cb) - length;
             continue;
         }
     }
@@ -425,7 +425,7 @@ int CacheFile::Close(int fd)
 CacheChunck CacheFile::GetNextHole(uint64_t start_cb, uint64_t end_cb) 
 {
     /* Ceil length in blocks */
-    uint64_t length_cb = bytes_to_cblocks_ceil(length);
+    uint64_t length_cb = bytes_to_ccblocks_ceil(length);
     uint64_t holestart = start_cb;
     uint64_t holesize = 0;
 
@@ -441,12 +441,12 @@ CacheChunck CacheFile::GetNextHole(uint64_t start_cb, uint64_t end_cb)
 
         /* The last block might not be full */
         if (i + 1 == length_cb) {
-            holesize -= cblocks_to_bytes(length_cb) - length;
-            return (CacheChunck(cblocks_to_bytes(holestart), holesize));
+            holesize -= ccblocks_to_bytes(length_cb) - length;
+            return (CacheChunck(ccblocks_to_bytes(holestart), holesize));
         }
 
         if ((i + 1 == end_cb) || cached_chuncks->Value(i + 1)) {
-            return (CacheChunck(cblocks_to_bytes(holestart), holesize));
+            return (CacheChunck(ccblocks_to_bytes(holestart), holesize));
         }
     }
 
@@ -458,7 +458,7 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len)
 {
     uint64_t start_cb = cblock_start(start);
     uint64_t end_cb = cblock_end(start, len);
-    uint64_t length_cb = bytes_to_cblocks_ceil(length);  // Ceil length in blocks
+    uint64_t length_cb = bytes_to_ccblocks_ceil(length);  // Ceil length in blocks
     uint64_t fstart = 0;
     uint64_t fend = 0;
     CacheChunckList * clist = new CacheChunckList();
@@ -491,7 +491,7 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len)
         clist->AddChunck(currc.GetStart(), currc.GetLength());
 
         /* Jump the hole */
-        i = bytes_to_cblocks_ceil(currc.GetStart() + currc.GetLength());
+        i = bytes_to_ccblocks_ceil(currc.GetStart() + currc.GetLength());
     }
     
     ReadUnlock();
@@ -502,7 +502,7 @@ CacheChunckList * CacheFile::GetHoles(uint64_t start, int64_t len)
 uint64_t CacheFile::ConsecutiveValidData(void)
 {
     /* Use the start of the first hole */
-    uint64_t start = GetNextHole(0, bytes_to_cblocks_ceil(length)).GetStart();
+    uint64_t start = GetNextHole(0, bytes_to_ccblocks_ceil(length)).GetStart();
 
     if (start != 0)
         start--;
@@ -665,9 +665,9 @@ void CacheSegmentFile::Create(CacheFile *cf)
 int64_t CacheSegmentFile::ExtractSegment(uint64_t pos, int64_t count)
 {
     uint32_t byte_start = pos_align_to_cblock(pos);
-    uint32_t block_start = bytes_to_cblocks(byte_start);
+    uint32_t block_start = bytes_to_ccblocks(byte_start);
     uint32_t byte_len = length_align_to_cblock(pos, count);
-    uint32_t block_end = bytes_to_cblocks(byte_start + byte_len);
+    uint32_t block_end = bytes_to_ccblocks(byte_start + byte_len);
     int tfd, ffd;
     struct stat tstat;
     
@@ -729,9 +729,9 @@ int64_t CacheSegmentFile::ExtractSegment(uint64_t pos, int64_t count)
 void CacheSegmentFile::InjectSegment(uint64_t pos, int64_t count)
 {
     uint32_t byte_start = pos_align_to_cblock(pos);
-    uint32_t block_start = bytes_to_cblocks(byte_start);
+    uint32_t block_start = bytes_to_ccblocks(byte_start);
     uint32_t byte_len = length_align_to_cblock(pos, count);
-    uint32_t block_end = bytes_to_cblocks(byte_start + byte_len);
+    uint32_t block_end = bytes_to_ccblocks(byte_start + byte_len);
     int tfd, ffd;
     struct stat tstat;
     

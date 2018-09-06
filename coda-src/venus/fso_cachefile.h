@@ -89,40 +89,40 @@ extern int global_kernfd;
 #define LARGEST_SUPPORTED_FILE_SIZE (2^32)
 #define LARGEST_BITMAP_SIZE 131072 /* 2^32 / CBLOCK_SIZE */
 
-static inline uint64_t cblocks_to_bytes(uint64_t cblocks) {
+static inline uint64_t ccblocks_to_bytes(uint64_t ccblocks) {
     return cblocks << CBLOCK_BITS_SIZE;
 }
 
-static inline uint64_t bytes_to_cblocks(uint64_t bytes) {
+static inline uint64_t bytes_to_ccblocks(uint64_t bytes) {
     return bytes >> CBLOCK_BITS_SIZE;
 }
 
-static inline uint64_t bytes_to_cblocks_floor(uint64_t bytes) {
+static inline uint64_t bytes_to_ccblocks_floor(uint64_t bytes) {
     return bytes_to_cblocks(bytes);
 }
 
-static inline uint64_t bytes_to_cblocks_ceil(uint64_t bytes) {
+static inline uint64_t bytes_to_ccblocks_ceil(uint64_t bytes) {
     return bytes_to_cblocks(bytes + CBLOCK_SIZE_MAX);
 }
 
 static inline uint64_t align_to_cblock_ceil(uint64_t bytes)
 {
-    return cblocks_to_bytes(bytes_to_cblocks_ceil(bytes));
+    return ccblocks_to_bytes(bytes_to_ccblocks_ceil(bytes));
 }
 
 static inline uint64_t align_to_cblock_floor(uint64_t bytes)
 {
-    return cblocks_to_bytes(bytes_to_cblocks_floor(bytes));
+    return ccblocks_to_bytes(bytes_to_ccblocks_floor(bytes));
 }
 
 static inline uint64_t cblock_start(uint64_t b_pos)
 {
-    return bytes_to_cblocks_floor(b_pos);
+    return bytes_to_ccblocks_floor(b_pos);
 }
 
 static inline uint64_t cblock_end(uint64_t b_pos, int64_t b_count)
 {
-    return bytes_to_cblocks_ceil(b_pos + b_count);
+    return bytes_to_ccblocks_ceil(b_pos + b_count);
 }
 
 static inline uint64_t cblock_length(uint64_t b_pos, int64_t b_count)
@@ -132,12 +132,12 @@ static inline uint64_t cblock_length(uint64_t b_pos, int64_t b_count)
 
 static inline uint64_t pos_align_to_cblock(uint64_t b_pos)
 {
-    return cblocks_to_bytes(bytes_to_cblocks_floor(b_pos));
+    return ccblocks_to_bytes(bytes_to_ccblocks_floor(b_pos));
 }
 
 static inline uint64_t length_align_to_cblock(uint64_t b_pos, int64_t b_count)
 {
-    return cblocks_to_bytes(cblock_length(b_pos, b_count));
+    return ccblocks_to_bytes(cblock_length(b_pos, b_count));
 }
 
 class rd_rw_lockable {
