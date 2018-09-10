@@ -7,5 +7,11 @@ pipeline {
 echo "Build OK"'''
       }
     }
+    stage('Test') {
+      steps {
+        sh '''echo "Testing"
+echo "Test OK"'''
+      }
+    }
   }
 }
