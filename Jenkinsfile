@@ -13,5 +13,11 @@ echo "Build OK"'''
 echo "Test OK"'''
       }
     }
+    stage('Deploy') {
+      steps {
+        sh '''echo "Deploying"
+echo "Deploy OK"'''
+      }
+    }
   }
 }
