@@ -688,7 +688,7 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched) {
 
 	LOG(0, ("DataWalk:  Restarting Iterator!!!!  Reset availability status information.\n"));
 	InitTally();  // Delete old list and start over
-	TallyPrint(PrimaryUser);		   
+	TallyPrint(venus_conf.PrimaryUser);		   
 
 	bstree_iterator next(*FSDB->prioq, BstDescending);
 	bsnode *b = 0;
@@ -858,7 +858,7 @@ void hdb::PostWalkStatus() {
       }  
     }    
 
-    TallyPrint(PrimaryUser);
+    TallyPrint(venus_conf.PrimaryUser);
 
     /* NotifyUsersTaskAvailability(); */
 
@@ -2243,5 +2243,3 @@ hdb_key::hdb_key(VolumeId Vid, char *Realm, char *Name)
     realm = Realm;
     name = Name;
 }
-
-

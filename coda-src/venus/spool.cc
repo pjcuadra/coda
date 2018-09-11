@@ -54,9 +54,9 @@ static void ValidateDir(const char *dir, uid_t owner, mode_t mode)
 void MakeUserSpoolDir(char *usd, uid_t owner)
 {
     // Ensure that the spool directory exists...
-    ValidateDir(SpoolDir, V_UID, 0755);
+    ValidateDir(venus_conf.SpoolDir, V_UID, 0755);
 
     // Ensure that user's spool (sub-)directory exists...
-    sprintf(usd, "%s/%d", SpoolDir, owner);
+    sprintf(usd, "%s/%d", venus_conf.SpoolDir, owner);
     ValidateDir(usd, owner, 0700);
 }

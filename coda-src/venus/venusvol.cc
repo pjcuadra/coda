@@ -228,8 +228,8 @@ void VolInit(void)
 
         int nvols = VDB->volrep_hash.count() + VDB->repvol_hash.count();
 
-	if (nvols > CacheFiles)
-	    CHOKE("VolInit: too many vol entries (%d > %d)", nvols, CacheFiles);
+	if (nvols > venus_conf.CacheFiles)
+	    CHOKE("VolInit: too many vol entries (%d > %d)", nvols, venus_conf.CacheFiles);
 	if (VDB->AllocatedMLEs + VDB->mlefreelist.count() > VDB->MaxMLEs)
 	    CHOKE("VolInit: too many MLEs (%d + %d > %d)",
 		VDB->AllocatedMLEs, VDB->mlefreelist.count(), VDB->MaxMLEs);
@@ -2663,4 +2663,3 @@ volrep *volrep_iterator::operator()()
     assert(!v->IsReplicated());
     return (volrep *)v;
 }
-

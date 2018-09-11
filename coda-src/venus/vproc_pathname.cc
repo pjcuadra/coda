@@ -218,9 +218,9 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp) {
 		/* Figure out the type of the new path and act accordingly. */
 		static int venusRootLength = -1;
 		if (venusRootLength == -1)
-		    venusRootLength = strlen(venusRoot);
+		    venusRootLength = strlen(venus_conf.venusRoot);
 		if (linklen >= venusRootLength &&
-		    STRNEQ(linkdata, venusRoot, venusRootLength) &&
+		    STRNEQ(linkdata, venus_conf.venusRoot, venusRootLength) &&
 		    (linklen == venusRootLength || linkdata[venusRootLength] == '/')) {
 		    LOG(100, ("vproc::namev: abspath within this venus (%s)\n", linkdata));
 
@@ -324,13 +324,13 @@ void vproc::GetPath(VenusFid *fid, char *out, int *outlen, int fullpath)
 	if (FID_IsVolRoot(&current)) {
 
 	    if (fullpath && FID_EQ(&current, &rootfid)) {
-		len = strlen(venusRoot);
+		len = strlen(venus_conf.venusRoot);
 		if (p - len < start) {
 		    u.u_error = ENAMETOOLONG;
 		    goto FreeLocks;
 		}
 		p -= len;
-		strncpy(p, venusRoot, len);
+		strncpy(p, venus_conf.venusRoot, len);
 		done = 1;
 		goto FreeLocks;
 	    }

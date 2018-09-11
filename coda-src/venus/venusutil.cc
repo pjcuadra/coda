@@ -438,7 +438,7 @@ int binaryfloor(int n) {
 
 void LogInit()
 {
-    logFile = fopen(VenusLogFile, "a+");
+    logFile = fopen(venus_conf.VenusLogFile, "a+");
     if (logFile == NULL)
 	{ eprint("LogInit failed"); exit(EXIT_FAILURE); }
     LogInited = 1;
@@ -732,9 +732,9 @@ void SwapLog()
     struct timeval now;
     gettimeofday(&now, 0);
 
-    freopen(VenusLogFile, "a+", logFile);
-    if (!nofork) /* only redirect stderr when daemonizing */
-        freopen(consoleFile, "a+", stderr);
+    freopen(venus_conf.VenusLogFile, "a+", logFile);
+    if (!venus_conf.nofork) /* only redirect stderr when daemonizing */
+        freopen(venus_conf.consoleFile, "a+", stderr);
 
     LOG(0, ("New Logfile started at %s", ctime((time_t *)&now.tv_sec)));
 }
@@ -782,4 +782,3 @@ int FAV_Compare(ViceFidAndVV *fav1, ViceFidAndVV *fav2) {
 
     return(0);  /* this shouldn't happen */
 }
-

@@ -245,7 +245,7 @@ void repvol::Reintegrate()
 	 * 4.) An ASR is not currently running within this volume.
 	 * 5.) The timeout interval for ASR launching has expired.
 	 */
-	if (!ASRLauncherFile) {
+	if (!venus_conf.ASRLauncherFile) {
 	    LOG(0, ("ClientModifyLog::HandleFailedMLE: No ASRLauncher "
 		    "specified in venus.conf!\n"));
 	    goto Done;
@@ -265,7 +265,7 @@ void repvol::Reintegrate()
 	    goto Done;
 	}
 
-	ASRInvokable = ASRPolicyFile && v->IsASREnabled();
+	ASRInvokable = venus_conf.ASRPolicyFile && v->IsASREnabled();
 	/* Send in any conflict type, it will get changed later. */
 	if (ASRInvokable)  /* Execute ASR. */
 	    conflict->LaunchASR(LOCAL_GLOBAL, DIRECTORY_CONFLICT);

@@ -148,7 +148,7 @@ void SigInit(void)
     sa.sa_handler = SigASR;
 #ifdef SIGCHLD
     sigaction(SIGCHLD, &sa, NULL);
-    ASRpid = NO_ASR; 
+    venus_conf.ASRpid = NO_ASR; 
 #endif
 }
 
@@ -158,14 +158,14 @@ static void SigControl(int sig)
     FILE *fp;
     char command[80];
 
-    if (stat(VenusControlFile, &tstat) != 0) {
+    if (stat(venus_conf.VenusControlFile, &tstat) != 0) {
 	SwapLog();
         return;
     }
 
-    fp = fopen(VenusControlFile, "r+");
+    fp = fopen(venus_conf.VenusControlFile, "r+");
     if (fp == NULL) {
-        LOG(0, ("SigControl: open(%s) failed", VenusControlFile));
+        LOG(0, ("SigControl: open(%s) failed", venus_conf.VenusControlFile));
         return;
     }
 
@@ -218,9 +218,9 @@ static void SigControl(int sig)
 	DumpState();
 
     if (fclose(fp) == EOF)
-	LOG(0, ("SigControl: fclose(%s) failed", VenusControlFile));
-    if (unlink(VenusControlFile) < 0)
-	LOG(0, ("SigControl: unlink(%s) failed", VenusControlFile));
+	LOG(0, ("SigControl: fclose(%s) failed", venus_conf.VenusControlFile));
+    if (unlink(venus_conf.VenusControlFile) < 0)
+	LOG(0, ("SigControl: unlink(%s) failed", venus_conf.VenusControlFile));
 }
 
 static void SigChoke(int sig)
@@ -279,17 +279,17 @@ static void SigASR(int sig)
    * an ASRLauncher completing execution, and the status is the return code
    * of success or failure of the repair. */
 
-  if(ASRpid == NO_ASR)
+  if(venus_conf.ASRpid == NO_ASR)
 	return;
 
-  LOG(0, ("Signal Handler(ASR): ASRpid:%d, ASRfid:%s\n", 
-		  ASRpid, FID_(&ASRfid)));
+  LOG(0, ("Signal Handler(ASR): venus_conf.ASRpid:%d, venus_conf.ASRfid:%s\n", 
+		  venus_conf.ASRpid, FID_(&venus_conf.ASRfid)));
 
   status = options = 0;
 
-  child_pid = waitpid(ASRpid, &status, WNOHANG);
+  child_pid = waitpid(venus_conf.ASRpid, &status, WNOHANG);
   if(child_pid < 0) { perror("waitpid"); exit(EXIT_FAILURE); }
-  else if(child_pid == ASRpid)
+  else if(child_pid == venus_conf.ASRpid)
       LOG(0, ("Signal Handler(ASR): Caught ASRLauncher (%d) with status %d\n", 
 	      child_pid, status));
   else {
@@ -298,14 +298,14 @@ static void SigASR(int sig)
 			   * could be the VFSMount double-fork middle child. */
   }
 
-  v = (repvol *)VDB->Find(MakeVolid(&ASRfid)); 
+  v = (repvol *)VDB->Find(MakeVolid(&venus_conf.ASRfid)); 
   if(v == NULL) {
       LOG(0, ("Signal Handler(ASR): Couldn't find volume!\n"));
       return;
   }
 
   /* Clear out table entry */
-  ASRpid = NO_ASR;
+  venus_conf.ASRpid = NO_ASR;
 
   /* Unassign Tokens */
   /* TODO: not easy to do at the moment. */

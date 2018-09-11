@@ -92,12 +92,12 @@ void MarinerInit()
     struct sockaddr_un s_un;
 
     /* make sure the path leading to the mariner socket is there */
-    mkpath(MarinerSocketPath, 0755);
-    unlink(MarinerSocketPath);
+    mkpath(venus_conf.MarinerSocketPath, 0755);
+    unlink(venus_conf.MarinerSocketPath);
     
     memset(&s_un, 0, sizeof(struct sockaddr_un));
     s_un.sun_family = AF_UNIX;
-    strcpy(s_un.sun_path, MarinerSocketPath);
+    strcpy(s_un.sun_path, venus_conf.MarinerSocketPath);
 
     sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -115,7 +115,7 @@ void MarinerInit()
     }
     
     /* make sure the socket is accessible */
-    chmod(MarinerSocketPath, 0777);
+    chmod(venus_conf.MarinerSocketPath, 0777);
     
     if (listen(sock, 2) < 0) {
         eprint("MarinerInit: socket listen failed", errno);

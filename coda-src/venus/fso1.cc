@@ -519,7 +519,7 @@ FailSafe:
 	int idx = 0;
 
 	do {
-	    snprintf(spoolfile,MAXPATHLEN,"%s/%s-%u",SpoolDir,GetComp(),idx++);
+	    snprintf(spoolfile,MAXPATHLEN,"%s/%s-%u",venus_conf.SpoolDir,GetComp(),idx++);
 	} while (::access(spoolfile, F_OK) == 0 || errno != ENOENT);
 
 	data.file->Copy(spoolfile, 1);
@@ -2220,7 +2220,7 @@ void fsobj::GetPath(char *buf, int scope)
                 return;
             }
   	    LOG(100, ("fsobj::GetPath (%s): venusRoot.\n", FID_(&fid)));
-	    strcpy(buf, venusRoot);
+	    strcpy(buf, venus_conf.venusRoot);
 	    return;
 	}
 
@@ -2254,7 +2254,7 @@ void fsobj::GetPath(char *buf, int scope)
       if(fid.Volume == FakeRootVolumeId) {
 	LOG(0, ("fsobj::GetPath (%s): In the local realm without a parent. "
 		"Realm mountpoint?\n", FID_(&fid)));	
-	strcpy(buf, venusRoot);
+	strcpy(buf, venus_conf.venusRoot);
       }
       else {
 	LOG(0, ("fsobj::GetPath (%s): Couldn't find parent.\n", FID_(&fid)));
@@ -2622,17 +2622,17 @@ int fsobj::LaunchASR(int conflict_type, int object_type) {
   /* Not exactly thread-safe, but rarely do ASR's start concurrently. */
   
 
-  if(ASRpid > 0) {
+  if(venus_conf.ASRpid > 0) {
     LOG(0, ("fsobj::LaunchASR: ASR in progress in another volume!\n"));
 	return -1; /* or should we yield() for a while? */
   }
 	
-  ASRpid = 1; /* reserve our place */
+  venus_conf.ASRpid = 1; /* reserve our place */
 
 
   /* Tell the user what is in conflict, and what launcherfile's handling it. */
 
-  MarinerLog("ASRLauncher(%s) HANDLING %s\n", ASRLauncherFile, path);
+  MarinerLog("ASRLauncher(%s) HANDLING %s\n", venus_conf.ASRLauncherFile, path);
 	  
 
   /* Assign Coda tokens to Venus' uid. */
@@ -2665,11 +2665,11 @@ int fsobj::LaunchASR(int conflict_type, int object_type) {
 	sprintf(confstr, "%d", conflict_type);
 
 	/* Set up argument array. */
-	arg[0] = strdup(ASRLauncherFile); /* extracted from venus.conf */
+	arg[0] = strdup(venus_conf.ASRLauncherFile); /* extracted from venus.conf */
 	arg[1] = path;
 	arg[2] = rootPath;
 	arg[3] = confstr;
-	arg[4] = strdup(ASRPolicyFile);   /* extracted from venus.conf */
+	arg[4] = strdup(venus_conf.ASRPolicyFile);   /* extracted from venus.conf */
 	arg[5] = NULL;
 
 	while ((error = read(pfd[0], buf, 2)) == 0)
@@ -2705,9 +2705,9 @@ failure:
    * we exec().
    * This is used when we receive a SIGCHLD at the end of our launch. */
   
-  ASRpid = pid;
-  ASRfid = fid;
-  ASRuid = uid;
+  venus_conf.ASRpid = pid;
+  venus_conf.ASRfid = fid;
+  venus_conf.ASRuid = uid;
 
   if(write(pfd[1], (void *) "go", 2) < 0)
 	{ perror("write"); exit(EXIT_FAILURE); }
@@ -2743,4 +2743,3 @@ fsobj *fso_iterator::operator()() {
 	}
     }
 }
-

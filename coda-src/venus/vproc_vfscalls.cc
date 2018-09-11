@@ -100,10 +100,10 @@ void vproc::root(struct venus_cnode *vpp) {
 void vproc::statfs(struct coda_statfs *sfs) {
     LOG(1, ("vproc::statfs\n"));
 
-    sfs->f_blocks  = CacheBlocks;
-    sfs->f_bfree   = CacheBlocks - FSDB->DirtyBlockCount();
+    sfs->f_blocks  = venus_conf.CacheBlocks;
+    sfs->f_bfree   = venus_conf.CacheBlocks - FSDB->DirtyBlockCount();
     sfs->f_bavail  = FSDB->FreeBlockCount() - FSDB->FreeBlockMargin;
-    sfs->f_files   = CacheFiles;
+    sfs->f_files   = venus_conf.CacheFiles;
     sfs->f_ffree   = FSDB->FreeFsoCount();
 
     /* Compensate block size since Cacheblocks is in 1K-Blocks and
@@ -1459,4 +1459,3 @@ FreeLocks:
 	k_Purge(&cp->c_fid, 1);
     }
 }
-

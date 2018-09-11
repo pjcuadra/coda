@@ -725,8 +725,6 @@ class fso_iterator : public rec_ohashtab_iterator {
 };
 
 /*  *****  Variables  ***** */
-
-extern int CacheFiles;
 extern int FSO_SWT;
 extern int FSO_MWT;
 extern int FSO_SSF;

@@ -63,7 +63,6 @@ extern "C" {
 #include "vproc.h"
 #include "worker.h"
 
-int CacheFiles = 0;
 int FSO_SWT = UNSET_SWT;
 int FSO_MWT = UNSET_MWT;
 int FSO_SSF = UNSET_SSF;
@@ -85,12 +84,12 @@ void FSOInit() {
     Recov_BeginTrans();
     RVMLIB_REC_OBJECT(*FSDB);
 
-    if (InitMetaData || FSDB->MaxBlocks != CacheBlocks) {
+    if (InitMetaData || FSDB->MaxBlocks != venus_conf.CacheBlocks) {
 	    if (!InitMetaData)
 		    eprint("Warning: CacheBlocks changing from %d to %d",
-			   FSDB->MaxBlocks, CacheBlocks);
+			   FSDB->MaxBlocks, venus_conf.CacheBlocks);
 	    
-	    FSDB->MaxBlocks = CacheBlocks;
+	    FSDB->MaxBlocks = venus_conf.CacheBlocks;
     }
     FSDB->FreeBlockMargin = FSDB->MaxBlocks / FREE_FACTOR;
     
@@ -339,7 +338,7 @@ fsdb::fsdb() : htab(FSDB_NBUCKETS, FSO_HashFN) {
     /* Initialize the persistent members. */
     RVMLIB_REC_OBJECT(*this);
     MagicNumber = FSDB_MagicNumber;
-    MaxFiles = CacheFiles;
+    MaxFiles = venus_conf.CacheFiles;
     FreeFileMargin = MaxFiles / FREE_FACTOR;
 
     LastRef = (long *)rvmlib_rec_malloc(MaxFiles * (int)sizeof(long));
@@ -873,15 +872,15 @@ RestartFind:
 	 * 5.) The timeout interval for ASR launching has expired.
 	 */
 
-	ASRInvokable = ((ASRLauncherFile != NULL) && (vp->type == VPT_Worker) &&
+	ASRInvokable = ((venus_conf.ASRLauncherFile != NULL) && (vp->type == VPT_Worker) &&
 					v->IsASRAllowed() && !v->asr_running() &&
 					((tv.tv_sec - realobj->lastresolved) > ASR_INTERVAL) &&
-					v->IsASREnabled() && (ASRPolicyFile != NULL));
+					v->IsASREnabled() && (venus_conf.ASRPolicyFile != NULL));
 
-	if(ASRLauncherFile == NULL)
+	if(venus_conf.ASRLauncherFile == NULL)
 	  LOG(0, ("fsdb::Get: asrlauncher_file not specified in venus.conf!\n"));
 
-	if(ASRPolicyFile == NULL)
+	if(venus_conf.ASRPolicyFile == NULL)
 	  LOG(0, ("fsdb::Get: asrpolicy_file not specified in venus.conf!\n"));
 
 	if(vp->type != VPT_Worker)

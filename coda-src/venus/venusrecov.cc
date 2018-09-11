@@ -140,10 +140,10 @@ static void Recov_GetStatistics();
 /* Crude formula for estimating recoverable data requirements! */
 #define	RECOV_BYTES_NEEDED()\
     (MLEs * (sizeof(cmlent) + 64) +\
-    CacheFiles * (sizeof(fsobj) + 64) +\
-    (CacheFiles / 4) * (sizeof(VenusDirData) + 3072) +\
-    (CacheFiles / 256) * sizeof(repvol) +\
-    (CacheFiles / 512) * sizeof(volrep) +\
+    venus_conf.CacheFiles * (sizeof(fsobj) + 64) +\
+    (venus_conf.CacheFiles / 4) * (sizeof(VenusDirData) + 3072) +\
+    (venus_conf.CacheFiles / 256) * sizeof(repvol) +\
+    (venus_conf.CacheFiles / 512) * sizeof(volrep) +\
     HDBEs * (sizeof(hdbent) + 128) +\
     64 * 1024 * 1024)
 
@@ -214,7 +214,7 @@ static void RecovNewInstance(void)
 
     /* server disables replay detection when storeid.uniquifier > INT_MAX */
     rvg->recov_StoreId =
-	detect_reintegration_retry ? 0 : ((unsigned int)INT_MAX+1);
+	venus_conf.detect_reintegration_retry ? 0 : ((unsigned int)INT_MAX+1);
     Recov_EndTrans(0);
 }
 
@@ -251,11 +251,11 @@ void RecovInit(void)
 	    override = 1;
 	    MLEs = VDB->MaxMLEs;
 	}
-	if (CacheFiles != FSDB->MaxFiles) {
+	if (venus_conf.CacheFiles != FSDB->MaxFiles) {
 	    eprint("Ignoring requested # of cache files (%ld), "
-		   "using rvm value (%ld)", CacheFiles, FSDB->MaxFiles);
+		   "using rvm value (%ld)", venus_conf.CacheFiles, FSDB->MaxFiles);
 	    override = 1;
-	    CacheFiles = FSDB->MaxFiles;
+	    venus_conf.CacheFiles = FSDB->MaxFiles;
 	}
 	if (HDBEs != HDB->MaxHDBEs) {
 	    eprint("Ignoring requested # of hoard entries (%ld), "
@@ -267,7 +267,7 @@ void RecovInit(void)
 	    eprint("\t(restart venus with the -init flag to reset RVM values)");
 
 	LOG(10, ("RecovInit: MLEs = %d, CacheFiles = %d, HDBEs = %d\n",
-		 MLEs, CacheFiles, HDBEs));
+		 MLEs, venus_conf.CacheFiles, HDBEs));
     }
 
     RecovInited = 1;
@@ -535,8 +535,8 @@ static void Recov_LoadRDS()
 
     detecting_retries = rvg->recov_StoreId <= INT_MAX;
     if (InitMetaData || InitNewInstance ||
-        (detect_reintegration_retry && !detecting_retries) || 
-	(!detect_reintegration_retry && detecting_retries))
+        (venus_conf.detect_reintegration_retry && !detecting_retries) || 
+	(!venus_conf.detect_reintegration_retry && detecting_retries))
 	RecovNewInstance();
 
     /* Plumb the heap here? */
@@ -786,4 +786,3 @@ void Recov_GenerateStoreId(ViceStoreId *sid)
     RVMLIB_REC_OBJECT(rvg->recov_StoreId);
     rvg->recov_StoreId++;
 }
-

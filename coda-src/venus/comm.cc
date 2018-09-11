@@ -145,7 +145,7 @@ void CommInit() {
     /* Port initialization. */
     RPC2_PortIdent port1;
     port1.Tag = RPC2_PORTBYINETNUMBER;
-    port1.Value.InetPortNumber = htons(masquerade_port);
+    port1.Value.InetPortNumber = htons(venus_conf.masquerade_port);
 
     /* SFTP initialization. */
     SFTP_Initializer sei;
@@ -1251,4 +1251,3 @@ int FailReconnect(int nservers, struct in_addr *hostids)
     Fail_SendPredicate = Fail_RecvPredicate = NULL;
     return 0;
 }
-

@@ -568,7 +568,7 @@ void vproc::Begin_VFS(Volid *volid, int vfsop, int volmode)
 wait_for_reintegration:
 	free_fsos   = FSDB->FreeFsoCount();
 	free_mles   = VDB->FreeMLECount();
-	free_blocks = CacheBlocks - FSDB->DirtyBlockCount();
+	free_blocks = venus_conf.CacheBlocks - FSDB->DirtyBlockCount();
 	cml_length  = ((repvol *)u.u_vol)->LengthOfCML();
 
 	/* the redzone and yellow zone thresholds are pretty arbitrary at the
@@ -578,11 +578,11 @@ wait_for_reintegration:
          */
 	inredzone = !free_fsos ||
 		  free_mles <= MaxWorkers ||
-		  free_blocks <= (CacheBlocks >> 4) || /* ~94% cache dirty */
+		  free_blocks <= (venus_conf.CacheBlocks >> 4) || /* ~94% cache dirty */
 		  (redzone_limit > 0 && cml_length >= redzone_limit);
 	inyellowzone = free_fsos <= MaxWorkers ||
 		   free_mles <= (MLEs>>3) || /* ~88% CMLs used */
-		   free_blocks <= (CacheBlocks >> 2) || /* ~75% cache dirty */
+		   free_blocks <= (venus_conf.CacheBlocks >> 2) || /* ~75% cache dirty */
 		   (yellowzone_limit > 0 && cml_length >= yellowzone_limit);
 
 	if (inredzone) MarinerLog("progress::Red zone, stalling writer\n");

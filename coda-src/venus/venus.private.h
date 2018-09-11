@@ -112,6 +112,35 @@ const int MIN_HDBE = MIN_CF / FILES_PER_HDBE;
 #define UNSET_PRIMARYUSER 0		    /* primary user of this machine */
 const int FREE_FACTOR = 16;
 
+/* Command-line/venus.conf parameters. */
+struct venus_config {
+    const char *consoleFile;
+    const char *venusRoot;
+    const char *kernDevice;
+    const char *realmtab;
+    const char *CacheDir;
+    const char *CachePrefix;
+    uint64_t    CacheBlocks;
+    uint64_t    CacheFiles = 0;
+    uid_t PrimaryUser = UNSET_PRIMARYUSER;
+    const char *SpoolDir;
+    const char *CheckpointFormat;
+    const char *VenusPidFile;
+    const char *VenusControlFile;
+    const char *VenusLogFile;
+    const char *ASRLauncherFile;
+    const char *ASRPolicyFile;
+    const char *MarinerSocketPath;
+    int masquerade_port;
+    int PiggyValidations;
+    pid_t ASRpid;
+    VenusFid ASRfid;
+    uid_t ASRuid;
+    int detect_reintegration_retry;
+    int option_isr;
+    int nofork;
+};
+
 
 /*  *****  Manifest constants for Venus.  *****  */
 #ifdef __CYGWIN32__
@@ -336,31 +365,33 @@ extern VenusFid rootfid;
 extern int parent_fd;
 extern long rootnodeid;
 extern int CleanShutDown;
-extern const char *venusRoot;
-extern const char *kernDevice;
+// extern const char *venusRoot;
+// extern const char *kernDevice;
 extern const char *realmtab;
-extern const char *CacheDir;
-extern const char *CachePrefix;
-extern uint64_t CacheBlocks;
-extern const char *SpoolDir;
-extern uid_t PrimaryUser;
-extern const char *VenusPidFile;
-extern const char *VenusControlFile;
-extern const char *VenusLogFile;
-extern const char *consoleFile;
-extern const char *MarinerSocketPath;
+// extern const char *CacheDir;
+// extern const char *CachePrefix;
+// extern uint64_t CacheBlocks;
+// extern const char *SpoolDir;
+// extern uid_t PrimaryUser;
+// extern const char *VenusPidFile;
+// extern const char *VenusControlFile;
+// extern const char *VenusLogFile;
+// extern const char *consoleFile;
+// extern const char *MarinerSocketPath;
 extern int   mariner_tcp_enable;
 extern int   plan9server_enabled;
 extern int   nofork;
 extern int   allow_reattach;
-extern int   masquerade_port;
-extern int   PiggyValidations;
+// extern int   masquerade_port;
+// extern int   PiggyValidations;
 extern int   T1Interval;
-extern const char *ASRLauncherFile;
-extern const char *ASRPolicyFile;
-extern int   option_isr;
-extern int   detect_reintegration_retry;
+// extern const char *ASRLauncherFile;
+// extern const char *ASRPolicyFile;
+// extern int   option_isr;
+// extern int   detect_reintegration_retry;
 extern int   redzone_limit, yellowzone_limit;
+
+extern struct venus_config venus_conf;
 
 /* spool.cc */
 extern void MakeUserSpoolDir(char *, uid_t);
@@ -373,8 +404,8 @@ extern void MakeUserSpoolDir(char *, uid_t);
  * assignment constraints, though, this is not possible as of 06/2006.
  */
 
-extern pid_t ASRpid;
-extern VenusFid ASRfid;
-extern uid_t ASRuid;
+// extern pid_t venus_conf.ASRpid;
+// extern VenusFid venus_conf.ASRfid;
+// extern uid_t venus_conf.ASRuid;
 
 #endif /* _VENUS_PRIVATE_H_ */

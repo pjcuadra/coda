@@ -86,29 +86,8 @@ int SearchForNOreFind;  // Look for better detection method for iterrupted hoard
 int ASRallowed = 1;
 
 /* Command-line/venus.conf parameters. */
-const char *consoleFile;
-const char *venusRoot;
-const char *kernDevice;
-const char *realmtab;
-const char *CacheDir;
-const char *CachePrefix;
-uint64_t    CacheBlocks;
-uid_t PrimaryUser = UNSET_PRIMARYUSER;
-const char *SpoolDir;
-const char *CheckpointFormat;
-const char *VenusPidFile;
-const char *VenusControlFile;
-const char *VenusLogFile;
-const char *ASRLauncherFile;
-const char *ASRPolicyFile;
-const char *MarinerSocketPath;
-int masquerade_port;
-int PiggyValidations;
-pid_t ASRpid;
-VenusFid ASRfid;
-uid_t ASRuid;
-int detect_reintegration_retry;
-int option_isr;
+struct venus_config venus_conf;
+
 /* exit codes (http://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic/iniscrptact.html) */
 // EXIT_SUCCESS             0   /* stdlib.h - success */
 // EXIT_FAILURE             1   /* stdlib.h - generic or unspecified error */
@@ -125,7 +104,7 @@ int mariner_tcp_enable = 0;
 int mariner_tcp_enable = 1;
 #endif
 int plan9server_enabled;
-int nofork;
+
 
 /* Global red and yellow zone limits on CML length; default is infinite */
 int redzone_limit = -1, yellowzone_limit = -1;
@@ -296,27 +275,30 @@ static uint64_t ParseSizeWithUnits(const char * CacheSize)
     return cachesize;
 }
 
+int VenusTermitate()
+{
+    TerminateVenus = 1;
+}
 
 /* local-repair modification */
-int main(int argc, char **argv)
+int VenusInit(const struct venus_config * vconf = NULL)
 {
-    coda_assert_action = CODA_ASSERT_SLEEP;
-    coda_assert_cleanup = VFSUnmount;
-
-    ParseCmdline(argc, argv);
-    DefaultCmdlineParms();   /* read /etc/coda/venus.conf */
+    /* In case we run as a library */
+    if (vconf) {
+        memcpy(&venus_conf, vconf, sizeof(struct venus_config));
+    }
 
     // Cygwin runs as a service and doesn't need to daemonize.
 #ifndef __CYGWIN__
-    if (!nofork && LogLevel == 0)
+    if (!venus_conf.nofork && LogLevel == 0)
 	parent_fd = daemonize();
 #endif
 
-    update_pidfile(VenusPidFile);
+    update_pidfile(venus_conf.VenusPidFile);
 
     /* open the console file and print vital info */
-    if (!nofork) /* only redirect stderr when daemonizing */
-        freopen(consoleFile, "a+", stderr);
+    if (!venus_conf.nofork) /* only redirect stderr when daemonizing */
+        freopen(venus_conf.consoleFile, "a+", stderr);
     eprint("Coda Venus, version " PACKAGE_VERSION);
 
     CdToCacheDir(); 
@@ -336,19 +318,6 @@ int main(int argc, char **argv)
 
     /* test mismatch with kernel before doing real work */
     testKernDevice();
-
-    if (codatunnel_enabled) {
-        int rc;
-        /* masquerade_port is the UDP portnum specified via venus.conf */
-        char service[6];
-        sprintf(service, "%hu", masquerade_port);
-        rc = codatunnel_fork(argc, argv, NULL, "0.0.0.0", service, codatunnel_onlytcp);
-        if (rc < 0){
-            perror("codatunnel_fork: ");
-            exit(-1);
-        }
-        printf("codatunneld started\n");
-    }
 
     /* 
      * VprocInit MUST precede LogInit. Log messages are stamped
@@ -428,6 +397,33 @@ int main(int argc, char **argv)
 #endif
 
     exit(EXIT_SUCCESS);
+}
+
+int main(int argc, char **argv)
+{
+    coda_assert_action = CODA_ASSERT_SLEEP;
+    coda_assert_cleanup = VFSUnmount;
+
+    ParseCmdline(argc, argv);
+    DefaultCmdlineParms();   /* read /etc/coda/venus.conf */
+    
+    VenusInit();
+    
+    if (codatunnel_enabled) {
+        int rc;
+        /* masquerade_port is the UDP portnum specified via venus.conf */
+        char service[6];
+        sprintf(service, "%hu", venus_conf.masquerade_port);
+        rc = codatunnel_fork(argc, argv, NULL, "0.0.0.0", service, codatunnel_onlytcp);
+        if (rc < 0){
+            perror("codatunnel_fork: ");
+            exit(-1);
+        }
+        printf("codatunneld started\n");
+    }
+    
+    
+    VenusTermitate();    
 }
 
 static void Usage(char *argv0)
@@ -512,13 +508,13 @@ static void ParseCmdline(int argc, char **argv)
  		i++;
 		inet_aton(argv[i], &venus_relay_addr);
  	    } else if (STREQ(argv[i], "-k"))         /* default is /dev/cfs0 */
-  		i++, kernDevice = argv[i];
+  		i++, venus_conf.kernDevice = argv[i];
 	    else if (STREQ(argv[i], "-mles")) /* total number of CML entries */
 		i++, MLEs = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-cf"))   /* number of cache files */
-		i++, CacheFiles = atoi(argv[i]);
+		i++, venus_conf.CacheFiles = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-c"))    /* cache block size */
-		i++, CacheBlocks = ParseSizeWithUnits(argv[i]);  
+		i++, venus_conf.CacheBlocks = ParseSizeWithUnits(argv[i]);  
 	    else if (STREQ(argv[i], "-hdbes")) /* hoard DB entries */
 		i++, HDBEs = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-d"))     /* debugging */
@@ -533,7 +529,7 @@ static void ParseCmdline(int argc, char **argv)
 	    } else if (STREQ(argv[i], "-rdstrace"))     /* RDS heap tracing */
 		MallocTrace = 1;
 	    else if (STREQ(argv[i], "-f"))     /* location of cache files */
-		i++, CacheDir = argv[i];
+		i++, venus_conf.CacheDir = argv[i];
 	    else if (STREQ(argv[i], "-m"))
 		i++, COPModes = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-maxworkers"))  /* number of worker threads */
@@ -543,7 +539,7 @@ static void ParseCmdline(int argc, char **argv)
 	    else if (STREQ(argv[i], "-maxprefetchers")) /* max number of threads */
 		i++, MaxPrefetchers = atoi(argv[i]);    /* doing prefetch ioctl */
 	    else if (STREQ(argv[i], "-console"))      /* location of console file */
-		i++, consoleFile = argv[i];
+		i++, venus_conf.consoleFile = argv[i];
 	    else if (STREQ(argv[i], "-retries"))      /* number of rpc2 retries */
 		i++, rpc2_retries = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-timeout"))      /* rpc timeout */
@@ -583,7 +579,7 @@ static void ParseCmdline(int argc, char **argv)
 	    else if (STREQ(argv[i], "-ssf"))         /* short term scale factor */
 		i++, FSO_SSF = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-primaryuser")) /* primary user of this machine */
-		i++, PrimaryUser = atoi(argv[i]);
+		i++, venus_conf.PrimaryUser = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-von"))
 		rpc2_timeflag = 1;
 	    else if (STREQ(argv[i], "-voff"))
@@ -603,7 +599,7 @@ static void ParseCmdline(int argc, char **argv)
 	        PeriodicWalksAllowed = 0;
 	    }
 	    else if (STREQ(argv[i], "-spooldir")) {
-	        i++, SpoolDir = argv[i];
+	        i++, venus_conf.SpoolDir = argv[i];
 	    }
             /* let venus listen to tcp port `venus', as mariner port, normally
              * it only listens to a unix domain socket */
@@ -632,7 +628,7 @@ static void ParseCmdline(int argc, char **argv)
                 eprint("9pfs enabled");
 	    }
 	    else if (STREQ(argv[i], "-nofork")) {
-                nofork = true;
+                venus_conf.nofork = true;
 	    }
 	    else {
 		eprint("bad command line option %-4s", argv[i]);
@@ -675,36 +671,36 @@ static void DefaultCmdlineParms()
     /* Load the "venus.conf" configuration file */
     codaconf_init("venus.conf");
 
-    if (!CacheBlocks) {
+    if (!venus_conf.CacheBlocks) {
         CODACONF_STR(CacheSize, "cachesize", MIN_CS);
-        CacheBlocks = ParseSizeWithUnits(CacheSize);
+        venus_conf.CacheBlocks = ParseSizeWithUnits(CacheSize);
     }
 
     /* In case of user missconfiguration */
-    if (CacheBlocks < MIN_CB) {
+    if (venus_conf.CacheBlocks < MIN_CB) {
         eprint("Cannot start: minimum cache size is %s", "2MB");
         exit(EXIT_UNCONFIGURED);
     }
 
-    CODACONF_INT(CacheFiles, "cachefiles", CalculateCacheFiles(CacheBlocks));
-    if (CacheFiles < MIN_CF) {
-        eprint("Cannot start: minimum number of cache files is %d", CalculateCacheFiles(CacheBlocks));
+    CODACONF_INT(venus_conf.CacheFiles, "cachefiles", CalculateCacheFiles(venus_conf.CacheBlocks));
+    if (venus_conf.CacheFiles < MIN_CF) {
+        eprint("Cannot start: minimum number of cache files is %d", CalculateCacheFiles(venus_conf.CacheBlocks));
         eprint("Cannot start: minimum number of cache files is %d", MIN_CF);
         exit(EXIT_UNCONFIGURED);
     }
     
-    CODACONF_STR(CacheDir,	    "cachedir",      DFLT_CD);
-    CODACONF_STR(SpoolDir,	    "checkpointdir", "/usr/coda/spool");
-    CODACONF_STR(VenusLogFile,	    "logfile",	     DFLT_LOGFILE);
-    CODACONF_STR(consoleFile,	    "errorlog",      DFLT_ERRLOG);
-    CODACONF_STR(kernDevice,	    "kerneldevice",  "/dev/cfs0,/dev/coda/0");
+    CODACONF_STR(venus_conf.CacheDir,	    "cachedir",      DFLT_CD);
+    CODACONF_STR(venus_conf.SpoolDir,	    "checkpointdir", "/usr/coda/spool");
+    CODACONF_STR(venus_conf.VenusLogFile,	    "logfile",	     DFLT_LOGFILE);
+    CODACONF_STR(venus_conf.consoleFile,	    "errorlog",      DFLT_ERRLOG);
+    CODACONF_STR(venus_conf.kernDevice,	    "kerneldevice",  "/dev/cfs0,/dev/coda/0");
     CODACONF_INT(MapPrivate,	    "mapprivate",     0);
-    CODACONF_STR(MarinerSocketPath, "marinersocket", "/usr/coda/spool/mariner");
-    CODACONF_INT(masquerade_port,   "masquerade_port", 0);
+    CODACONF_STR(venus_conf.MarinerSocketPath, "marinersocket", "/usr/coda/spool/mariner");
+    CODACONF_INT(venus_conf.masquerade_port,   "masquerade_port", 0);
     CODACONF_INT(allow_backfetch,   "allow_backfetch", 0);
-    CODACONF_STR(venusRoot,	    "mountpoint",     DFLT_VR);
-    CODACONF_INT(PrimaryUser,	    "primaryuser",    UNSET_PRIMARYUSER);
-    CODACONF_STR(realmtab,	    "realmtab",	      "/etc/coda/realms");
+    CODACONF_STR(venus_conf.venusRoot,	    "mountpoint",     DFLT_VR);
+    CODACONF_INT(venus_conf.PrimaryUser,	    "primaryuser",    UNSET_PRIMARYUSER);
+    CODACONF_STR(venus_conf.realmtab,	    "realmtab",	      "/etc/coda/realms");
     CODACONF_STR(VenusLogDevice,    "rvm_log",        "/usr/coda/LOG");
     CODACONF_STR(VenusDataDevice,   "rvm_data",       "/usr/coda/DATA");
 
@@ -718,9 +714,9 @@ static void DefaultCmdlineParms()
     default_reintegration_time *= 1000; /* reintegration time is in msec */
 
 #if defined(__CYGWIN32__)
-    CODACONF_STR(CachePrefix, "cache_prefix", "/?" "?/C:/cygwin");
+    CODACONF_STR(venus_conf.CachePrefix, "cache_prefix", "/?" "?/C:/cygwin");
 #else
-    CachePrefix = "";
+    venus_conf.CachePrefix = "";
 #endif
 
     CODACONF_INT(DontUseRVM, "dontuservm", 0);
@@ -731,7 +727,7 @@ static void DefaultCmdlineParms()
 
     CODACONF_INT(MLEs, "cml_entries", 0);
     {
-	if (!MLEs) MLEs = CacheFiles * MLES_PER_FILE;
+	if (!MLEs) MLEs = venus_conf.CacheFiles * MLES_PER_FILE;
 
 	if (MLEs < MIN_MLE) {
 	    eprint("Cannot start: minimum number of cml entries is %d",MIN_MLE);
@@ -741,7 +737,7 @@ static void DefaultCmdlineParms()
 
     CODACONF_INT(HDBEs, "hoard_entries", 0);
     {
-	if (!HDBEs) HDBEs = CacheFiles / FILES_PER_HDBE;
+	if (!HDBEs) HDBEs = venus_conf.CacheFiles / FILES_PER_HDBE;
 
 	if (HDBEs < MIN_HDBE) {
 	    eprint("Cannot start: minimum number of hoard entries is %d",
@@ -750,36 +746,36 @@ static void DefaultCmdlineParms()
 	}
     }
 
-    CODACONF_STR(VenusPidFile, "pid_file", DFLT_PIDFILE);
-    if (*VenusPidFile != '/') {
-	char *tmp = (char *)malloc(strlen(CacheDir) + strlen(VenusPidFile) + 2);
+    CODACONF_STR(venus_conf.VenusPidFile, "pid_file", DFLT_PIDFILE);
+    if (*venus_conf.VenusPidFile != '/') {
+	char *tmp = (char *)malloc(strlen(venus_conf.CacheDir) + strlen(venus_conf.VenusPidFile) + 2);
 	CODA_ASSERT(tmp);
-	sprintf(tmp, "%s/%s", CacheDir, VenusPidFile);
-	VenusPidFile = tmp;
+	sprintf(tmp, "%s/%s", venus_conf.CacheDir, venus_conf.VenusPidFile);
+	venus_conf.VenusPidFile = tmp;
     }
 
-    CODACONF_STR(VenusControlFile, "run_control_file", DFLT_CTRLFILE);
-    if (*VenusControlFile != '/') {
-	char *tmp = (char *)malloc(strlen(CacheDir) + strlen(VenusControlFile) + 2);
+    CODACONF_STR(venus_conf.VenusControlFile, "run_control_file", DFLT_CTRLFILE);
+    if (*venus_conf.VenusControlFile != '/') {
+	char *tmp = (char *)malloc(strlen(venus_conf.CacheDir) + strlen(venus_conf.VenusControlFile) + 2);
 	CODA_ASSERT(tmp);
-	sprintf(tmp, "%s/%s", CacheDir, VenusControlFile);
-	VenusControlFile = tmp;
+	sprintf(tmp, "%s/%s", venus_conf.CacheDir, venus_conf.VenusControlFile);
+	venus_conf.VenusControlFile = tmp;
     }
 
-    CODACONF_STR(ASRLauncherFile, "asrlauncher_path", NULL);
+    CODACONF_STR(venus_conf.ASRLauncherFile, "asrlauncher_path", NULL);
 
-    CODACONF_STR(ASRPolicyFile, "asrpolicy_path", NULL);
+    CODACONF_STR(venus_conf.ASRPolicyFile, "asrpolicy_path", NULL);
 
-    CODACONF_INT(PiggyValidations, "validateattrs", 15);
+    CODACONF_INT(venus_conf.PiggyValidations, "validateattrs", 15);
     {
-	if (PiggyValidations > MAX_PIGGY_VALIDATIONS)
-	    PiggyValidations = MAX_PIGGY_VALIDATIONS;
+	if (venus_conf.PiggyValidations > MAX_PIGGY_VALIDATIONS)
+	    venus_conf.PiggyValidations = MAX_PIGGY_VALIDATIONS;
     }
 
     /* Enable special tweaks for running in a VM
      * - Write zeros to container file contents before truncation.
      * - Disable reintegration replay detection. */
-    CODACONF_INT(option_isr, "isr", 0);
+    CODACONF_INT(venus_conf.option_isr, "isr", 0);
 
     /* Enable client-server communication helper process */
     CODACONF_INT(codatunnel_enabled, "codatunnel", 0);
@@ -787,16 +783,16 @@ static void DefaultCmdlineParms()
     if (codatunnel_onlytcp)
         codatunnel_enabled = 1;
 
-    CODACONF_INT(detect_reintegration_retry, "detect_reintegration_retry", 1);
-    if (option_isr) {
-	detect_reintegration_retry = 0;
+    CODACONF_INT(venus_conf.detect_reintegration_retry, "detect_reintegration_retry", 1);
+    if (venus_conf.option_isr) {
+	venus_conf.detect_reintegration_retry = 0;
     }
 
-    CODACONF_STR(CheckpointFormat,  "checkpointformat", "newc");
-    if (strcmp(CheckpointFormat, "tar") == 0)	archive_type = TAR_TAR;
-    if (strcmp(CheckpointFormat, "ustar") == 0) archive_type = TAR_USTAR;
-    if (strcmp(CheckpointFormat, "odc") == 0)   archive_type = CPIO_ODC;
-    if (strcmp(CheckpointFormat, "newc") == 0)  archive_type = CPIO_NEWC;
+    CODACONF_STR(venus_conf.CheckpointFormat,  "checkpointformat", "newc");
+    if (strcmp(venus_conf.CheckpointFormat, "tar") == 0)	archive_type = TAR_TAR;
+    if (strcmp(venus_conf.CheckpointFormat, "ustar") == 0) archive_type = TAR_USTAR;
+    if (strcmp(venus_conf.CheckpointFormat, "odc") == 0)   archive_type = CPIO_ODC;
+    if (strcmp(venus_conf.CheckpointFormat, "newc") == 0)  archive_type = CPIO_NEWC;
 
 #ifdef moremoremore
     char *x = NULL;
@@ -817,19 +813,19 @@ static void CdToCacheDir()
     struct stat statbuf;
     int fd;
 
-    if (stat(CacheDir, &statbuf) != 0)
+    if (stat(venus_conf.CacheDir, &statbuf) != 0)
     {
         if (errno != ENOENT) {
             perror("CacheDir stat");
             exit(EXIT_FAILURE);
         }
 
-        if (mkdir(CacheDir, 0700)) {
+        if (mkdir(venus_conf.CacheDir, 0700)) {
             perror("CacheDir mkdir");
             exit(EXIT_FAILURE);
         }
     }
-    if (chdir(CacheDir)) {
+    if (chdir(venus_conf.CacheDir)) {
         perror("CacheDir chdir");
         exit(EXIT_FAILURE);
     }
@@ -849,7 +845,7 @@ static void CheckInitFile() {
     struct stat tstat;
 
     /* Construct name for INIT file */
-    snprintf(initPath, MAXPATHLEN, "%s/INIT", CacheDir);
+    snprintf(initPath, MAXPATHLEN, "%s/INIT", venus_conf.CacheDir);
 
     /* See if it's there */ 
     if (stat(initPath, &tstat) == 0) {
@@ -871,7 +867,7 @@ static void UnsetInitFile() {
     char initPath[MAXPATHLEN];
 
     /* Create the file, if it doesn't already exist */
-    snprintf(initPath, MAXPATHLEN, "%s/INIT", CacheDir);
+    snprintf(initPath, MAXPATHLEN, "%s/INIT", venus_conf.CacheDir);
     unlink(initPath);
 }
 

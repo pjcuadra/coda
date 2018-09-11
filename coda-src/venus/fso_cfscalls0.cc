@@ -150,7 +150,7 @@ int fsobj::LookAside(void)
 	 * there really is nothing to fetch, and secondly we would otherwise
 	 * trigger the HAVEALLDATA assert in fsobj::Fetch */
 	lka_successful = LookAsideAndFillContainer(VenusSHA, fd, stat.Length,
-						   venusRoot, emsg,
+						   venus_conf.venusRoot, emsg,
 						   sizeof(emsg)-1);
 	data.file->Close(fd);
 
@@ -610,7 +610,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 		list_for_each(p, vol->fso_list) {
 		    fsobj *f;
 
-		    if (numPiggyFids >= PiggyValidations)
+		    if (numPiggyFids >= venus_conf.PiggyValidations)
 			break;
 
 		    f = list_entry_plusplus(p, fsobj, vol_handle);

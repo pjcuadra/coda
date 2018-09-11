@@ -256,7 +256,7 @@ void testKernDevice()
 #else
 	int fd = -1;
 	char *str, *p, *q = NULL;
-	CODA_ASSERT((str = p = strdup(kernDevice)) != NULL);
+	CODA_ASSERT((str = p = strdup(venus_conf.kernDevice)) != NULL);
 
 	for(p = strtok(p, ","); p && fd == -1; p = strtok(NULL, ",")) {
 	    fd = ::open(p, O_RDWR, 0);
@@ -268,13 +268,13 @@ void testKernDevice()
 	   no other living venus. */
 	if (fd < 0) {
 	    eprint("Probably another Venus is running! open failed for %s, exiting",
-		   kernDevice);
+		   venus_conf.kernDevice);
 	    free(str);
 	    exit(EXIT_FAILURE);
 	}
 
 	CODA_ASSERT(q);
-	kernDevice = strdup(q);
+	venus_conf.kernDevice = strdup(q);
 	free(str);
 
 	/* Construct a purge message */
@@ -294,7 +294,7 @@ void testKernDevice()
 	/* Close the kernel device. */
 	if (close(fd) < 0) {
 	    eprint("close of %s failed (%d), exiting",
-		   kernDevice, errno);
+		   venus_conf.kernDevice, errno);
 	    exit(EXIT_FAILURE);
 	}
 #endif
@@ -309,10 +309,10 @@ void VFSMount()
 #ifdef __BSD44__ /* BSD specific preamble */
     /* Silently unmount the root node in case an earlier venus exited without
      * successfully unmounting. */
-    unmount(venusRoot,0);
+    unmount(venus_conf.venusRoot, 0);
     switch(errno) {
 	case 0:
-	    eprint("unmount(%s) succeeded, continuing", venusRoot);
+	    eprint("unmount(%s) succeeded, continuing", venus_conf.venusRoot);
 	    break;
 
 	case EINVAL:
@@ -321,14 +321,14 @@ void VFSMount()
 
 	case EBUSY:
 	default:
-	    eprint("unmount(%s) failed (%d), exiting", venusRoot, errno);
+	    eprint("unmount(%s) failed (%d), exiting", venus_conf.venusRoot, errno);
 	    exit(EXIT_FAILURE);
     }
 
     /* Deduce rootnodeid. */
     struct stat tstat;
-    if (::stat(venusRoot, &tstat) < 0) {
-	eprint("stat(%s) failed (%d), exiting", venusRoot, errno);
+    if (::stat(venus_conf.venusRoot, &tstat) < 0) {
+	eprint("stat(%s) failed (%d), exiting", venus_conf.venusRoot, errno);
 	exit(EXIT_FAILURE);
     }
     rootnodeid = tstat.st_ino;
@@ -354,7 +354,7 @@ void VFSMount()
 
 	    if ((STREQ(ent->mnt_fsname, "Coda") ||
 		 STREQ(ent->mnt_fsname, "coda")) &&
-		STREQ(ent->mnt_dir, venusRoot)) {
+		STREQ(ent->mnt_dir, venus_conf.venusRoot)) {
 		mounted = 1;
 		break;
 	    }
@@ -362,7 +362,7 @@ void VFSMount()
 	endmntent(fd);
 
 	if (mounted) {
-	    eprint("%s already mounted", venusRoot);
+	    eprint("%s already mounted", venus_conf.venusRoot);
 	    if (allow_reattach) {
 		kill(getpid(), SIGUSR1);
 		return;
@@ -399,29 +399,29 @@ void VFSMount()
 	    md[0].iov_base = (char *)"fstype"; md[0].iov_len = sizeof("fstype");
 	    md[1].iov_base = (char *)"coda";   md[1].iov_len = sizeof("coda");
 	    md[2].iov_base = (char *)"fspath"; md[2].iov_len = sizeof("fspath");
-	    md[3].iov_base = (char *)venusRoot;        md[3].iov_len = strlen((char *)venusRoot) + 1;
+	    md[3].iov_base = (char *)venus_conf.venusRoot;        md[3].iov_len = strlen((char *)venus_conf.venusRoot) + 1;
 	    md[4].iov_base = (char *)"from";   md[4].iov_len = sizeof("from");
-	    md[5].iov_base = (char *)kernDevice;       md[5].iov_len = strlen((char *)kernDevice) + 1;
+	    md[5].iov_base = (char *)venus_conf.kernDevice;       md[5].iov_len = strlen((char *)venus_conf.kernDevice) + 1;
 	    error = nmount(md, 6, 0);
 	}
 #endif
 
 #if defined(__NetBSD__) && __NetBSD_Version__ >= 499002400   /* 4.99.24 */
 	if (error < 0)
-	    error = mount("coda", venusRoot, 0, (void *)kernDevice, 256);
+	    error = mount("coda", venus_conf.venusRoot, 0, (void *)venus_conf.kernDevice, 256);
 	if (error < 0)
-	    error = mount("cfs", venusRoot, 0, (void *)kernDevice, 256);
+	    error = mount("cfs", venus_conf.venusRoot, 0, (void *)venus_conf.kernDevice, 256);
 #else
 	if (error < 0)
-	    error = mount("coda", (char *)venusRoot, 0, (char *)kernDevice);
+	    error = mount("coda", (char *)venus_conf.venusRoot, 0, (char *)venus_conf.kernDevice);
 	if (error < 0)
-	    error = mount("cfs", (char *)venusRoot, 0, (char *)kernDevice);
+	    error = mount("cfs", (char *)venus_conf.venusRoot, 0, (char *)venus_conf.kernDevice);
 #endif
 
 #if defined(__FreeBSD__) && !defined(__FreeBSD_version)
 #define MOUNT_CFS 19
 	if (error < 0)
-	    error = mount(MOUNT_CFS, venusRoot, 0, kernDevice);
+	    error = mount(MOUNT_CFS, venus_conf.venusRoot, 0, venus_conf.kernDevice);
 #endif
 #endif /* __BSD44__ */
 
@@ -430,9 +430,9 @@ void VFSMount()
 	mountdata.version = CODA_MOUNT_VERSION;
 	mountdata.fd = worker::muxfd;
 
-	error = mount("coda", venusRoot, "coda",
+	error = mount("coda", venus_conf.venusRoot, "coda",
 		      MS_MGC_VAL | MS_NOATIME | MS_NODEV | MS_NOSUID,
-		      islinux20 ? (void *)&kernDevice : (void *)&mountdata);
+		      islinux20 ? (void *)&venus_conf.kernDevice : (void *)&mountdata);
 
 
 	if (!error) {
@@ -440,7 +440,7 @@ void VFSMount()
 	    struct mntent ent;
 	    if (fd) {
 		ent.mnt_fsname = (char *)"coda";
-		ent.mnt_dir    = (char *)venusRoot;
+		ent.mnt_dir    = (char *)venus_conf.venusRoot;
 		ent.mnt_type   = (char *)"coda";
 		ent.mnt_opts   = (char *)"rw,noatime,nosuid,nodev";
 		ent.mnt_freq   = 0;
@@ -456,7 +456,7 @@ void VFSMount()
 	    eprint("CHILD: mount system call failed. Killing parent.\n");
 	    kill(parent, SIGKILL);
 	} else {
-	    eprint("%s now mounted.", venusRoot);
+	    eprint("%s now mounted.", venus_conf.venusRoot);
 	    kill(parent, SIGUSR1);
 	}
 
@@ -475,17 +475,17 @@ child_done:
 #ifdef sun
     { int error;
       /* Do a umount just in case it is mounted. */
-      error = umount(venusRoot);
+      error = umount(venus_conf.venusRoot);
       if (error) {
 	if (errno != EINVAL) {
-	    eprint("unmount(%s) failed (%d), exiting", venusRoot, errno);
+	    eprint("unmount(%s) failed (%d), exiting", venus_conf.venusRoot, errno);
 	    exit(EXIT_FAILURE);
 	}
       } else
-	eprint("unmount(%s) succeeded, continuing", venusRoot);
+	eprint("unmount(%s) succeeded, continuing", venus_conf.venusRoot);
     }
     /* New mount */
-    CODA_ASSERT (!mount(kernDevice, venusRoot, MS_DATA, "coda", NULL, 0));
+    CODA_ASSERT (!mount(venus_conf.kernDevice, venus_conf.venusRoot, MS_DATA, "coda", NULL, 0));
     /* Update the /etc mount table entry */
     { int lfd, mfd;
       int lck;
@@ -502,7 +502,7 @@ child_done:
 	  mnttab = fopen(MNTTAB, "a+");
 	  if (mnttab != NULL) {
 	    mt.mnt_special = "CODA";
-	    mt.mnt_mountp = (char *)venusRoot;
+	    mt.mnt_mountp = (char *)venus_conf.venusRoot;
 	    mt.mnt_fstype = "CODA";
 	    mt.mnt_mntopts = "rw";
 	    mt.mnt_time = tm;
@@ -524,8 +524,8 @@ child_done:
 
 #ifdef __CYGWIN32__
     /* Mount by starting another thread. */
-    eprint ("Mounting on %s", venusRoot);
-    nt_mount (venusRoot);
+    eprint ("Mounting on %s", venus_conf.venusRoot);
+    nt_mount (venus_conf.venusRoot);
 #endif
 
     Mounted = 1;
@@ -545,8 +545,8 @@ void VFSUnmount()
        nail us. */
 #ifndef	__BSD44__
     /* Issue the VFS unmount request. */
-    if(unmount(venusRoot,0) < 0) {
-	eprint("vfsunmount(%s) failed (%d)", venusRoot, errno);
+    if(unmount(venus_conf.venusRoot,0) < 0) {
+	eprint("vfsunmount(%s) failed (%d)", venus_conf.venusRoot, errno);
 	return;
     }
 #else
@@ -567,7 +567,7 @@ void VFSUnmount()
       FILE *mnttab;
       FILE *newtab;
 
-      res = umount (venusRoot);
+      res = umount (venus_conf.venusRoot);
       if (res)
         eprint ("Unmount failed.");
       /* Remove CODA entry from /etc/mnttab */
@@ -608,8 +608,8 @@ void VFSUnmount()
 #endif
 
 #ifdef __CYGWIN32__
-    eprint ("Unmounting %s", venusRoot);
-    nt_umount (venusRoot);
+    eprint ("Unmounting %s", venus_conf.venusRoot);
+    nt_umount (venus_conf.venusRoot);
 #endif
 
 
@@ -781,9 +781,9 @@ void WorkerInit()
     dprint("WorkerInit: muxfd = %d\n", worker::muxfd);
 #else
     /* Open the communications channel. */
-    worker::muxfd = ::open(kernDevice, O_RDWR, 0);
+    worker::muxfd = ::open(venus_conf.kernDevice, O_RDWR, 0);
     if (worker::muxfd == -1) {
-        eprint("WorkerInit: open %s failed", kernDevice);
+        eprint("WorkerInit: open %s failed", venus_conf.kernDevice);
         exit(EXIT_FAILURE);
     }
 #endif
@@ -1391,8 +1391,8 @@ inline void worker::op_coda_open_by_path(union inputArgs *in,
 
         char *begin = (char *)(&out->coda_open_by_path.path + 1);
         out->coda_open_by_path.path = begin - (char *)out;
-        sprintf(begin, "%s%s/%s", CachePrefix, CacheDir,
-                vtarget.c_cf->Name());
+        sprintf(begin, "%s%s/%s", venus_conf.CachePrefix, 
+                venus_conf.CacheDir, vtarget.c_cf->Name());
 
 #ifdef __CYGWIN32__
         slash = begin;

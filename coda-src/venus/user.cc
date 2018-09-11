@@ -146,8 +146,8 @@ int AuthorizedUser(uid_t thisUser)
 {
     /* If this user is the primary user of this machine, then this user is
      * authorized */
-    if (PrimaryUser != UNSET_PRIMARYUSER) {
-	if (PrimaryUser == thisUser) {
+    if (venus_conf.PrimaryUser != UNSET_PRIMARYUSER) {
+	if (venus_conf.PrimaryUser == thisUser) {
 	    LOG(100, ("AuthorizedUser: User (%d) --> authorized as primary user.\n", thisUser));
 	    return(1);
 	}
