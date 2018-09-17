@@ -78,7 +78,7 @@ CacheFile::CacheFile(int i, int recoverable)
     refcnt = 1;
     numopens = 0;
     this->recoverable = recoverable;
-    cached_chuncks = new (recoverable) bitmap(CacheChunckBlockBitmapSize, recoverable);
+    cached_chuncks = new(recoverable) bitmap(CacheChunckBlockBitmapSize, recoverable);
     /* Container reset will be done by eventually by FSOInit()! */
     LOG(100, ("CacheFile::CacheFile(%d): %s (this=0x%x)\n", i, name, this));
 }
@@ -90,7 +90,7 @@ CacheFile::CacheFile()
     refcnt = 1;
     numopens = 0;
     this->recoverable = 1;
-    cached_chuncks = new (recoverable) bitmap(CacheChunckBlockBitmapSize, recoverable);
+    cached_chuncks = new(recoverable) bitmap(CacheChunckBlockBitmapSize, recoverable);
 }
 
 
@@ -98,7 +98,7 @@ CacheFile::~CacheFile()
 {
     LOG(10, ("CacheFile::~CacheFile: %s (this=0x%x)\n", name, this));
     CODA_ASSERT(length == 0);
-    delete(cached_chuncks);
+    delete cached_chuncks;
 }
 
 
