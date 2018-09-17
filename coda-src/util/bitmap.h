@@ -50,7 +50,7 @@ extern "C" {
 class bitmap {
 //  friend ostream& operator<<(ostream& s, bitmap *b);  
     uint8_t recoverable;	/* is this bitmap recoverable */
-    uint8_t malloced = BITMAP_NOTVIANEW; /* was bitmap allocated via new? */
+    uint8_t malloced; /* was bitmap allocated via new? */
     int mapsize;		/* 1/8 size of array of elements */
     char *map;			/* bitmap showing status of the elements */
 
@@ -78,8 +78,17 @@ public:
      * @param size     memory size in bytes
      * @param recable  recoverable flag (RVM persistent)
      *
+     * @return pointer to the new allocated object
      */
     void *operator new (size_t size, int recable = 0);
+
+    /**
+     * Delete operator overloading
+     *
+     * @param ptr     Pointer of the object to be deleted
+     *
+     */
+    void operator delete(void *ptr);
 
     /**
      * Constuctor

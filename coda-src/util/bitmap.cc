@@ -76,6 +76,23 @@ void *bitmap::operator new(size_t size, int recable)
     return(x);
 }
 
+void bitmap::operator delete(void *ptr)
+{
+    // Do nothing
+    // This method must stay to prevent double free of memory
+    bitmap * x = (bitmap *) ptr;
+    
+    /* Finally, get rid of the object itself if it was allocated
+       via new.  This should really have been in delete(), but can't
+       test malloced there */
+    if (x->malloced == BITMAP_VIANEW) {
+        if (x->recoverable)
+            rvmlib_rec_free(ptr);
+        else
+            free(ptr);
+    }
+}
+
 bitmap::bitmap(int inputmapsize, int recable)
 {
     if (malloced != BITMAP_VIANEW) {
@@ -121,15 +138,7 @@ bitmap::~bitmap()
     map = NULL;
     mapsize = 0;
 
-    /* Finally, get rid of the object itself if it was allocated
-       via new.  This should really have been in delete(), but can't
-       test malloced there */
-    if (malloced == BITMAP_VIANEW) {
-        if (recoverable)
-            rvmlib_rec_free(this);
-        else
-            free(this);
-    }
+    
 }
 
 void bitmap::Resize(int newsize)
