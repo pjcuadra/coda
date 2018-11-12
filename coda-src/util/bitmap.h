@@ -24,6 +24,9 @@ listed in the file CREDITS.
  * Declaration of a bitmap class 
  */
 
+#include <stddef.h>
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

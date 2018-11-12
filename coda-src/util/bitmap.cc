@@ -179,8 +179,13 @@ void bitmap::Resize(int newsize)
     if (recoverable)
         rvmlib_set_range(this, sizeof(bitmap));
 
-    mapsize = newmapsize;
     map = newmap;
+    mapsize = newmapsize;
+
+    /* Clean the gap between actual wanted size 
+     * and the map size when shrinking */
+    for (int i = newsize; i < (newmapsize << 3); i++) 
+        FreeIndex(i);
 }
 
 void bitmap::Grow(int newsize)
@@ -235,7 +240,7 @@ void bitmap::SetValue(int index, int value)
 
 void bitmap::CopyRange(int start, int len, bitmap& b)
 {
-    int bit_end = len < 0 ? mapsize - 1 : start + len;
+    int bit_end = len < 0 ? (mapsize << 3) : start + len;
     int byte_start = start;
     int byte_end = bit_end;
 
@@ -267,7 +272,7 @@ void bitmap::CopyRange(int start, int len, bitmap& b)
 
 void bitmap::SetRangeValue(int start, int len, int value)
 {
-    int bit_end = len < 0 ? mapsize - 1 : start + len;
+    int bit_end = len < 0 ? (mapsize << 3): start + len;
     int byte_start = start;
     int byte_end = bit_end;
 
@@ -304,7 +309,7 @@ void bitmap::SetIndex(int index)
 
 void bitmap::SetRange(int start, int len)
 {
-    SetRangeValue(start, len, 1);
+    SetRangeValue(start, len, 0xFF);
 }
 
 void bitmap::FreeIndex(int index)
