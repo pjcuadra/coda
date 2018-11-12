@@ -6,7 +6,7 @@ AC_INIT(Coda, 6.15.2, [bugs@coda.cs.cmu.edu])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([coda-src/librepair/resolve.h])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 
 CONFIG_DATE=`date +"%a, %d %b %Y %T %z"`
@@ -46,6 +46,8 @@ AC_ARG_ENABLE(venus, [  --enable-client-only	  build only Coda client],
     buildvenus="$enableval", buildvenus="no")
 AC_ARG_ENABLE(vcodacon, [  --enable-vcodacon	  build graphical Coda console],
     buildvcodacon="$enableval", buildvcodacon="no")
+AC_ARG_ENABLE(unit_test, [  --enable-unit-test	run unit tests],
+    run_unit="$enableval", run_unit="yes")
 
 dnl Make sure we configure any sub-projects before checking with pkg-config
 test -f "${srcdir}/lib-src/lwp/configure.ac" && AC_CONFIG_SUBDIRS([lib-src/lwp])
@@ -75,6 +77,11 @@ AC_SEARCH_LIBS(res_search, resolv)
 AC_SEARCH_LIBS(__res_search, resolv)
 AC_SEARCH_LIBS(res_9_init, resolv)
 AC_SEARCH_LIBS(kvm_openfiles, kvm)
+
+AC_CHECK_LIB([gtest_main], 
+             [main], 
+             [HAVE_LIBGTEST_MAIN=1] [TEST_LIBS="$TEST_LIBS -lgtest_main"],
+             AC_MSG_WARN([libgtest is not installed.]))
 
 CODA_CHECK_LIBTERMCAP
 CODA_CHECK_LIBCURSES
@@ -162,6 +169,18 @@ AM_CONDITIONAL(BUILD_VENUS, [test "$buildclient" != no -o "$buildvenus" != no])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AM_CONDITIONAL([WANT_FTS], [test "$ac_cv_header_fts_h" = no])
 
+AM_CONDITIONAL(HAVE_GTEST, [test "$HAVE_LIBGTEST_MAIN" == "1"])
+
+AM_CONDITIONAL(RUN_UNIT, [test "$run_unit" != no])
+
+dnl Google tests isn't installed notify the user
+AM_COND_IF(HAVE_GTEST,, [
+    AM_COND_IF(RUN_UNIT, [
+        AC_MSG_WARN([Google test missing disabling unit tests])
+        AM_CONDITIONAL(RUN_UNIT, [false])]
+    )]
+)
+
 AC_CONFIG_FILES([coda-src/scripts/bldvldb.sh],
        [chmod +x coda-src/scripts/bldvldb.sh])
 AC_CONFIG_FILES([coda-src/scripts/createvol_rep],
@@ -218,5 +237,10 @@ coda-src/egasr/Makefile
 coda-src/asrlauncher/Makefile
 coda-src/vcodacon/Makefile
 coda-src/smon2/Makefile])
-AC_OUTPUT
 
+dnl Configure testing
+AC_CONFIG_FILES([
+test-src/Makefile
+test-src/unit/Makefile
+])
+AC_OUTPUT

@@ -41,3 +41,5 @@ ylwrap
 *.orig
 *.swp
 *~
+unittest.xml
+test-src/unit/unit
