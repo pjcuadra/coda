@@ -41,5 +41,8 @@ ylwrap
 *.orig
 *.swp
 *~
+functional.xml
 unittest.xml
 test-src/unit/unit
+__pycache__
+.pytest_cache

@@ -46,6 +46,8 @@ AC_ARG_ENABLE(venus, [  --enable-client-only	  build only Coda client],
     buildvenus="$enableval", buildvenus="no")
 AC_ARG_ENABLE(vcodacon, [  --enable-vcodacon	  build graphical Coda console],
     buildvcodacon="$enableval", buildvcodacon="no")
+AC_ARG_ENABLE(functional_test, [  --enable-functional-test	run functional tests],
+    run_functional="$enableval", run_functional="no")
 AC_ARG_ENABLE(unit_test, [  --enable-unit-test	run unit tests],
     run_unit="$enableval", run_unit="yes")
 
@@ -169,7 +171,26 @@ AM_CONDITIONAL(BUILD_VENUS, [test "$buildclient" != no -o "$buildvenus" != no])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AM_CONDITIONAL([WANT_FTS], [test "$ac_cv_header_fts_h" = no])
 
+AM_CONDITIONAL(HAVE_PYTEST, [test $(pytest -h | wc -l) != 0])
+AM_CONDITIONAL(RUN_FUNCTIONAL, [test "$run_functional" != no])
 AM_CONDITIONAL(HAVE_GTEST, [test "$HAVE_LIBGTEST_MAIN" == "1"])
+
+
+
+dnl If Python or pytest aren't installed notify the user
+AM_COND_IF(HAVE_PYTHON,, [
+    AM_COND_IF(RUN_FUNCTIONAL, [
+        AC_MSG_WARN([Python missing disabling functional tests])
+        AM_CONDITIONAL(RUN_FUNCTIONAL, [false])]
+    )]
+)
+
+AM_COND_IF(HAVE_PYTEST,, [
+    AM_COND_IF(RUN_FUNCTIONAL, [
+        AC_MSG_WARN([Pytest missing disabling functional tests])
+        AM_CONDITIONAL(RUN_FUNCTIONAL, [false])]
+    )]
+)
 
 AM_CONDITIONAL(RUN_UNIT, [test "$run_unit" != no])
 
@@ -242,5 +263,5 @@ dnl Configure testing
 AC_CONFIG_FILES([
 test-src/Makefile
 test-src/unit/Makefile
-])
+test-src/functional/Makefile])
 AC_OUTPUT
