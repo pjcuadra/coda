@@ -14,6 +14,8 @@ dist_man_MANS += venus.8
 dist_sysconf_DATA = venus.conf.ex realms
 endif
 
+noinst_LIBRARIES = libvenus.a
+
 venus_SOURCES = binding.cc binding.h comm.cc comm.h comm_daemon.cc daemon.cc \
     fso.h fso0.cc fso1.cc fso_cachefile.h fso_cachefile.cc fso_cfscalls0.cc \
     fso_cfscalls1.cc fso_cfscalls2.cc fso_daemon.cc fso_dir.cc hdb.cc hdb.h \
@@ -28,6 +30,8 @@ venus_SOURCES = binding.cc binding.h comm.cc comm.h comm_daemon.cc daemon.cc \
     realmdb.cc realmdb.h realm.cc realm.h rec_dllist.h refcounted.h archive.c \
     archive.h 9pfs.cc 9pfs.h SpookyV2.cc SpookyV2.h
 vutil_SOURCES = vutil.cc
+
+libvenus_a_SOURCES = $(venus_SOURCES)
 
 AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) -DVENUS -DTIMING -DVENUSDEBUG \
 	      -I$(top_srcdir)/lib-src/base \
