@@ -13,6 +13,8 @@ unittest_LDADD = $(top_builddir)/coda-src/util/libutil.la \
              $(top_builddir)/test-src/unit/.libs/librecov.la \
              $(RVM_RPC2_LIBS)
 
+unittest_LDFLAGS = -no-install
+
 AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) -DVENUS -DTIMING -DVENUSDEBUG \
               -I$(top_srcdir)/test-src/unit/include \
               -I$(top_srcdir)/lib-src/base \

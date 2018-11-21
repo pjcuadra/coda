@@ -259,6 +259,7 @@ void bitmap::CopyRange(int start, int len, bitmap& b)
 
     /* Copy all the bytes in between */
     memcpy(&b.map[start_byte], &map[start_byte], bulk_len);
+    if (b.recoverable) rvmlib_set_range(&b.map[start_byte], bulk_len * sizeof(char));
 
     /* Copy the values from before the first copied byte */
     for (int i = start; i & 0x7; i++) {
@@ -290,6 +291,7 @@ void bitmap::SetRangeValue(int start, int len, int value)
 
     /* Copy all the bytes in between */
     memset(&map[start_byte], bulk_value, bulk_len);
+    if (recoverable) rvmlib_set_range(&map[start_byte], bulk_len * sizeof(char));
 
     /* Copy the values from before the first copied byte */
     for (int i = start; i & 0x7; i++) {

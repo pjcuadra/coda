@@ -49,7 +49,7 @@ extern "C" {
 }
 #endif
 
-static const char *VM_RVMADDR = (char *)0x50000000;
+static const char *VM_RVMADDR = (char *)0x80000000;
 
 #ifndef MAX
 #define MAX(a,b)  ( ((a) > (b)) ? (a) : (b) )

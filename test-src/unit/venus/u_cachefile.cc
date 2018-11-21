@@ -16,7 +16,9 @@ listed in the file CREDITS.
 
 #*/
 /* system */
+#include <stdlib.h>
 #include <sys/stat.h>
+#include <iostream>
 
 /* external */
 #include <gtest/gtest.h>
@@ -26,6 +28,7 @@ listed in the file CREDITS.
 
 /* from test-src */
 #include <test/rvm/rvm.h>
+#include <test/rvm/recov.h>
 
 namespace {
 
@@ -48,9 +51,13 @@ void EXPECT_FILE_EXISTS(char name[13], bool exists) {
 // cachefile.
 TEST(cachefile, construct) {
     int idx = rand() & 0x7FF;
+    int recoverable = 0x1;
     char name[13];
-    struct stat stat_b;
-    CacheFile * cf = new CacheFile(idx, 0);
+    CacheFile * cf = NULL;
+
+    Recov_BeginTrans();   
+
+    cf = new (recoverable) CacheFile(idx, recoverable);
 
     get_container_file_path(idx, name);
 
@@ -59,14 +66,21 @@ TEST(cachefile, construct) {
     delete(cf);
 
     EXPECT_FILE_EXISTS(name, false);
+
+    Recov_EndTrans(0);
 }
 
 TEST(cachefile, create) {
     int idx = rand() & 0x7FF;
     int size = rand() & 0x7FF;
-    CacheFile * cf = new CacheFile(idx, 0);
+    int recoverable = 0x1;
+    CacheFile * cf = NULL;
     char name[13];
     struct stat stat_b;
+
+    Recov_BeginTrans();
+
+    cf = new (recoverable) CacheFile(idx, recoverable);
 
     get_container_file_path(idx, name);
 
@@ -75,7 +89,6 @@ TEST(cachefile, create) {
     stat(name, &stat_b);
     EXPECT_EQ(stat_b.st_size, size);
     EXPECT_EQ(stat_b.st_blocks, 0);
-
 
     cf->Truncate(0);
 
@@ -87,14 +100,20 @@ TEST(cachefile, create) {
     delete(cf);
 
     EXPECT_FILE_EXISTS(name, false);
+
+    Recov_EndTrans(0);
 }
 
 TEST(cachefile, create_ref_cnt) {
     int idx = rand() & 0x7FF;
     int size = rand() & 0x7FF;
-    CacheFile * cf = new CacheFile(idx, 0);
+    int recoverable = rand() & 0x1;
+    CacheFile * cf = NULL;
     char name[13];
     struct stat stat_b;
+
+    Recov_BeginTrans();
+    cf = new (recoverable) CacheFile(idx, recoverable);
 
     get_container_file_path(idx, name);
 
@@ -120,6 +139,8 @@ TEST(cachefile, create_ref_cnt) {
     delete(cf);
 
     EXPECT_FILE_EXISTS(name, false);
+
+    Recov_EndTrans(0);
 }
 
 }  // namespace

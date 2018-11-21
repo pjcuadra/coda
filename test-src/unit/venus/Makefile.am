@@ -10,6 +10,8 @@ unittest_LDADD = $(top_builddir)/test-src/unit/.libs/libmain_test.la \
              $(top_builddir)/coda-src/venus/.libs/libvenus.la \
              $(GTEST_DIR)/lib/libgtest.la
 
+unittest_LDFLAGS = -no-install
+
 AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) -DVENUS -DTIMING -DVENUSDEBUG \
               -I$(top_srcdir)/test-src/unit/include \
               -I$(top_srcdir)/lib-src/base \
@@ -31,5 +33,9 @@ AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) -DVENUS -DTIMING -DVENUSDEBUG \
 check-local: unittest 
 	@LIBTOOL_PREFIX@ ./unittest @GTEST_FLAGS@ 
 
-memcheck: unittest
-	@LIBTOOL_PREFIX@ @VALGRIND@ ./unittest @GTEST_FLAGS@ 
+rvmallocs_memcheck:
+	@LIBTOOL_PREFIX@ @VALGRIND@ ./unittest @GTEST_FLAGS@ -- --rvm_type=vm
+
+memcheck: unittest rvmallocs_memcheck
+	@LIBTOOL_PREFIX@ @VALGRIND@ ./unittest @GTEST_FLAGS@ -- --rvm_type=ufs
+

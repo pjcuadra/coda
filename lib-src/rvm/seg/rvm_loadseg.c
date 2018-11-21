@@ -51,7 +51,7 @@ rvm_load_segment(char *DevName, rvm_offset_t DevLength, rvm_options_t *options,
     int i;
 
     /* HACK */ rds_rvmsize = 0; /* HACK */
-    
+
     /* Read in the header region of the segment. */
     hdr_region->data_dev = strdup(DevName);
     hdr_region->dev_length = DevLength;		/* Struct assignment */
@@ -67,7 +67,7 @@ rvm_load_segment(char *DevName, rvm_offset_t DevLength, rvm_options_t *options,
     }
     /* else, as vmaddr is NULL, the segment will be pre-allocated and
      * registered by rvm_map->establish_range->round_region->page_alloc -JH */
-    
+
     err = rvm_map(hdr_region,options);
     if (err != RVM_SUCCESS)
 	return err;    /* Some error condition exists, return the error code */

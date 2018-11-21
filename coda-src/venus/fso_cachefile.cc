@@ -63,6 +63,30 @@ uint64_t CacheChunkBlockSizeMax = 0;
 uint64_t CacheChunkBlockSizeBits = 0;
 uint64_t CacheChunkBlockBitmapSize = 0;
 
+void * CacheFile::operator new (std::size_t size, int recoverable) {
+    CacheFile * x;
+
+    if (recoverable) {
+        x = (CacheFile *) rvmlib_rec_malloc(sizeof(CacheFile));
+    } else {
+        x = (CacheFile *) malloc(sizeof(CacheFile));
+    }
+
+    CODA_ASSERT(x);
+
+    return x;
+}
+
+void CacheFile::operator delete(void * p) {
+    CacheFile * x = (CacheFile *) p;
+
+    if (x->recoverable) {
+        rvmlib_rec_free(x);
+    } else {
+        free(p);
+    }
+}
+
 /*  *****  CacheFile Members  *****  */
 
 /* Pre-allocation routine. */
@@ -70,7 +94,7 @@ uint64_t CacheChunkBlockBitmapSize = 0;
 CacheFile::CacheFile(int i, int recoverable)
 {
     /* Assume caller has done RVMLIB_REC_OBJECT! */
-    /* RVMLIB_REC_OBJECT(*this); */
+    // RVMLIB_REC_OBJECT(*this);
     sprintf(name, "%02X/%02X/%02X/%02X",
 	    (i>>24) & 0xff, (i>>16) & 0xff, (i>>8) & 0xff, i & 0xff);
             
@@ -303,8 +327,6 @@ void CacheFile::Truncate(uint64_t newlen)
 
     if (length != newlen) {
         if (recoverable) RVMLIB_REC_OBJECT(*this);
-    
-        
 
         if (newlen < length) {
             ObtainWriteLock(&rw_lock);

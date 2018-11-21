@@ -1018,7 +1018,7 @@ rvm_return_t rvm_map(rvm_region_t *rvm_region, rvm_options_t *rvm_options)
        for truncation dependencies, and enter region in map_list */
     if ((retval=chk_dependencies(seg,region)) != RVM_SUCCESS)
         goto err_exit;
-    
+
     /* Do the private map or get the data from the segment */
     if (rvm_map_private) {
 	fd = open(rvm_region->data_dev, O_RDONLY | O_BINARY);

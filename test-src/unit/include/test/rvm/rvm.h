@@ -49,7 +49,6 @@ const int DFLT_RDSNL = 16;		/* RDS nlists */
                                 config.staticHeapRatio = DefaultStaticHeapRatio; \
                                 config.DataDeviceSize = DefaultDataDeviceSize; \
                                 config.LogDeviceSize = config.DataDeviceSize / DataToLogSizeRatio;\
-                                
 
 struct rvm_config {
     bool configInit;

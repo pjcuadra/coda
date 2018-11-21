@@ -52,7 +52,7 @@ int nofork = 1;
 
 /* Cache */
 const char *CachePrefix = "";
-unsigned int CacheBlocks = 100000;
+unsigned int CacheBlocks = 1000000;
 
 /* Mariner */
 const char *MarinerSocketPath = "/usr/coda/spool/mariner";

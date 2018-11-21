@@ -355,6 +355,9 @@ class CacheFile {
 
 public:
 
+    void * operator new (std::size_t size, int recoverable=1);
+    void operator delete(void * p);
+
     /**
      * Constructor
      *

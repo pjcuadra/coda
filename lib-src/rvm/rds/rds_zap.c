@@ -61,7 +61,7 @@ rds_zap_heap(DevName, DevLength, startAddr, staticLength, heapLength, nlists, ch
 	(*err) = (int) rvmret;
 	return -1;
     }
-    
+
     /* Map in the appropriate structures by calling Rvm_Load_Segment. */
     rvmret = rvm_load_segment(DevName, DevLength, NULL, &n_loadregions, &loadregions);
     if (rvmret != RVM_SUCCESS) {
@@ -75,7 +75,7 @@ rds_zap_heap(DevName, DevLength, startAddr, staticLength, heapLength, nlists, ch
         rvm_release_segment(n_loadregions, &loadregions);
         return -1;
     }
-    
+
     /* Start a transaction to initialize the heap */
     tid = rvm_malloc_tid();
     rvmret = rvm_begin_transaction(tid, restore);
