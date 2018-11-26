@@ -447,8 +447,8 @@ int vproc::operator=(vproc& vp) {
 }
 
 vproc::~vproc() {
-    if (LogLevel >= 1)
-	print(logFile);
+    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1)
+	print(LoggingSubsystem::GetInstance()->GetLogFile());
 
     if (!idle) CHOKE("vproc::~vproc: not idle!");
 
@@ -826,14 +826,14 @@ void va_init(struct coda_vattr *vap) {
 
 void VPROC_printvattr(struct coda_vattr *vap)
 {     
-	if (LogLevel >= 1000) {
-	dprint("\tmode = %#o, uid = %d, gid = %d, rdev = %d\n",
+	if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1000) {
+	LoggingSubsystem::dprint("\tmode = %#o, uid = %d, gid = %d, rdev = %d\n",
 	       vap->va_mode, vap->va_uid, vap->va_gid,
 	       vap->va_rdev);
-	dprint("\tid = %d, nlink = %d, size = %d, blocksize = %d, storage = %d\n",
+	LoggingSubsystem::dprint("\tid = %d, nlink = %d, size = %d, blocksize = %d, storage = %d\n",
 	       vap->va_fileid, vap->va_nlink, vap->va_size,
 	       vap->va_blocksize, vap->va_bytes);
-	dprint("\tatime = <%d, %d>, mtime = <%d, %d>, ctime = <%d, %d>\n",
+	LoggingSubsystem::dprint("\tatime = <%d, %d>, mtime = <%d, %d>, ctime = <%d, %d>\n",
 	       vap->va_atime.tv_sec, vap->va_atime.tv_nsec, 
 	       vap->va_mtime.tv_sec, vap->va_mtime.tv_nsec, 
 	       vap->va_ctime.tv_sec, vap->va_ctime.tv_nsec);

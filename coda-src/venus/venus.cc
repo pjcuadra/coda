@@ -99,6 +99,7 @@ const char *CheckpointFormat;
 const char *VenusPidFile;
 const char *VenusControlFile;
 const char *VenusLogFile;
+int LogLevel = 0;
 const char *ASRLauncherFile;
 const char *ASRPolicyFile;
 const char *MarinerSocketPath;
@@ -345,13 +346,14 @@ int main(int argc, char **argv)
 {
     coda_assert_action = CODA_ASSERT_SLEEP;
     coda_assert_cleanup = VFSUnmount;
+    struct log_config logging_conf;
 
     ParseCmdline(argc, argv);
     DefaultCmdlineParms();   /* read /etc/coda/venus.conf */
 
     // Cygwin runs as a service and doesn't need to daemonize.
 #ifndef __CYGWIN__
-    if (!nofork && LogLevel == 0)
+    if (!nofork && LoggingSubsystem::GetInstance()->GetLoggingLevel() == 0)
 	parent_fd = daemonize();
 #endif
 
@@ -401,11 +403,20 @@ int main(int argc, char **argv)
      * hasn't yet been called. 
      */
     VprocInit();    /* init LWP/IOMGR support */
-    LogInit();      /* move old Venus log and create a new one */
-   
-    LWP_SetLog(logFile, lwp_debug);
-    RPC2_SetLog(logFile, RPC2_DebugLevel);
+
+    logging_conf.log_file_path = VenusLogFile;
+    logging_conf.logging_level = LogLevel;
+    logging_conf.nofork = nofork;
+
+    LoggingSubsystem::setup(logging_conf);
+
+    SubsystemManager::InitializeSubsystems();
+
+    LWP_SetLog(LoggingSubsystem::GetInstance()->GetLogFile(), lwp_debug);
+    RPC2_SetLog(LoggingSubsystem::GetInstance()->GetLogFile(), RPC2_DebugLevel);
+
     DaemonInit();   /* before any Daemons initialize and after LogInit */
+
     StatsInit();
     SigInit();      /* set up signal handlers */
 
@@ -463,8 +474,10 @@ int main(int argc, char **argv)
     RecovFlush(1);
     RecovTerminate();
     VFSUnmount();
-    fflush(logFile);
+    fflush(LoggingSubsystem::GetInstance()->GetLogFile());
     fflush(stderr);
+
+    SubsystemManager::KillInstance();
 
     MarinerLog("shutdown in progress\n");
 

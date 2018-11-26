@@ -537,11 +537,11 @@ void mariner::main(void)
 	}
 	else if (STREQ(argv[0], "debugon")) {
 	    DebugOn();
-	    Write("LogLevel is now %d\n", LogLevel);
+	    Write("LoggingSubsystem::GetInstance()->GetLoggingLevel() is now %d\n", LoggingSubsystem::GetInstance()->GetLoggingLevel());
 	}
 	else if (STREQ(argv[0], "debugoff")) {
 	    DebugOff();
-	    Write("LogLevel is now %d\n", LogLevel);
+	    Write("LoggingSubsystem::GetInstance()->GetLoggingLevel() is now %d\n", LoggingSubsystem::GetInstance()->GetLoggingLevel());
 	}
 	else if (STREQ(argv[0], "dumpcore")) {
 	    CHOKE("Telnet");

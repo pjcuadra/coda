@@ -33,6 +33,7 @@ extern "C" {
 
 #ifndef TESTING
 #include "venus.private.h"
+#include "venuslog.h"
 #endif
 
 #include "tallyent.h"

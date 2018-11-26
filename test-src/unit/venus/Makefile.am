@@ -2,7 +2,7 @@
 check_PROGRAMS = unittest
 
 # Add unittest and venus sources
-unittest_SOURCES = venus_symbols.cc u_cachefile.cc u_cachechunk.cc
+unittest_SOURCES = u_cachefile.cc u_cachechunk.cc
 
 GTEST_DIR = $(top_builddir)/external-src/googletest/googletest
 

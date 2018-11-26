@@ -48,8 +48,10 @@ extern "C" {
 
 /* from venus */
 #include "fso_cachefile.h"
+#include "venuslog.h"
 #include "venusrecov.h"
-#include "venus.private.h"
+#include "coda_assert.h"
+#include "venusconsts.private.h"
 
 #ifndef fdatasync
 #define fdatasync(fd) fsync(fd)
@@ -139,9 +141,9 @@ int CacheFile::ValidContainer()
 #endif
       tstat.st_size == (off_t)length;
 
-    if (!valid && LogLevel >= 0) {
-	dprint("CacheFile::ValidContainer: %s invalid\n", name);
-	dprint("\t(%u, %u), (%u, %u), (%o, %o), (%d, %d)\n",
+    if (!valid && LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 0) {
+	LoggingSubsystem::dprint("CacheFile::ValidContainer: %s invalid\n", name);
+	LoggingSubsystem::dprint("\t(%u, %u), (%u, %u), (%o, %o), (%d, %d)\n",
 	       tstat.st_uid, (uid_t)V_UID, tstat.st_gid, (gid_t)V_GID,
 	       (tstat.st_mode & ~S_IFMT), V_MODE,
 	       tstat.st_size, length);
@@ -286,7 +288,7 @@ void CacheFile::Truncate(uint64_t newlen)
     CODA_ASSERT(fd >= 0 && "fatal error opening container file");
 
     /* ISR tweak, write zeros to data area before truncation */
-    if (option_isr && newlen < length) {
+    if (newlen < length) {
 	size_t len = sizeof(zeropage), n = length - newlen;
 
 	lseek(fd, newlen, SEEK_SET);
