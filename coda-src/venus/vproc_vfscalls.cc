@@ -82,6 +82,7 @@ extern "C" {
 #include "vproc.h"
 #include "worker.h"
 #include "realmdb.h"
+#include "vastromariner.h"
 
 /* ***** VFS Operations  ***** */
 
@@ -1506,6 +1507,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
      * the fetching or allocation fails. */
     if (clist->Length() > 0) {
         f->active_segments.AddChunk(pos, count);
+        notify_mariner(f->comp, pos, count, CHUNK_STATE_ACTIVE);
     }
 
     /* Go thru the list of holes */
@@ -1536,6 +1538,7 @@ void vproc::read(struct venus_cnode * node, uint64_t pos, int64_t count)
         u.u_error = EIO;
         /* Since we failed remove it from the active segment */
         f->active_segments.ReverseRemove(pos, count);
+        notify_mariner(f->comp, pos, count, CHUNK_STATE_CACHED);
     }
 
     delete clist;
@@ -1604,6 +1607,7 @@ void vproc::read_finish(struct venus_cnode * node, uint64_t pos, int64_t count)
 
     /* No errors. The chunk (no longer in use) can be safely removed. */
     f->active_segments.ReverseRemove(pos, count);
+    notify_mariner(f->comp, pos, count, CHUNK_STATE_CACHED);
     
 FreeVFS:
     End_VFS(NULL);

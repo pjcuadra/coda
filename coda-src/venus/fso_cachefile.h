@@ -609,12 +609,13 @@ class SegmentedCacheFile : public CacheFile {
     CacheFile * cf; /**< Associated cache file */
 
 public:
+    char * comp;
     /**
      * Constructor
      *
      * @param i cache file identifier
      */
-    SegmentedCacheFile(int i);
+    SegmentedCacheFile(int i, char * comp);
 
     /**
      * Destructor

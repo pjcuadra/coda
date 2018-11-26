@@ -52,6 +52,7 @@ extern "C" {
 /* from venus */
 #include "fso.h"
 #include "mariner.h"
+#include "vastromariner.h"
 #include "mgrp.h"
 #include "venuscb.h"
 #include "vproc.h"
@@ -333,6 +334,8 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
     GotThisDataStart = offset;
     GotThisDataEnd = len > 0 ? offset + len : Size();
+
+    notify_mariner(comp, offset, GotThisDataEnd - GotThisDataStart, CHUNK_STATE_CACHED);
 
     /* C++ 3.0 whines if the following decls moved closer to use  -- Satya */
     {

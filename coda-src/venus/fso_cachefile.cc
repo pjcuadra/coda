@@ -793,7 +793,7 @@ CacheChunk CacheChunkList::pop()
 }
 
 /* MUST be called from within transaction! */
-SegmentedCacheFile::SegmentedCacheFile(int i) : CacheFile(i, 0) 
+SegmentedCacheFile::SegmentedCacheFile(int i, char * comp) : CacheFile(i, 0), comp(comp)
 {
     sprintf(name, "%02X/%02X/%02X/%02X.seg",
             (i>>24) & 0xff, (i>>16) & 0xff, (i>>8) & 0xff, i & 0xff);

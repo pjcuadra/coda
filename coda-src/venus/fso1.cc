@@ -69,6 +69,7 @@ extern "C" {
 #include "fso.h"
 #include "local.h"
 #include "mariner.h"
+#include "vastromariner.h"
 #include "user.h"
 #include "venus.private.h"
 #include "venusrecov.h"
@@ -1818,7 +1819,9 @@ void InjectSegmentCallback(uint64_t start, int64_t len,
     void * usr_data_cb)
 {
     SegmentedCacheFile * tmpcpy = (SegmentedCacheFile *)usr_data_cb;
+    notify_mariner((char *)tmpcpy->comp, start, len, CHUNK_STATE_ACTIVE);
     tmpcpy->InjectSegment(start, len);
+    
 }
 
 /*  *****  Data Contents  *****  */
@@ -1839,6 +1842,7 @@ void fsobj::DiscardData() {
     RVMLIB_REC_OBJECT(data);
     switch(stat.VnodeType) {
 	case File:
+        notify_mariner(comp, 0, data.file->Length(), CHUNK_STATE_DISCARDED);
         if (ISVASTRO(this) && ACTIVE(this)) {
             DiscardPartialData();
         } else {
@@ -1894,7 +1898,7 @@ void fsobj::DiscardPartialData() {
     CODA_ASSERT(ISVASTRO(this) && ACTIVE(this));
     /* stat.Length() might have been changed, only data.file->Length()
     * can be trusted */
-    SegmentedCacheFile * tmpcpy = new SegmentedCacheFile(ix);
+    SegmentedCacheFile * tmpcpy = new SegmentedCacheFile(ix, comp);
 
     len = data.file->Length();
     tmpcpy->Associate(&cf);
