@@ -405,6 +405,7 @@ int main(int argc, char **argv)
     VprocInit();    /* init LWP/IOMGR support */
 
     logging_conf.log_file_path = VenusLogFile;
+    logging_conf.console_file_path = consoleFile;
     logging_conf.logging_level = LogLevel;
     logging_conf.nofork = nofork;
 
@@ -1007,3 +1008,4 @@ static void SetRlimits() {
     }
 #endif
 }
+

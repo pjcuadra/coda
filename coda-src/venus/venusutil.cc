@@ -77,6 +77,7 @@ extern "C" {
 #include "worker.h"
 
 #include "venuslog.h"
+#include "venusconsts.private.h"
 
 
 /* *****  Exported variables  ***** */
@@ -135,33 +136,6 @@ static const char *VFSOpsNameTemplate[NVFSOPS] = {
 
 /* *****  util.c  ***** */
 
-/* LOGGING */
-struct logging_handler_t {
-    int log_level = 0;
-    FILE * log_file = NULL;
-    const char * log_file_path = NULL;
-    int log_inited = 0;
-};
-
-static logging_handler_t logging_instance;
-
-void LogInit(struct log_config config)
-{
-    logging_instance.log_file_path = config.log_file_path;
-    logging_instance.log_file = fopen(config.log_file_path, "a+");
-    if (logging_instance.log_file == NULL)
-	{ eprint("LogInit failed"); exit(EXIT_FAILURE); }
-    logging_instance.log_inited = 1;
-    LOG(0, ("Coda Venus, version " PACKAGE_VERSION "\n"));
-
-    logging_instance.log_level = config.logging_level;
-
-    struct timeval now;
-    gettimeofday(&now, 0);
-    LOG(0, ("Logfile initialized with LogLevel = %d at %s\n",
-	    logging_instance.log_level, ctime((time_t *)&now.tv_sec)));
-}
-
 /* Print an error message and then exit. */
 void choke(const char *file, int line, const char *fmt ...) {
     static int dying = 0;
@@ -190,7 +164,7 @@ void choke(const char *file, int line, const char *fmt ...) {
 	VFSUnmount();
     }
 
-    if (logging_instance.log_inited) fflush(logging_instance.log_file);
+    if (LoggingSubsystem::isInitialized()) fflush(LoggingSubsystem::GetLogFile());
     fflush(stderr);
     fflush(stdout);
 
@@ -347,34 +321,18 @@ int binaryfloor(int n) {
     return(m);
 }
 
-
-
-
-
-void DebugOn() {
-    logging_instance.log_level = ((logging_instance.log_level == 0) ? 1 : logging_instance.log_level * 10);
-    LOG(0, ("LogLevel is now %d.\n", logging_instance.log_level));
-}
-
-
-void DebugOff() {
-    logging_instance.log_level = 0;
-    LOG(0, ("LogLevel is now %d.\n", logging_instance.log_level));
-}
-
-
 void Terminate() {
     CHOKE("terminate signal received");
 }
 
 
 void DumpState() {
-    if (!logging_instance.log_inited) return;
+    if (!LoggingSubsystem::isInitialized()) return;
 
     const char *argv[1];
     argv[0] = "all";
-    VenusPrint(logging_instance.log_file, 1, argv);
-    fflush(logging_instance.log_file);
+    VenusPrint(LoggingSubsystem::GetLogFile(), 1, argv);
+    fflush(LoggingSubsystem::GetLogFile());
 }
 
 
@@ -617,7 +575,7 @@ void ToggleMallocTrace() {
     rds_trace_off();
     MallocTrace = FALSE;
   } else {
-    rds_trace_on(logging_instance.log_file);
+    rds_trace_on(LoggingSubsystem::GetLogFile());
     rds_trace_dump_heap();
     MallocTrace = TRUE;
   }
@@ -626,19 +584,6 @@ void ToggleMallocTrace() {
 void rds_printer(char *fmt ...) {
   LOG(0, (fmt));
 }
-
-void SwapLog()
-{
-    struct timeval now;
-    gettimeofday(&now, 0);
-
-    freopen(logging_instance.log_file_path, "a+", logging_instance.log_file);
-    if (!nofork) /* only redirect stderr when daemonizing */
-        freopen(consoleFile, "a+", stderr);
-
-    LOG(0, ("New Logfile started at %s", ctime((time_t *)&now.tv_sec)));
-}
-
 
 const char *lvlstr(LockLevel level)
 {

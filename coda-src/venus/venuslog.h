@@ -23,12 +23,10 @@ listed in the file CREDITS.
 
 /*  *****  Debugging macros.  *****  */
 #ifdef	VENUSDEBUG
-#define	LOG(level, stmt) do { if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= (level)) LoggingSubsystem::dprint stmt; } while(0)
+#define	LOG(level, stmt) do { if (LoggingSubsystem::GetLoggingLevel() >= (level)) LoggingSubsystem::dprint stmt; } while(0)
 #else
 #define	LOG(level, stmt)
 #endif /* !VENUSDEBUG */
-
-#define CHOKE(me...) LoggingSubsystem::choke(__FILE__, __LINE__, ##me)
 
 struct log_config {
     int logging_level;
@@ -47,9 +45,23 @@ class LoggingSubsystem : public Subsystem {
 private:
     struct log_config config;
     FILE * log_file = NULL;
-    LoggingSubsystem() : Subsystem("Logging"), log_file(NULL) {}
+    LoggingSubsystem() : Subsystem("Logging"), log_file(NULL) {
+        printf("CREEE\n");
+    }
     int init();
     int uninit();
+
+    int _GetLoggingLevel();
+
+    void _SetLoggingLevel(int logging_level);
+
+    FILE * _GetLogFile();
+
+    void _DebugOn();
+
+    void _DebugOff();
+
+    void _DumpState();
 
 public:
     /* Get singleton class */
@@ -57,21 +69,21 @@ public:
 
     static int setup(struct log_config config);
 
-    int GetLoggingLevel();
+    static int GetLoggingLevel();
 
-    void SetLoggingLevel(int logging_level);
+    static void SetLoggingLevel(int logging_level);
 
-    FILE * GetLogFile();
+    static FILE * GetLogFile();
 
-    void SwapLog();
+    static void SwapLog();
 
-    static void choke(const char *file, int line, const char *fmt ...);
-    static void dprint(const char *fmt ...);
+    static void dprint(const char *fmt, ...);
 
-    void DebugOn();
-    void DebugOff();
+    static void DebugOn();
+    static void DebugOff();
 
-    void DumpState();
+    static void DumpState();
+    static bool isInitialized();
 };
 
 

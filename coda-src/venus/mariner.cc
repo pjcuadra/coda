@@ -536,11 +536,11 @@ void mariner::main(void)
 "\tfidstat <fid>, rpc2stat, print <args>\n");
 	}
 	else if (STREQ(argv[0], "debugon")) {
-	    DebugOn();
+	    LoggingSubsystem::DebugOn();
 	    Write("LoggingSubsystem::GetInstance()->GetLoggingLevel() is now %d\n", LoggingSubsystem::GetInstance()->GetLoggingLevel());
 	}
 	else if (STREQ(argv[0], "debugoff")) {
-	    DebugOff();
+	    LoggingSubsystem::DebugOff();
 	    Write("LoggingSubsystem::GetInstance()->GetLoggingLevel() is now %d\n", LoggingSubsystem::GetInstance()->GetLoggingLevel());
 	}
 	else if (STREQ(argv[0], "dumpcore")) {

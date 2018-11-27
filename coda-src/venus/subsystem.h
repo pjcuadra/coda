@@ -36,7 +36,7 @@ protected:
     virtual int uninit() {}
 
 public:
-    bool isInitialized() {return initialized;}
+    bool _isInitialized() {return initialized;}
 
 };
 

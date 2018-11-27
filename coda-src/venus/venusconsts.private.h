@@ -36,6 +36,9 @@ extern "C" {
 }
 #endif
 
+#define CHOKE(me...) choke(__FILE__, __LINE__, ##me)
+extern void choke(const char *file, int line, const char *fmt ...);
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif

@@ -35,7 +35,6 @@ extern "C" {
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <time.h>
 #include <sys/resource.h>
 #include <sys/param.h>
 #include <errno.h>
@@ -64,20 +63,38 @@ extern "C" {
 #include "vproc.h"
 
 int LoggingSubsystem::init() {
+    int ret = 0;
+    printf("-> %s\n", config.log_file_path);
+    printf("-> %s\n", config.console_file_path);
+    printf("-> %d\n", config.nofork);
+    printf("-> %d\n", config.logging_level);
     log_file = fopen(config.log_file_path, "a+");
 
     if (log_file == NULL)   { 
-        eprint("LogInit failed"); exit(EXIT_FAILURE); 
+        eprint("LogInit failed");
+        return EPERM;
     }
+
+    printf("TP: %s %d\n", __FILE__, __LINE__);
+
+   
+
+    struct timeval now;
+    // ret = gettimeofday(&now, 0);
+    if (ret) return ret;
+
+    // LOG(0, ("TP: %s %d\n", __FILE__, __LINE__));
 
     initialized = true;
 
     LOG(0, ("Coda Venus, version " PACKAGE_VERSION "\n"));
 
-    struct timeval now;
-    gettimeofday(&now, 0);
-    LOG(0, ("Logfile initialized with LogLevel = %d at %s\n",
-        config.logging_level, ctime((time_t *)&now.tv_sec)));
+    // LOG(0, ("Logfile initialized with LogLevel = %d at %s\n",
+    //     config.logging_level, ctime((time_t *)&now.tv_sec)));
+
+    printf("TP: %s %d\n", __FILE__, __LINE__);
+
+    return 0;
 }
 
 int LoggingSubsystem::uninit() {
@@ -97,121 +114,123 @@ int LoggingSubsystem::setup(struct log_config config) {
     SubsystemManager::RegisterSubsystem(sub);
 }
 
-int LoggingSubsystem::GetLoggingLevel() {
+int LoggingSubsystem::_GetLoggingLevel() {
     return config.logging_level;
 }
 
-void LoggingSubsystem::SetLoggingLevel(int logging_level) {
+int LoggingSubsystem::GetLoggingLevel() {
+    return LoggingSubsystem::GetInstance()->_GetLoggingLevel();
+}
+
+void LoggingSubsystem::_SetLoggingLevel(int logging_level) {
     config.logging_level = logging_level;
 }
 
-FILE * LoggingSubsystem::GetLogFile() {
+void LoggingSubsystem::SetLoggingLevel(int logging_level) {
+    return LoggingSubsystem::GetInstance()->_SetLoggingLevel(logging_level);
+}
+
+FILE * LoggingSubsystem::_GetLogFile() {
     return log_file;
+}
+
+FILE * LoggingSubsystem::GetLogFile() {
+    return LoggingSubsystem::GetInstance()->_GetLogFile();
 }
 
 void LoggingSubsystem::SwapLog()
 {
+    LoggingSubsystem * sub = LoggingSubsystem::GetInstance();
     struct timeval now;
     gettimeofday(&now, 0);
 
-    freopen(config.log_file_path, "a+", log_file);
-    if (!config.nofork) /* only redirect stderr when daemonizing */
-        freopen(config.console_file_path, "a+", stderr);
+    freopen(sub->config.log_file_path, "a+", sub->log_file);
+    if (!sub->config.nofork) /* only redirect stderr when daemonizing */
+        freopen(sub->config.console_file_path, "a+", stderr);
 
     LOG(0, ("New Logfile started at %s", ctime((time_t *)&now.tv_sec)));
 }
 
 /* Print a debugging message to the log file. */
-void LoggingSubsystem::dprint(const char *fmt ...) {
+void LoggingSubsystem::dprint(const char *fmt, ...) {
     va_list ap;
     LoggingSubsystem * sub = LoggingSubsystem::GetInstance();
 
-    if (!LoggingSubsystem::GetInstance()->isInitialized()) return;
+    printf("TP: %s %d\n", __FILE__, __LINE__);
+
+    if (!sub->isInitialized()) return;
+
+    printf("TP: %s %d\n", __FILE__, __LINE__);
 
     char msg[240];
     (VprocSelf())->GetStamp(msg);
+
+    printf("TP: %s %d\n", __FILE__, __LINE__);
 
     /* Output a newline if we are starting a new block. */
     static int last_vpid = -1;
     static int last_seq = -1;
     int this_vpid;
     int this_seq;
+
+    printf("TP: %s %d\n", __FILE__, __LINE__);
     if (sscanf(msg, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid, &this_seq) != 2) {
         fprintf(stderr, "Choking in dprint\n");
         exit(EXIT_FAILURE);
     }
+
+    printf("TP: %s %d\n", __FILE__, __LINE__);
     if ((this_vpid != last_vpid || this_seq != last_seq) && (this_vpid != -1)) {
         fprintf(sub->log_file, "\n");
         last_vpid = this_vpid;
         last_seq = this_seq;
     }
 
+    printf("TP: %s %d\n", __FILE__, __LINE__);
+
     va_start(ap, fmt);
     vsnprintf(msg + strlen(msg), 240-strlen(msg), fmt, ap);
     va_end(ap);
+
+    printf("TP: %s %d\n", __FILE__, __LINE__);
 
     fwrite(msg, (int)sizeof(char), (int) strlen(msg), sub->log_file);
     fflush(sub->log_file);
 }
 
-
-/* Print an error message and then exit. */ 
-void LoggingSubsystem::choke(const char *file, int line, const char *fmt ...) {
-    static int dying = 0;
-    LoggingSubsystem * sub = LoggingSubsystem::GetInstance();
-
-    if (!dying) {
-        /* Avoid recursive death. */
-        dying = 1;
-
-        /* eprint the message, with an indication that it is fatal. */
-        va_list ap;
-        char msg[240];
-        strcpy(msg, "fatal error -- ");
-        va_start(ap, fmt);
-        vsnprintf(msg + strlen(msg), 240-strlen(msg), fmt, ap);
-        va_end(ap);
-        eprint(msg);
-
-        /* Dump system state to the log. */
-        sub->DumpState();
-
-        /* Force meta-data changes to disk. */
-        // RecovFlush(1);
-        // RecovTerminate();
-
-        /* Unmount if possible. */
-        // VFSUnmount();
-    }
-
-    if (sub->initialized) fflush(sub->log_file);
-
-    fflush(stderr);
-    fflush(stdout);
-
-    coda_assert("0", file, line);
-
-    /* NOTREACHED */
-}
-
-void LoggingSubsystem::DebugOn() {
+void LoggingSubsystem::_DebugOn() {
     config.logging_level = ((config.logging_level == 0) ? 1 : config.logging_level * 10);
     LOG(0, ("LogLevel is now %d.\n", config.logging_level));
 }
 
+void LoggingSubsystem::DebugOn() {
+    return LoggingSubsystem::GetInstance()->_DebugOn();
+}
 
-void LoggingSubsystem::DebugOff() {
+void LoggingSubsystem::_DebugOff() {
     config.logging_level = 0;
     LOG(0, ("LogLevel is now %d.\n", config.logging_level));
 }
 
-void LoggingSubsystem::DumpState() {
+void LoggingSubsystem::DebugOff() {
+    return LoggingSubsystem::GetInstance()->_DebugOff();
+}
+
+void LoggingSubsystem::_DumpState() {
     if (!initialized) return;
 
     const char *argv[1];
     argv[0] = "all";
     VenusPrint(log_file, 1, argv);
     fflush(log_file);
+}
+
+void LoggingSubsystem::DumpState() {
+    return LoggingSubsystem::GetInstance()->_DumpState();
+}
+
+bool LoggingSubsystem::isInitialized() {
+    return LoggingSubsystem::GetInstance()->_isInitialized();
 }
 
 
@@ -288,3 +307,4 @@ void VenusPrint(int fd, int argc, const char **argv)
 //     if (mallocp || allp)  MallocPrint(fd);
 //     fdprint(fd, "************************\n\n");
 }
+

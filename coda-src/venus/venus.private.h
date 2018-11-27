@@ -176,8 +176,6 @@ const char *IoctlOpStr(unsigned char nr);
 const char *VenusRetStr(int);
 void VVPrint(FILE *, ViceVersionVector **);
 int binaryfloor(int);
-void DebugOn();
-void DebugOff();
 void Terminate();
 void DumpState();
 void RusagePrint(int);
