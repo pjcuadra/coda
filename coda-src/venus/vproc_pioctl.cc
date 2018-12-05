@@ -1561,7 +1561,7 @@ OI_FreeLocks:
 		    uint32_t on;
 		    memcpy(&on, data->in, sizeof(uint32_t));
 		    on &= 0xff;
-		    if (on) LoggingSubsystem::DebugOn(); else LoggingSubsystem::DebugOff();
+		    if (on) DebugOn(); else DebugOff();
 
 		    break;
 		    }

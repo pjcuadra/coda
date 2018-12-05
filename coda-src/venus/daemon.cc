@@ -40,7 +40,7 @@ extern "C" {
 #include "vice.h"
 #include "vproc.h"
 #include "venus.private.h"
-#include "venuslog.h"
+#include "logging.h"
 
 
 static struct TM_Elem *DaemonList;
@@ -114,8 +114,8 @@ void DispatchDaemons() {
 		    VprocSignal(((struct DaemonInfo *)tp->BackPointer)->sync);
 	    else {  /* once a day task */
 		    LOG(0, ("At the tone the time will be %s", ctime((time_t *)&curr_time)));
-		    RusagePrint(fileno(LoggingSubsystem::GetInstance()->GetLogFile()));
-		    MallocPrint(fileno(LoggingSubsystem::GetInstance()->GetLogFile()));
+		    RusagePrint(fileno(GetLogFile()));
+		    MallocPrint(fileno(GetLogFile()));
 	    }
     }
 }

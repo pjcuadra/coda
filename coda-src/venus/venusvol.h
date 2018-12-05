@@ -1068,7 +1068,7 @@ extern int PathAltered(VenusFid *, char *, ClientModifyLog *, cmlent *);
 #define	VOL_ASSERT(v, ex)\
 {\
     if (!(ex)) {\
-	(v)->print(LoggingSubsystem::GetInstance()->GetLogFile());\
+	(v)->print(GetLogFile());\
 	CHOKE("Assertion failed: file \"%s\", line %d\n", __FILE__, __LINE__);\
     }\
 }

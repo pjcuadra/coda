@@ -409,7 +409,7 @@ extern struct CommQueueStruct CommQueue;
     RPCPktStatistics startCS, endCS;\
     GetCSS(&startCS);
 #define END_COMMSTATS()\
-    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1000) {\
+    if (GetLoggingLevel() >= 1000) {\
 	GetCSS(&endCS);\
 	SubCSSs(&endCS, &startCS);\
     }

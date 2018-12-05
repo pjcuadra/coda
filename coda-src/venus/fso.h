@@ -82,7 +82,7 @@ extern int global_kernfd;
 #include "vproc.h"
 #include "fso_cachefile.h"
 #include "venus.private.h"
-#include "venuslog.h"
+#include "logging.h"
 
 /* from coda include again, must appear AFTER venus.private.h */
 
@@ -751,7 +751,7 @@ void FSOD_ReclaimFSOs(void);
 #define	FSO_ASSERT(f, ex)\
 {\
     if (!(ex)) {\
-	(f)->print(LoggingSubsystem::GetInstance()->GetLogFile());\
+	(f)->print(GetLogFile());\
 	CHOKE("Assertion failed: file \"%s\", line %d\n", __FILE__, __LINE__);\
     }\
 }

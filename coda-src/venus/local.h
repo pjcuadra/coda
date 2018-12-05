@@ -128,7 +128,7 @@ public:
 #define	OBJ_ASSERT(o, ex) \
 {\
     if (!(ex)) {\
-       (o)->print(LoggingSubsystem::GetInstance()->GetLogFile());\
+       (o)->print(GetLogFile());\
        CHOKE("Assertion failed: file \"%s\", line %d\n", __FILE__, __LINE__);\
     }\
 }

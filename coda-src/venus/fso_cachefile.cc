@@ -48,7 +48,7 @@ extern "C" {
 
 /* from venus */
 #include "fso_cachefile.h"
-#include "venuslog.h"
+#include "logging.h"
 #include "venusrecov.h"
 #include "coda_assert.h"
 #include "venusconsts.private.h"
@@ -141,9 +141,9 @@ int CacheFile::ValidContainer()
 #endif
       tstat.st_size == (off_t)length;
 
-    if (!valid && LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 0) {
-	LoggingSubsystem::dprint("CacheFile::ValidContainer: %s invalid\n", name);
-	LoggingSubsystem::dprint("\t(%u, %u), (%u, %u), (%o, %o), (%d, %d)\n",
+    if (!valid && GetLoggingLevel() >= 0) {
+	dprint("CacheFile::ValidContainer: %s invalid\n", name);
+	dprint("\t(%u, %u), (%u, %u), (%o, %o), (%d, %d)\n",
 	       tstat.st_uid, (uid_t)V_UID, tstat.st_gid, (gid_t)V_GID,
 	       (tstat.st_mode & ~S_IFMT), V_MODE,
 	       tstat.st_size, length);

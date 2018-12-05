@@ -65,6 +65,10 @@ extern "C" {
 #include "realmdb.h"
 #include "daemonizer.h"
 
+/* venus subsystems */
+#include "subsystem.h"
+#include "logging_subsystem.h"
+
 #include "nt_util.h"
 #ifdef __CYGWIN32__
 //  Not right now ... should go #define main venus_main
@@ -353,7 +357,7 @@ int main(int argc, char **argv)
 
     // Cygwin runs as a service and doesn't need to daemonize.
 #ifndef __CYGWIN__
-    if (!nofork && LoggingSubsystem::GetInstance()->GetLoggingLevel() == 0)
+    if (!nofork && GetLoggingLevel() == 0)
 	parent_fd = daemonize();
 #endif
 
@@ -413,8 +417,8 @@ int main(int argc, char **argv)
 
     SubsystemManager::InitializeSubsystems();
 
-    LWP_SetLog(LoggingSubsystem::GetInstance()->GetLogFile(), lwp_debug);
-    RPC2_SetLog(LoggingSubsystem::GetInstance()->GetLogFile(), RPC2_DebugLevel);
+    LWP_SetLog(GetLogFile(), lwp_debug);
+    RPC2_SetLog(GetLogFile(), RPC2_DebugLevel);
 
     DaemonInit();   /* before any Daemons initialize and after LogInit */
 
@@ -475,7 +479,7 @@ int main(int argc, char **argv)
     RecovFlush(1);
     RecovTerminate();
     VFSUnmount();
-    fflush(LoggingSubsystem::GetInstance()->GetLogFile());
+    fflush(GetLogFile());
     fflush(stderr);
 
     SubsystemManager::KillInstance();

@@ -654,7 +654,7 @@ cmlent::cmlent(ClientModifyLog *Log, time_t Mtime, uid_t Uid, int op, int prepen
 	    break;
 
 	default:
-	    print(LoggingSubsystem::GetInstance()->GetLogFile());
+	    print(GetLogFile());
 	    CHOKE("cmlent::cmlent: bogus opcode (%d)", op);
     }
     va_end(ap);
@@ -748,7 +748,7 @@ void cmlent::ResetTransient()
 	    break;
 
 	default:
-	    print(LoggingSubsystem::GetInstance()->GetLogFile());
+	    print(GetLogFile());
 	    CHOKE("cmlent::ResetTransient: bogus opcode (%d)", opcode);
     }
 }
@@ -1599,7 +1599,7 @@ int cmlent::cancel()
     }
 
     LOG(10, ("cmlent::cancel: age = %d\n", curTime-time));
-    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 10) print(LoggingSubsystem::GetInstance()->GetLogFile());
+    if (GetLoggingLevel() >= 10) print(GetLogFile());
 
     /* Parameters for possible utimes to be done AFTER cancelling this record. */
     struct {
@@ -1927,8 +1927,8 @@ void ClientModifyLog::IncThread(int tid)
 	      m->thread();
     }
 
-    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 10)
-	print(LoggingSubsystem::GetInstance()->GetLogFile());
+    if (GetLoggingLevel() >= 10)
+	print(GetLogFile());
 
     LOG(0, ("ClientModifyLog::IncThread: (%s)\n", vol->name));
 }
@@ -2564,7 +2564,7 @@ void cmlent::translatefid(VenusFid *OldFid, VenusFid *NewFid)
 	    CHOKE("cmlent::translatefid: bogus opcode (%d)", opcode);
     }
     if (!found) {
-	print(LoggingSubsystem::GetInstance()->GetLogFile());
+	print(GetLogFile());
 	CHOKE("cmlent::translatefid: (%s) not matched", FID_(OldFid));
     }
 }
@@ -2582,8 +2582,8 @@ void cmlent::thread() {
 
 	fsobj *f = FSDB->Find(fidp);
 	if (f == 0) {
-	    print(LoggingSubsystem::GetInstance()->GetLogFile());
-	    (strbase(repvol, log, CML))->print(LoggingSubsystem::GetInstance()->GetLogFile());
+	    print(GetLogFile());
+	    (strbase(repvol, log, CML))->print(GetLogFile());
 	    CHOKE("cmlent::thread: can't find (%s)", FID_(fidp));
 	}
 
@@ -3576,7 +3576,7 @@ void ClientModifyLog::IncAbort(int Tid)
 	    if (!d) break;			/* list exhausted */
 	    cmlent *m = strbase(cmlent, d, handle);
 	    if (m->GetTid() == Tid) {
-		m->print(LoggingSubsystem::GetInstance()->GetLogFile());
+		m->print(GetLogFile());
 		d = next();	/* advance d before it is un-listed by m->abort() */
 		m->abort();
 	    } else {
@@ -3640,8 +3640,8 @@ void cmlent::AttachFidBindings()
 
 	fsobj *f = FSDB->Find(fidp);
 	if (f == 0) {
-	    print(LoggingSubsystem::GetInstance()->GetLogFile());
-	    (strbase(repvol, log, CML))->print(LoggingSubsystem::GetInstance()->GetLogFile());
+	    print(GetLogFile());
+	    (strbase(repvol, log, CML))->print(GetLogFile());
 	    CHOKE("cmlent::AttachFidBindings: can't find (%s)", FID_(fidp));
 	}
 
@@ -3822,7 +3822,7 @@ unsigned long cmlent::ReintTime(unsigned long bw) {
 
     LOG(10, ("cmlent::ReintTime: bandwidth = %d bytes/sec, time = %d msec\n",
 	    bw, (unsigned long) time));
-    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 10) print(LoggingSubsystem::GetInstance()->GetLogFile());
+    if (GetLoggingLevel() >= 10) print(GetLogFile());
 
     return((unsigned long) time);
 }

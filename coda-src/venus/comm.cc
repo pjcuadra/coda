@@ -663,11 +663,11 @@ void DoProbes(int HowMany, struct in_addr *Hosts)
 
 void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
 {
-    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1) {
-	LoggingSubsystem::dprint("MultiBind: HowMany = %d\n\tHosts = [ ", HowMany);
+    if (GetLoggingLevel() >= 1) {
+	dprint("MultiBind: HowMany = %d\n\tHosts = [ ", HowMany);
 	for (int i = 0; i < HowMany; i++)
-	    fprintf(LoggingSubsystem::GetInstance()->GetLogFile(), "%s ", inet_ntoa(Hosts[i]));
-	fprintf(LoggingSubsystem::GetInstance()->GetLogFile(), "]\n");
+	    fprintf(GetLogFile(), "%s ", inet_ntoa(Hosts[i]));
+	fprintf(GetLogFile(), "]\n");
     }
 
     int ix, slaves = 0;
@@ -708,11 +708,11 @@ void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
 
 void MultiProbe(int HowMany, RPC2_Handle *Handles)
 {
-    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1) {
-	LoggingSubsystem::dprint("MultiProbe: HowMany = %d\n\tHandles = [ ", HowMany);
+    if (GetLoggingLevel() >= 1) {
+	dprint("MultiProbe: HowMany = %d\n\tHandles = [ ", HowMany);
 	for (int i = 0; i < HowMany; i++)
-	    fprintf(LoggingSubsystem::GetInstance()->GetLogFile(), "%x ", Handles[i]);
-	fprintf(LoggingSubsystem::GetInstance()->GetLogFile(), "]\n");
+	    fprintf(GetLogFile(), "%x ", Handles[i]);
+	fprintf(GetLogFile(), "]\n");
     }
 
     /* Make multiple copies of the IN/OUT and OUT parameters. */

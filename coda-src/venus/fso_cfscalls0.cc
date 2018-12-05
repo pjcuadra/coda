@@ -260,7 +260,7 @@ static int CheckTransferredData(uint64_t pos, int64_t count,
 TillEndFetching:
     /* If not VASTRO or Fetch till the end */
     if ((pos + transfred) != length) {
-        // print(LoggingSubsystem::GetInstance()->GetLogFile());
+        // print(GetLogFile());
         LOG(0, ("fsobj::Fetch: fetched file length mismatch (%lu, %lu)",
                 pos + transfred, length));
         return ERETRY;
@@ -290,11 +290,11 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
 	/* We never fetch data if we don't already have status. */
 	if (!HAVESTATUS(this))
-	    { print(LoggingSubsystem::GetInstance()->GetLogFile()); CHOKE("fsobj::Fetch: !HAVESTATUS"); }
+	    { print(GetLogFile()); CHOKE("fsobj::Fetch: !HAVESTATUS"); }
 
         /* We never fetch data if we already have the file. */
         if (HAVEALLDATA(this) && !ISVASTRO(this)) {
-            print(LoggingSubsystem::GetInstance()->GetLogFile());
+            print(GetLogFile());
             CHOKE("fsobj::Fetch: HAVEALLDATA");
         }
     }
@@ -451,14 +451,14 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
 	    /* Handle failed validations. */
 	    if (!CompareVersion(&status)) {
-		if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1) {
-		    LoggingSubsystem::dprint("fsobj::Fetch: failed validation\n");
+		if (GetLoggingLevel() >= 1) {
+		    dprint("fsobj::Fetch: failed validation\n");
 		    int *r = ((int *)&status.VV);
-		    LoggingSubsystem::dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+		    dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
 			   r[0], r[1], r[2], r[3], r[4],
 			   r[5], r[6], r[7], r[8], r[9], r[10]);
 		    int *l = ((int *)&stat.VV);
-		    LoggingSubsystem::dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+		    dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
 			   l[0], l[1], l[2], l[3], l[4],
 			   l[5], l[6], l[7], l[8], l[9], l[10]);
 		}
@@ -514,13 +514,13 @@ RepExit:
 	if (HAVESTATUS(this) && !CompareVersion(&status)) {
 	    LOG(1, ("fsobj::Fetch: failed validation (%d, %d)\n",
 		    status.DataVersion, stat.DataVersion));
-        if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1) {
+        if (GetLoggingLevel() >= 1) {
             int *r = ((int *)&status.VV);
-            LoggingSubsystem::dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+            dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
         	   r[0], r[1], r[2], r[3], r[4],
         	   r[5], r[6], r[7], r[8], r[9], r[10]);
             int *l = ((int *)&stat.VV);
-            LoggingSubsystem::dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+            dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
         	   l[0], l[1], l[2], l[3], l[4],
         	   l[5], l[6], l[7], l[8], l[9], l[10]);
         }
@@ -933,10 +933,10 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
             ARG_UNMARSHALL_BS(myshavar, mysha, dh_ix);
 
-	    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 10 && mysha.SeqLen == SHA_DIGEST_LENGTH) {
+	    if (GetLoggingLevel() >= 10 && mysha.SeqLen == SHA_DIGEST_LENGTH) {
 		char printbuf[2*SHA_DIGEST_LENGTH+1];
 		ViceSHAtoHex(VenusSHA, printbuf, sizeof(printbuf));
-		LoggingSubsystem::dprint("mysha(%d, %d) = %s\n.", mysha.MaxSeqLen, mysha.SeqLen,
+		dprint("mysha(%d, %d) = %s\n.", mysha.MaxSeqLen, mysha.SeqLen,
 		       printbuf);
 	    }
 
@@ -957,14 +957,14 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
 	    /* Handle failed validations. */
 	    if (HAVESTATUS(this) && !CompareVersion(&status)) {
-		if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1) {
-		    LoggingSubsystem::dprint("fsobj::GetAttr: failed validation\n");
+		if (GetLoggingLevel() >= 1) {
+		    dprint("fsobj::GetAttr: failed validation\n");
 		    int *r = ((int *)&status.VV);
-		    LoggingSubsystem::dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+		    dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
 			   r[0], r[1], r[2], r[3], r[4],
 			   r[5], r[6], r[7], r[8], r[9], r[10]);
 		    int *l = ((int *)&stat.VV);
-		    LoggingSubsystem::dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+		    dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
 			   l[0], l[1], l[2], l[3], l[4],
 			   l[5], l[6], l[7], l[8], l[9], l[10]);
 		}
@@ -1104,13 +1104,13 @@ RepExit:
     if (HAVESTATUS(this) && !CompareVersion(&status)) {
         LOG(1, ("fsobj::GetAttr: failed validation (%d, %d)\n",
             status.DataVersion, stat.DataVersion));
-        if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1) {
+        if (GetLoggingLevel() >= 1) {
             int *r = ((int *)&status.VV);
-            LoggingSubsystem::dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+            dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
         	   r[0], r[1], r[2], r[3], r[4],
         	   r[5], r[6], r[7], r[8], r[9], r[10]);
             int *l = ((int *)&stat.VV);
-            LoggingSubsystem::dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
+            dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
         	   l[0], l[1], l[2], l[3], l[4],
         	   l[5], l[6], l[7], l[8], l[9], l[10]);
         }

@@ -221,7 +221,7 @@ void mgrpent::Put()
 	     this, uid, McastInfo.Mgroup, authenticated, refcount, list_empty(&vsghandle)));
 
     if (!InUse()) {
-        print(LoggingSubsystem::GetInstance()->GetLogFile());
+        print(GetLogFile());
         CHOKE("mgrpent::Put mgrp not in use");
     }
 
@@ -621,14 +621,14 @@ int mgrpent::RVVCheck(ViceVersionVector **RVVs, int EqReq)
     /* Construct the array so that only valid VVs are checked. */
     for (int j = 0; j < VSG_MEMBERS; j++)
 	if (!rocc.hosts[j].s_addr || rocc.retcodes[j]) RVVs[j] = 0;
-    if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 100) VVPrint(LoggingSubsystem::GetInstance()->GetLogFile(), RVVs);
+    if (GetLoggingLevel() >= 100) VVPrint(GetLogFile(), RVVs);
 
     int dom_cnt = 0;
     if (!VV_Check(&dom_cnt, RVVs, EqReq))
 	return(ESYNRESOLVE);
 
     if (dom_cnt <= 0 || dom_cnt > rocc.HowMany) {
-        print(LoggingSubsystem::GetInstance()->GetLogFile());
+        print(GetLogFile());
         CHOKE("mgrpent::RVVCheck: bogus dom_cnt (%d)", dom_cnt);
     }
 

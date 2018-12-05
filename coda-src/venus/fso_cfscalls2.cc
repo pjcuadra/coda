@@ -329,7 +329,7 @@ Exit:
 	    if (!WRITING(this)) {
 		Recov_BeginTrans();
 		if (FSDB->owriteq->remove(&owrite_handle) != &owrite_handle)
-			{ print(LoggingSubsystem::GetInstance()->GetLogFile()); CHOKE("fsobj::Open: owriteq remove"); }
+			{ print(GetLogFile()); CHOKE("fsobj::Open: owriteq remove"); }
 		RVMLIB_REC_OBJECT(flags);
 		flags.owrite = 0;
 		FSDB->ChangeDiskUsage((int) BLOCKS(this));
@@ -399,7 +399,7 @@ int fsobj::Sync(uid_t uid)
         case ENOSPC: eprint("server partition full"); break;
         case EDQUOT: eprint("over your disk quota"); break;
         case EACCES: eprint("protection failure"); break;
-        case ERETRY: print(LoggingSubsystem::GetInstance()->GetLogFile()); CHOKE("fsobj::Close: Store returns ERETRY");
+        case ERETRY: print(GetLogFile()); CHOKE("fsobj::Close: Store returns ERETRY");
         default: eprint("unknown store error %d", code); break;
         }
     }
@@ -422,7 +422,7 @@ void fsobj::Release(int writep)
 	PromoteLock();    
 
 	if (!WRITING(this))
-	    { print(LoggingSubsystem::GetInstance()->GetLogFile()); CHOKE("fsobj::Release: !WRITING"); }
+	    { print(GetLogFile()); CHOKE("fsobj::Release: !WRITING"); }
 	Writers--;
 
         /* The object only gets removed from the owrite queue if we were the
@@ -431,7 +431,7 @@ void fsobj::Release(int writep)
             Recov_BeginTrans();
             /* Last writer: remove from owrite queue. */
             if (FSDB->owriteq->remove(&owrite_handle) != &owrite_handle)
-            { print(LoggingSubsystem::GetInstance()->GetLogFile()); CHOKE("fsobj::Release: owriteq remove"); }
+            { print(GetLogFile()); CHOKE("fsobj::Release: owriteq remove"); }
             RVMLIB_REC_OBJECT(flags);
             flags.owrite = 0;
 
@@ -548,7 +548,7 @@ int fsobj::Access(int rights, int modes, uid_t uid)
 	/* Record the parent fid and release the object. */
 	parent_fid = pfid;
 	if (FID_EQ(&NullFid, &parent_fid))
-	    { print(LoggingSubsystem::GetInstance()->GetLogFile()); CHOKE("fsobj::Access: pfid == Null"); }
+	    { print(GetLogFile()); CHOKE("fsobj::Access: pfid == Null"); }
 
 	UnLock(level);
 
@@ -754,7 +754,7 @@ int fsobj::Readlink(char *buf, unsigned long len, int *cc, uid_t uid)
 	      GetComp(), buf, len, cc, uid));
 
     if (!HAVEALLDATA(this))
-	{ print(LoggingSubsystem::GetInstance()->GetLogFile()); CHOKE("fsobj::Readlink: called without data and isn't fake!"); }
+	{ print(GetLogFile()); CHOKE("fsobj::Readlink: called without data and isn't fake!"); }
 
     if (!IsSymLink() && !IsMtPt())
 	  return(EINVAL);

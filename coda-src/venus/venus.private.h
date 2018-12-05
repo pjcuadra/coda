@@ -195,6 +195,14 @@ void FireAndForget(const char *name, void (*f)(void), int interval,
 void RegisterDaemon(unsigned long, char *);
 void DispatchDaemons();
 
+void VenusPrint(int argc, const char **argv);
+
+void VenusPrint(FILE *, int argc, const char **argv);
+
+void VenusPrint(int, int argc, const char **argv);
+
+void VFSPrint(int);
+
 /* Helper to add a file descriptor with callback to main select loop. */
 void MUX_add_callback(int fd, void (*cb)(int fd, void *udata), void *udata);
 

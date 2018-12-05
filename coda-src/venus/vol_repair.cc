@@ -296,19 +296,19 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 	status.VV = tvv;
 
 	/* A little debugging help. */
-	if (LoggingSubsystem::GetInstance()->GetLoggingLevel() >= 1) {
-	    fprintf(LoggingSubsystem::GetInstance()->GetLogFile(), "Repairing %s:\n", FID_(rFid));
-	    fprintf(LoggingSubsystem::GetInstance()->GetLogFile(), "\tIV = %d, VT = %d, LC = %d, LE = %d, DV = %d, DA = %d\n",
+	if (GetLoggingLevel() >= 1) {
+	    fprintf(GetLogFile(), "Repairing %s:\n", FID_(rFid));
+	    fprintf(GetLogFile(), "\tIV = %d, VT = %d, LC = %d, LE = %d, DV = %d, DA = %d\n",
 		    status.InterfaceVersion, status.VnodeType, status.LinkCount,
 		    status.Length, status.DataVersion, status.Date);
-	    fprintf(LoggingSubsystem::GetInstance()->GetLogFile(), "\tAU = %d, OW = %d, CB = %d, MA = %x, AA = %x, MO = %o\n",
+	    fprintf(GetLogFile(), "\tAU = %d, OW = %d, CB = %d, MA = %x, AA = %x, MO = %o\n",
 		    status.Author, status.Owner, status.CallBack,
 		    (int)status.MyAccess, (int)status.AnyAccess, status.Mode);
 	    ViceVersionVector *tvvs[VSG_MEMBERS];
 	    memset((void *)tvvs, 0, VSG_MEMBERS * (int)sizeof(ViceVersionVector *));
 	    tvvs[0] = &status.VV;
-	    VVPrint(LoggingSubsystem::GetInstance()->GetLogFile(), tvvs);
-	    fflush(LoggingSubsystem::GetInstance()->GetLogFile());
+	    VVPrint(GetLogFile(), tvvs);
+	    fflush(GetLogFile());
 	}
 
 	/* Set up the SE descriptor. */

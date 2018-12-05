@@ -536,12 +536,12 @@ void mariner::main(void)
 "\tfidstat <fid>, rpc2stat, print <args>\n");
 	}
 	else if (STREQ(argv[0], "debugon")) {
-	    LoggingSubsystem::DebugOn();
-	    Write("LoggingSubsystem::GetInstance()->GetLoggingLevel() is now %d\n", LoggingSubsystem::GetInstance()->GetLoggingLevel());
+	    DebugOn();
+	    Write("GetLoggingLevel() is now %d\n", GetLoggingLevel());
 	}
 	else if (STREQ(argv[0], "debugoff")) {
-	    LoggingSubsystem::DebugOff();
-	    Write("LoggingSubsystem::GetInstance()->GetLoggingLevel() is now %d\n", LoggingSubsystem::GetInstance()->GetLoggingLevel());
+	    DebugOff();
+	    Write("GetLoggingLevel() is now %d\n", GetLoggingLevel());
 	}
 	else if (STREQ(argv[0], "dumpcore")) {
 	    CHOKE("Telnet");

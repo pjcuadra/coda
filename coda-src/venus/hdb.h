@@ -41,7 +41,7 @@ extern "C" {
 #include <coda.h>
 
 /* venus */
-#include "venuslog.h"
+#include "logging.h"
 
 #define HDB_ASSERT(ex) \
 {\

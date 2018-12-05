@@ -543,7 +543,7 @@ static void Recov_LoadRDS()
 
     /* Plumb the heap here? */
     if (MallocTrace) {
-	rds_trace_on(LoggingSubsystem::GetInstance()->GetLogFile());
+	rds_trace_on(GetLogFile());
 	rds_trace_dump_heap();
     }
 }
@@ -690,8 +690,8 @@ void RecovPrint(int fd) {
 
     fdprint(fd, "***RVM Statistics***\n");
     Recov_GetStatistics();
-    rvm_return_t ret = rvm_print_statistics(&Recov_Statistics, LoggingSubsystem::GetInstance()->GetLogFile());
-    fflush(LoggingSubsystem::GetInstance()->GetLogFile());
+    rvm_return_t ret = rvm_print_statistics(&Recov_Statistics, GetLogFile());
+    fflush(GetLogFile());
     if (ret != RVM_SUCCESS)
 	CHOKE("Recov_PrintStatistics: rvm_print_statistics failed (%d)", ret);
 

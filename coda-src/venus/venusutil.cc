@@ -76,7 +76,8 @@ extern "C" {
 #include "vsg.h"
 #include "worker.h"
 
-#include "venuslog.h"
+#include "logging.h"
+#include "logging_subsystem.h"
 #include "venusconsts.private.h"
 
 
@@ -164,7 +165,7 @@ void choke(const char *file, int line, const char *fmt ...) {
 	VFSUnmount();
     }
 
-    if (LoggingSubsystem::isInitialized()) fflush(LoggingSubsystem::GetLogFile());
+    if (LoggingSubsystem::isInitialized()) fflush(GetLogFile());
     fflush(stderr);
     fflush(stdout);
 
@@ -331,8 +332,8 @@ void DumpState() {
 
     const char *argv[1];
     argv[0] = "all";
-    VenusPrint(LoggingSubsystem::GetLogFile(), 1, argv);
-    fflush(LoggingSubsystem::GetLogFile());
+    VenusPrint(GetLogFile(), 1, argv);
+    fflush(GetLogFile());
 }
 
 
@@ -575,7 +576,7 @@ void ToggleMallocTrace() {
     rds_trace_off();
     MallocTrace = FALSE;
   } else {
-    rds_trace_on(LoggingSubsystem::GetLogFile());
+    rds_trace_on(GetLogFile());
     rds_trace_dump_heap();
     MallocTrace = TRUE;
   }
@@ -626,4 +627,78 @@ int FAV_Compare(ViceFidAndVV *fav1, ViceFidAndVV *fav2) {
 	    return(1);
 
     return(0);  /* this shouldn't happen */
+}
+
+void VenusPrint(int argc, const char **argv) {
+    VenusPrint(stdout, argc, argv);
+}
+
+
+void VenusPrint(FILE *fp, int argc, const char **argv) {
+    fflush(fp);
+    VenusPrint(fileno(fp), argc, argv);
+}
+
+/* local-repair modification */
+void VenusPrint(int fd, int argc, const char **argv)
+{
+    int allp = 0;
+    int rusagep = 0;
+    int recovp = 0;
+    int vprocp = 0;
+    int userp = 0;
+    int serverp = 0;
+    int connp = 0;
+    int vsgp = 0;
+    int mgrpp = 0;
+    int volumep = 0;
+    int fsop = 0;
+    int	fsosump	= 0;	    /* summary only */
+    int vfsp = 0;
+    int rpcp = 0;
+    int hdbp = 0;
+    int vmonp = 0;    
+    int mallocp = 0;
+
+    /* Parse the argv to see what modules should be printed. */
+    for (int i = 0; i < argc; i++) {
+	if (STREQ(argv[i], "all")) { allp++; break; }
+	else if (STREQ(argv[i], "rusage")) rusagep++;
+	else if (STREQ(argv[i], "recov")) recovp++;
+	else if (STREQ(argv[i], "vproc")) vprocp++;
+	else if (STREQ(argv[i], "user")) userp++;
+	else if (STREQ(argv[i], "server")) serverp++;
+	else if (STREQ(argv[i], "conn")) connp++;
+	else if (STREQ(argv[i], "vsg")) vsgp++;
+	else if (STREQ(argv[i], "mgrp")) mgrpp++;
+	else if (STREQ(argv[i], "volume")) volumep++;
+	else if (STREQ(argv[i], "fso")) fsop++;
+	else if (STREQ(argv[i], "fsosum")) fsosump++;
+	else if (STREQ(argv[i], "vfs")) vfsp++;
+	else if (STREQ(argv[i], "rpc")) rpcp++;
+	else if (STREQ(argv[i], "hdb")) hdbp++;
+	else if (STREQ(argv[i], "vmon")) vmonp++;
+	else if (STREQ(argv[i], "malloc")) mallocp++;
+    }
+
+    fdprint(fd, "*****  VenusPrint  *****\n\n");
+    FILE *f = fdopen(dup(fd), "a");
+    if (allp) REALMDB->print(f);
+    if (serverp || allp)  ServerPrint(f);
+    if ((mgrpp || allp) && VSGDB) VSGDB->print(f);
+    fclose(f);
+
+    if (rusagep || allp)  RusagePrint(fd);
+    if (recovp || allp)   if (RecovInited) RecovPrint(fd);
+    if (vprocp || allp)   PrintVprocs(fd);
+    if (userp || allp)    UserPrint(fd);
+    if (connp || allp)    ConnPrint(fd);
+    if (volumep || allp)  if (RecovInited && VDB) VDB->print(fd);
+    if (fsop || allp)     if (RecovInited && FSDB) FSDB->print(fd);
+    if (fsosump && !allp) if (RecovInited && FSDB) FSDB->print(fd, 1);
+    if (vfsp || allp)     VFSPrint(fd);
+    if (rpcp || allp)     RPCPrint(fd);
+    if (hdbp || allp)     if (RecovInited && HDB) HDB->print(fd);
+    if (mallocp || allp)  MallocPrint(fd);
+    fdprint(fd, "************************\n\n");
 }

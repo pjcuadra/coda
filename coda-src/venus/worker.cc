@@ -773,10 +773,10 @@ void WorkerInit()
     }
     worker::muxfd = sd[0];
     if (!nt_initialize_ipc (sd[1])) {
-            LoggingSubsystem::dprint("WorkerInit: nt_initialize_ipc failed.\n");
+            dprint("WorkerInit: nt_initialize_ipc failed.\n");
             exit(EXIT_FAILURE);
     }
-    LoggingSubsystem::dprint("WorkerInit: muxfd = %d\n", worker::muxfd);
+    dprint("WorkerInit: muxfd = %d\n", worker::muxfd);
 #else
     /* Open the communications channel. */
     worker::muxfd = ::open(kernDevice, O_RDWR, 0);
@@ -1247,7 +1247,7 @@ inline void worker::op_coda_ioctl(union inputArgs *in, union outputArgs *out,
         RecovFlush(1);
         RecovTerminate();
         VFSUnmount();
-        fflush(LoggingSubsystem::GetInstance()->GetLogFile());
+        fflush(GetLogFile());
         fflush(stderr);
 
         exit(EXIT_SUCCESS);
@@ -1688,7 +1688,7 @@ void worker::main(void)
         default:	 /* Toned this down a bit, used to be a choke -- DCS */
             /* But make sure someone sees it! */
             eprint("worker::main Got a bogus opcode %d", in->ih.opcode);
-            LoggingSubsystem::dprint("worker::main Got a bogus opcode %d\n", in->ih.opcode);
+            dprint("worker::main Got a bogus opcode %d\n", in->ih.opcode);
             MarinerLog("worker::main Got a bogus opcode %d\n", in->ih.opcode);
             u.u_error = EOPNOTSUPP;
             break;
