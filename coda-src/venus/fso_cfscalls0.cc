@@ -260,7 +260,7 @@ static int CheckTransferredData(uint64_t pos, int64_t count,
 TillEndFetching:
     /* If not VASTRO or Fetch till the end */
     if ((pos + transfred) != length) {
-        // print(logFile);
+        // print(GetLogFile());
         LOG(0, ("fsobj::Fetch: fetched file length mismatch (%lu, %lu)",
                 pos + transfred, length));
         return ERETRY;
@@ -290,11 +290,11 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
 	/* We never fetch data if we don't already have status. */
 	if (!HAVESTATUS(this))
-	    { print(logFile); CHOKE("fsobj::Fetch: !HAVESTATUS"); }
+	    { print(GetLogFile()); CHOKE("fsobj::Fetch: !HAVESTATUS"); }
 
         /* We never fetch data if we already have the file. */
         if (HAVEALLDATA(this) && !ISVASTRO(this)) {
-            print(logFile);
+            print(GetLogFile());
             CHOKE("fsobj::Fetch: HAVEALLDATA");
         }
     }
@@ -451,7 +451,7 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
 	    /* Handle failed validations. */
 	    if (!CompareVersion(&status)) {
-		if (LogLevel >= 1) {
+		if (GetLoggingLevel() >= 1) {
 		    dprint("fsobj::Fetch: failed validation\n");
 		    int *r = ((int *)&status.VV);
 		    dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
@@ -514,7 +514,7 @@ RepExit:
 	if (HAVESTATUS(this) && !CompareVersion(&status)) {
 	    LOG(1, ("fsobj::Fetch: failed validation (%d, %d)\n",
 		    status.DataVersion, stat.DataVersion));
-        if (LogLevel >= 1) {
+        if (GetLoggingLevel() >= 1) {
             int *r = ((int *)&status.VV);
             dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
         	   r[0], r[1], r[2], r[3], r[4],
@@ -933,7 +933,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
             ARG_UNMARSHALL_BS(myshavar, mysha, dh_ix);
 
-	    if (LogLevel >= 10 && mysha.SeqLen == SHA_DIGEST_LENGTH) {
+	    if (GetLoggingLevel() >= 10 && mysha.SeqLen == SHA_DIGEST_LENGTH) {
 		char printbuf[2*SHA_DIGEST_LENGTH+1];
 		ViceSHAtoHex(VenusSHA, printbuf, sizeof(printbuf));
 		dprint("mysha(%d, %d) = %s\n.", mysha.MaxSeqLen, mysha.SeqLen,
@@ -957,7 +957,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
 	    /* Handle failed validations. */
 	    if (HAVESTATUS(this) && !CompareVersion(&status)) {
-		if (LogLevel >= 1) {
+		if (GetLoggingLevel() >= 1) {
 		    dprint("fsobj::GetAttr: failed validation\n");
 		    int *r = ((int *)&status.VV);
 		    dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
@@ -1104,7 +1104,7 @@ RepExit:
     if (HAVESTATUS(this) && !CompareVersion(&status)) {
         LOG(1, ("fsobj::GetAttr: failed validation (%d, %d)\n",
             status.DataVersion, stat.DataVersion));
-        if (LogLevel >= 1) {
+        if (GetLoggingLevel() >= 1) {
             int *r = ((int *)&status.VV);
             dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
         	   r[0], r[1], r[2], r[3], r[4],

@@ -117,8 +117,8 @@ void vproc::vget(struct venus_cnode *vpp, VenusFid *vfid, int what)
     VenusFid fid = *vfid;
     fsobj *f = 0;
 
-    if (u.u_nc && LogLevel >= 100)
-	u.u_nc->print(logFile);
+    if (u.u_nc && GetLoggingLevel() >= 100)
+	u.u_nc->print(GetLogFile());
 
     /* return early if we're called to prefetch data */
     if (type == VPT_Worker && (what & RC_DATA))
@@ -1244,7 +1244,7 @@ void vproc::rmdir(struct venus_cnode *dcp, char *name)
 
 	/* Sanity check. */
 	if (target_fso->IsRoot())
-	    { target_fso->print(logFile); CHOKE("vproc::rmdir: target is root"); }
+	    { target_fso->print(GetLogFile()); CHOKE("vproc::rmdir: target is root"); }
 
 	/* Verify that it is a directory */
 	if (!target_fso->IsDir())

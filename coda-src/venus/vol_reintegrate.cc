@@ -445,7 +445,7 @@ extern struct timeval *VprocRetryBeta;
 		/* non-retryable failures */
 
 		LOG(0, ("volent::IncReintegrate: fail code = %d\n", code));
-		CML.print(logFile);
+		CML.print(GetLogFile());
 		/* 	
                  * checkpoint the log before localizing or aborting.
 		 * release read lock; it will be boosted in CML.Checkpoint.
@@ -603,7 +603,7 @@ CheckResult:
 	m->flags.failed = 1;
 
 	LOG(0, ("volent::PartialReintegrate: fail code = %d\n", code));
-	CML.print(logFile);
+	CML.print(GetLogFile());
 
 	/* checkpoint the log */
 	ReleaseReadLock(&CML_lock);

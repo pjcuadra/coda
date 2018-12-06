@@ -65,6 +65,10 @@ extern "C" {
 #include "realmdb.h"
 #include "daemonizer.h"
 
+/* venus subsystems */
+#include "subsystem.h"
+#include "venuslog.subsystem.h"
+
 #include "nt_util.h"
 #ifdef __CYGWIN32__
 //  Not right now ... should go #define main venus_main
@@ -99,6 +103,7 @@ const char *CheckpointFormat;
 const char *VenusPidFile;
 const char *VenusControlFile;
 const char *VenusLogFile;
+int LogLevel = 0;
 const char *ASRLauncherFile;
 const char *ASRPolicyFile;
 const char *MarinerSocketPath;
@@ -345,13 +350,14 @@ int main(int argc, char **argv)
 {
     coda_assert_action = CODA_ASSERT_SLEEP;
     coda_assert_cleanup = VFSUnmount;
+    struct log_config logging_conf;
 
     ParseCmdline(argc, argv);
     DefaultCmdlineParms();   /* read /etc/coda/venus.conf */
 
     // Cygwin runs as a service and doesn't need to daemonize.
 #ifndef __CYGWIN__
-    if (!nofork && LogLevel == 0)
+    if (!nofork && GetLoggingLevel() == 0)
 	parent_fd = daemonize();
 #endif
 
@@ -394,18 +400,29 @@ int main(int argc, char **argv)
     }
 
     /* 
-     * VprocInit MUST precede LogInit. Log messages are stamped
+     * VprocInit MUST precede LoggingInit. Log messages are stamped
      * with the id of the vproc that writes them, so log messages
      * can't be properly stamped until the vproc class is initialized.
-     * The logging routines return without doing anything if LogInit 
+     * The logging routines return without doing anything if LoggingInit 
      * hasn't yet been called. 
      */
     VprocInit();    /* init LWP/IOMGR support */
-    LogInit();      /* move old Venus log and create a new one */
-   
-    LWP_SetLog(logFile, lwp_debug);
-    RPC2_SetLog(logFile, RPC2_DebugLevel);
+
+    /* Set Logging Configuration */
+    logging_conf.log_file_path = VenusLogFile;
+    logging_conf.console_file_path = consoleFile;
+    logging_conf.logging_level = LogLevel;
+    logging_conf.nofork = nofork;
+    LoggingSetup(logging_conf);
+
+    /* Init Logging Subsystem */
+    LoggingInit();
+
+    LWP_SetLog(GetLogFile(), lwp_debug);
+    RPC2_SetLog(GetLogFile(), RPC2_DebugLevel);
+
     DaemonInit();   /* before any Daemons initialize and after LogInit */
+
     StatsInit();
     SigInit();      /* set up signal handlers */
 
@@ -463,7 +480,7 @@ int main(int argc, char **argv)
     RecovFlush(1);
     RecovTerminate();
     VFSUnmount();
-    fflush(logFile);
+    fflush(GetLogFile());
     fflush(stderr);
 
     MarinerLog("shutdown in progress\n");
@@ -994,3 +1011,4 @@ static void SetRlimits() {
     }
 #endif
 }
+

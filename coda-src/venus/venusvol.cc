@@ -923,7 +923,7 @@ volent::~volent()
     rvmlib_rec_free(name);
 
     if (refcnt != 0)
-	{ print(logFile); CHOKE("volent::~volent: non-zero refcnt"); }
+	{ print(GetLogFile()); CHOKE("volent::~volent: non-zero refcnt"); }
 }
 
 /* MUST be called from within transaction! */
@@ -1135,7 +1135,7 @@ int volent::Enter(int mode, uid_t uid)
 		    if (rv->GetCML()->Owner() == UNSET_UID) {
                         if (mutator_count != 0 || rv->GetCML()->count() != 0 ||
                             rv->IsReintegrating())
-			    { print(logFile); CHOKE("volent::Enter: mutating, CML owner == %d\n", rv->GetCML()->Owner()); }
+			    { print(GetLogFile()); CHOKE("volent::Enter: mutating, CML owner == %d\n", rv->GetCML()->Owner()); }
 
 			mutator_count++;
 			rv->GetCML()->owner = uid;
@@ -1150,7 +1150,7 @@ int volent::Enter(int mode, uid_t uid)
 		    if (rv->GetCML()->Owner() == uid) {
                         if (mutator_count == 0 && rv->GetCML()->count() == 0 &&
                             !rv->IsReintegrating())
-			    { print(logFile); CHOKE("volent::Enter: mutating, CML owner == %d\n", rv->GetCML()->Owner()); }
+			    { print(GetLogFile()); CHOKE("volent::Enter: mutating, CML owner == %d\n", rv->GetCML()->Owner()); }
 
 			mutator_count++;
 			shrd_count++;
@@ -1234,7 +1234,7 @@ int volent::Enter(int mode, uid_t uid)
 	    }
 
 	default:
-	    print(logFile); CHOKE("volent::Enter: bogus mode %d", mode);
+	    print(GetLogFile()); CHOKE("volent::Enter: bogus mode %d", mode);
     }
 
     return -1;
@@ -1274,7 +1274,7 @@ void volent::Exit(int mode, uid_t uid)
 	case VM_MUTATING:
 	    {
 	    if (IsResolving() || mutator_count <= 0)
-		{ print(logFile); CHOKE("volent::Exit: mutating"); }
+		{ print(GetLogFile()); CHOKE("volent::Exit: mutating"); }
 
 	    mutator_count--;
 	    shrd_count--;
@@ -1304,7 +1304,7 @@ void volent::Exit(int mode, uid_t uid)
 	case VM_OBSERVING:
 	    {
 	    if (IsResolving() || observer_count <= 0)
-		{ print(logFile); CHOKE("volent::Exit: observing"); }
+		{ print(GetLogFile()); CHOKE("volent::Exit: observing"); }
 
 	    observer_count--;
 	    shrd_count--;
@@ -1315,7 +1315,7 @@ void volent::Exit(int mode, uid_t uid)
 	    {
 	    CODA_ASSERT(IsReplicated());
 	    if (!IsResolving() || resolver_count == 0 || !flags.transition_pending)
-		{ print(logFile); CHOKE("volent::Exit: resolving"); }
+		{ print(GetLogFile()); CHOKE("volent::Exit: resolving"); }
 
 	    resolver_count--;
 	    excl_count--;
@@ -1326,7 +1326,7 @@ void volent::Exit(int mode, uid_t uid)
 	    }
 
 	default:
-	    print(logFile); CHOKE("volent::Exit: bogus mode %d", mode);
+	    print(GetLogFile()); CHOKE("volent::Exit: bogus mode %d", mode);
     }
 
     /* Step 3 is to take pending transition IF there is (now) no thread in it, */
@@ -1567,7 +1567,7 @@ void volent::Lock(VolLockType l, int pgid)
 {
     /* Sanity Check */
     if (l != EX_VOL_LK && l != SH_VOL_LK) {
-	print(logFile); 
+	print(GetLogFile()); 
 	CHOKE("volent::Lock: bogus lock type");
     }
 
@@ -1594,12 +1594,12 @@ void volent::UnLock(VolLockType l)
 
     /* Sanity Check */
     if (l != EX_VOL_LK && l != SH_VOL_LK) {
-	print(logFile); 
+	print(GetLogFile()); 
 	CHOKE("volent::UnLock bogus lock type");
     }
 
     if (excl_count < 0 || shrd_count < 0) {
-	print(logFile); 
+	print(GetLogFile()); 
 	CHOKE("volent::UnLock pgid = %d excl_count = %d shrd_count = %d",
 	      excl_pgid, excl_count, shrd_count);
     }
@@ -1646,7 +1646,7 @@ volrep::~volrep()
     volid.Realm = realm->Id();
     volid.Volume = vid;
     if (VDB->volrep_hash.remove(&volid, &handle) != &handle)
-	{ print(logFile); CHOKE("volrep::~volrep: htab remove"); }
+	{ print(GetLogFile()); CHOKE("volrep::~volrep: htab remove"); }
 
     PutServer(&volserver);
 }
@@ -1775,7 +1775,7 @@ repvol::~repvol()
     volid.Realm = realm->Id();
     volid.Volume = vid;
     if (VDB->repvol_hash.remove(&volid, &handle) != &handle)
-	{ print(logFile); CHOKE("repvol::~repvol: htab remove"); }
+	{ print(GetLogFile()); CHOKE("repvol::~repvol: htab remove"); }
 
     /* try to flush any pending COP2 and/or pending resolution requests */
     flags.transition_pending = 1;
@@ -1989,7 +1989,7 @@ int reintvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid, int f
 
         case Invalid:
         default:
-            print(logFile);
+            print(GetLogFile());
             CHOKE("reintvol::AllocFid: bogus Type (%d)", Type);
         }
 
@@ -2072,7 +2072,7 @@ int reintvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid, int f
 
     case Invalid:
     default:
-        print(logFile);
+        print(GetLogFile());
         CHOKE("reintvol::AllocFid: bogus Type (%d)", Type);
     }
 
@@ -2187,7 +2187,7 @@ int repvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid, int for
 
 			case Invalid:
 			default:
-			    print(logFile);
+			    print(GetLogFile());
 			    CHOKE("repvol::AllocFid: bogus Type (%d)", Type);
 		    }
 

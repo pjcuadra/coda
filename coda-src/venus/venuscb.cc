@@ -265,7 +265,7 @@ long VENUS_CallBackFetch(RPC2_Handle RPCid, ViceFid *Fid, SE_Descriptor *BD)
 	sid.Tag = SMARTFTP;
 	struct SFTP_Descriptor *sei = &sid.Value.SmartFTPD;
 	sei->TransmissionDirection = SERVERTOCLIENT;
-	sei->hashmark = (LogLevel >= 10 ? '#' : '\0');
+	sei->hashmark = (GetLoggingLevel() >= 10 ? '#' : '\0');
 	sei->SeekOffset = 0;
 	sei->ByteQuota = -1;
 
@@ -275,8 +275,8 @@ long VENUS_CallBackFetch(RPC2_Handle RPCid, ViceFid *Fid, SE_Descriptor *BD)
         sei->Tag = FILEBYFD;
         sei->FileInfo.ByFD.fd = fd;
 
-	if (LogLevel >= 1000) {
-	    rpc2_PrintSEDesc(&sid, logFile);
+	if (GetLoggingLevel() >= 1000) {
+	    rpc2_PrintSEDesc(&sid, GetLogFile());
 	}
 
 	if ((code = RPC2_InitSideEffect(RPCid, &sid)) <= RPC2_ELIMIT) {

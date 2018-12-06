@@ -46,7 +46,7 @@ extern "C" {
 
 #include <rpc2/rpc2.h>
 /* interfaces */
-#include <vice.h>
+// #include <vice.h>
 
 #ifdef __cplusplus
 }
@@ -66,7 +66,7 @@ extern "C" {
 #include "mariner.h"
 #include "mgrp.h"
 #include "user.h"
-#include "venus.private.h"
+
 #include "venuscb.h"
 #include "venusioctl.h"
 #include "venusrecov.h"
@@ -75,23 +75,21 @@ extern "C" {
 #include "vproc.h"
 #include "vsg.h"
 #include "worker.h"
-#include "realmdb.h"
+
+#include "venuslog.h"
+#include "venuslog.subsystem.h"
+#include "venusconsts.private.h"
 
 
 /* *****  Exported variables  ***** */
 
-FILE *logFile;
-int LogLevel = 0;
 int MallocTrace = 0;
 const VenusFid NullFid = {0, 0, 0, 0};
 const ViceVersionVector NullVV = {{0, 0, 0, 0, 0, 0, 0, 0}, {0, 0}, 0};
 VFSStatistics VFSStats;
 RPCOpStatistics RPCOpStats;
 
-
 /* *****  Private variables  ***** */
-
-static int LogInited = 0;
 static const char *VFSOpsNameTemplate[NVFSOPS] = {
     "No-Op",
     "No-Op",
@@ -139,39 +137,6 @@ static const char *VFSOpsNameTemplate[NVFSOPS] = {
 
 /* *****  util.c  ***** */
 
-/* Print a debugging message to the log file. */
-void dprint(const char *fmt ...) {
-    va_list ap;
-
-    if (!LogInited) return;
-
-    char msg[240];
-    (VprocSelf())->GetStamp(msg);
-
-    /* Output a newline if we are starting a new block. */
-    static int last_vpid = -1;
-    static int last_seq = -1;
-    int this_vpid;
-    int this_seq;
-    if (sscanf(msg, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid, &this_seq) != 2) {
-	fprintf(stderr, "Choking in dprint\n");
-	exit(EXIT_FAILURE);
-    }
-    if ((this_vpid != last_vpid || this_seq != last_seq) && (this_vpid != -1)) {
-	fprintf(logFile, "\n");
-	last_vpid = this_vpid;
-	last_seq = this_seq;
-    }
-
-    va_start(ap, fmt);
-    vsnprintf(msg + strlen(msg), 240-strlen(msg), fmt, ap);
-    va_end(ap);
-
-    fwrite(msg, (int)sizeof(char), (int) strlen(msg), logFile);
-    fflush(logFile);
-}
-
-
 /* Print an error message and then exit. */
 void choke(const char *file, int line, const char *fmt ...) {
     static int dying = 0;
@@ -200,8 +165,7 @@ void choke(const char *file, int line, const char *fmt ...) {
 	VFSUnmount();
     }
 
-    if (LogInited)
-	fflush(logFile);
+    if (LoggingIsInitialized()) fflush(GetLogFile());
     fflush(stderr);
     fflush(stdout);
 
@@ -209,83 +173,6 @@ void choke(const char *file, int line, const char *fmt ...) {
 
     /* NOTREACHED */
 }
-
-
-void VenusPrint(int argc, const char **argv) {
-    VenusPrint(stdout, argc, argv);
-}
-
-
-void VenusPrint(FILE *fp, int argc, const char **argv) {
-    fflush(fp);
-    VenusPrint(fileno(fp), argc, argv);
-}
-
-
-/* local-repair modification */
-void VenusPrint(int fd, int argc, const char **argv)
-{
-    int allp = 0;
-    int rusagep = 0;
-    int recovp = 0;
-    int vprocp = 0;
-    int userp = 0;
-    int serverp = 0;
-    int connp = 0;
-    int vsgp = 0;
-    int mgrpp = 0;
-    int volumep = 0;
-    int fsop = 0;
-    int	fsosump	= 0;	    /* summary only */
-    int vfsp = 0;
-    int rpcp = 0;
-    int hdbp = 0;
-    int vmonp = 0;
-    int mallocp = 0;
-
-    /* Parse the argv to see what modules should be printed. */
-    for (int i = 0; i < argc; i++) {
-	if (STREQ(argv[i], "all")) { allp++; break; }
-	else if (STREQ(argv[i], "rusage")) rusagep++;
-	else if (STREQ(argv[i], "recov")) recovp++;
-	else if (STREQ(argv[i], "vproc")) vprocp++;
-	else if (STREQ(argv[i], "user")) userp++;
-	else if (STREQ(argv[i], "server")) serverp++;
-	else if (STREQ(argv[i], "conn")) connp++;
-	else if (STREQ(argv[i], "vsg")) vsgp++;
-	else if (STREQ(argv[i], "mgrp")) mgrpp++;
-	else if (STREQ(argv[i], "volume")) volumep++;
-	else if (STREQ(argv[i], "fso")) fsop++;
-	else if (STREQ(argv[i], "fsosum")) fsosump++;
-	else if (STREQ(argv[i], "vfs")) vfsp++;
-	else if (STREQ(argv[i], "rpc")) rpcp++;
-	else if (STREQ(argv[i], "hdb")) hdbp++;
-	else if (STREQ(argv[i], "vmon")) vmonp++;
-	else if (STREQ(argv[i], "malloc")) mallocp++;
-    }
-
-    fdprint(fd, "*****  VenusPrint  *****\n\n");
-    FILE *f = fdopen(dup(fd), "a");
-    if (allp) REALMDB->print(f);
-    if (serverp || allp)  ServerPrint(f);
-    if ((mgrpp || allp) && VSGDB) VSGDB->print(f);
-    fclose(f);
-
-    if (rusagep || allp)  RusagePrint(fd);
-    if (recovp || allp)   if (RecovInited) RecovPrint(fd);
-    if (vprocp || allp)   PrintVprocs(fd);
-    if (userp || allp)    UserPrint(fd);
-    if (connp || allp)    ConnPrint(fd);
-    if (volumep || allp)  if (RecovInited && VDB) VDB->print(fd);
-    if (fsop || allp)     if (RecovInited && FSDB) FSDB->print(fd);
-    if (fsosump && !allp) if (RecovInited && FSDB) FSDB->print(fd, 1);
-    if (vfsp || allp)     VFSPrint(fd);
-    if (rpcp || allp)     RPCPrint(fd);
-    if (hdbp || allp)     if (RecovInited && HDB) HDB->print(fd);
-    if (mallocp || allp)  MallocPrint(fd);
-    fdprint(fd, "************************\n\n");
-}
-
 
 const char *VenusOpStr(int opcode)
 {
@@ -435,46 +322,18 @@ int binaryfloor(int n) {
     return(m);
 }
 
-
-void LogInit()
-{
-    logFile = fopen(VenusLogFile, "a+");
-    if (logFile == NULL)
-	{ eprint("LogInit failed"); exit(EXIT_FAILURE); }
-    LogInited = 1;
-    LOG(0, ("Coda Venus, version " PACKAGE_VERSION "\n"));
-
-    struct timeval now;
-    gettimeofday(&now, 0);
-    LOG(0, ("Logfile initialized with LogLevel = %d at %s\n",
-	    LogLevel, ctime((time_t *)&now.tv_sec)));
-}
-
-
-void DebugOn() {
-    LogLevel = ((LogLevel == 0) ? 1 : LogLevel * 10);
-    LOG(0, ("LogLevel is now %d.\n", LogLevel));
-}
-
-
-void DebugOff() {
-    LogLevel = 0;
-    LOG(0, ("LogLevel is now %d.\n", LogLevel));
-}
-
-
 void Terminate() {
     CHOKE("terminate signal received");
 }
 
 
 void DumpState() {
-    if (!LogInited) return;
+    if (!LoggingIsInitialized()) return;
 
     const char *argv[1];
     argv[0] = "all";
-    VenusPrint(logFile, 1, argv);
-    fflush(logFile);
+    VenusPrint(GetLogFile(), 1, argv);
+    fflush(GetLogFile());
 }
 
 
@@ -717,7 +576,7 @@ void ToggleMallocTrace() {
     rds_trace_off();
     MallocTrace = FALSE;
   } else {
-    rds_trace_on(logFile);
+    rds_trace_on(GetLogFile());
     rds_trace_dump_heap();
     MallocTrace = TRUE;
   }
@@ -726,19 +585,6 @@ void ToggleMallocTrace() {
 void rds_printer(char *fmt ...) {
   LOG(0, (fmt));
 }
-
-void SwapLog()
-{
-    struct timeval now;
-    gettimeofday(&now, 0);
-
-    freopen(VenusLogFile, "a+", logFile);
-    if (!nofork) /* only redirect stderr when daemonizing */
-        freopen(consoleFile, "a+", stderr);
-
-    LOG(0, ("New Logfile started at %s", ctime((time_t *)&now.tv_sec)));
-}
-
 
 const char *lvlstr(LockLevel level)
 {
@@ -781,4 +627,78 @@ int FAV_Compare(ViceFidAndVV *fav1, ViceFidAndVV *fav2) {
 	    return(1);
 
     return(0);  /* this shouldn't happen */
+}
+
+void VenusPrint(int argc, const char **argv) {
+    VenusPrint(stdout, argc, argv);
+}
+
+
+void VenusPrint(FILE *fp, int argc, const char **argv) {
+    fflush(fp);
+    VenusPrint(fileno(fp), argc, argv);
+}
+
+/* local-repair modification */
+void VenusPrint(int fd, int argc, const char **argv)
+{
+    int allp = 0;
+    int rusagep = 0;
+    int recovp = 0;
+    int vprocp = 0;
+    int userp = 0;
+    int serverp = 0;
+    int connp = 0;
+    int vsgp = 0;
+    int mgrpp = 0;
+    int volumep = 0;
+    int fsop = 0;
+    int	fsosump	= 0;	    /* summary only */
+    int vfsp = 0;
+    int rpcp = 0;
+    int hdbp = 0;
+    int vmonp = 0;    
+    int mallocp = 0;
+
+    /* Parse the argv to see what modules should be printed. */
+    for (int i = 0; i < argc; i++) {
+	if (STREQ(argv[i], "all")) { allp++; break; }
+	else if (STREQ(argv[i], "rusage")) rusagep++;
+	else if (STREQ(argv[i], "recov")) recovp++;
+	else if (STREQ(argv[i], "vproc")) vprocp++;
+	else if (STREQ(argv[i], "user")) userp++;
+	else if (STREQ(argv[i], "server")) serverp++;
+	else if (STREQ(argv[i], "conn")) connp++;
+	else if (STREQ(argv[i], "vsg")) vsgp++;
+	else if (STREQ(argv[i], "mgrp")) mgrpp++;
+	else if (STREQ(argv[i], "volume")) volumep++;
+	else if (STREQ(argv[i], "fso")) fsop++;
+	else if (STREQ(argv[i], "fsosum")) fsosump++;
+	else if (STREQ(argv[i], "vfs")) vfsp++;
+	else if (STREQ(argv[i], "rpc")) rpcp++;
+	else if (STREQ(argv[i], "hdb")) hdbp++;
+	else if (STREQ(argv[i], "vmon")) vmonp++;
+	else if (STREQ(argv[i], "malloc")) mallocp++;
+    }
+
+    fdprint(fd, "*****  VenusPrint  *****\n\n");
+    FILE *f = fdopen(dup(fd), "a");
+    if (allp) REALMDB->print(f);
+    if (serverp || allp)  ServerPrint(f);
+    if ((mgrpp || allp) && VSGDB) VSGDB->print(f);
+    fclose(f);
+
+    if (rusagep || allp)  RusagePrint(fd);
+    if (recovp || allp)   if (RecovInited) RecovPrint(fd);
+    if (vprocp || allp)   PrintVprocs(fd);
+    if (userp || allp)    UserPrint(fd);
+    if (connp || allp)    ConnPrint(fd);
+    if (volumep || allp)  if (RecovInited && VDB) VDB->print(fd);
+    if (fsop || allp)     if (RecovInited && FSDB) FSDB->print(fd);
+    if (fsosump && !allp) if (RecovInited && FSDB) FSDB->print(fd, 1);
+    if (vfsp || allp)     VFSPrint(fd);
+    if (rpcp || allp)     RPCPrint(fd);
+    if (hdbp || allp)     if (RecovInited && HDB) HDB->print(fd);
+    if (mallocp || allp)  MallocPrint(fd);
+    fdprint(fd, "************************\n\n");
 }

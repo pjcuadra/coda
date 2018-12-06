@@ -204,7 +204,7 @@ int repvol::FlushCOP2(mgrpent *m, RPC2_CountedBS *PiggyBS)
 	BS.SeqBody = (RPC2_ByteSeq)buf;
 	GetCOP2(&BS);
 	if (BS.SeqLen == 0)
-	    { print(logFile); CHOKE("volent::FlushCOP2(Piggy): No Entries!\n"); }
+	    { print(GetLogFile()); CHOKE("volent::FlushCOP2(Piggy): No Entries!\n"); }
 
 	/* Make the call. */
 	code = COP2(m, &BS);
@@ -288,7 +288,7 @@ void repvol::ClearCOP2(RPC2_CountedBS *BS)
 	cop2ent *c = FindCOP2(&sid);
 	if (c) {
 	    if (cop2_list->remove(c) != c)
-		{ print(logFile); CHOKE("volent::ClearCOP2: remove"); }
+		{ print(GetLogFile()); CHOKE("volent::ClearCOP2: remove"); }
 	    delete c;
 	}
     }

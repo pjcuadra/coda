@@ -257,7 +257,7 @@ hdbent *hdb::Create(VolumeId vid, char *realm, char *name, uid_t local_id,
 
     /* Check whether the key is already in the database. */
     if ((h = Find(vid, realm, name)) != 0)
-	{ h->print(logFile); CHOKE("hdb::Create: key exists"); }
+	{ h->print(GetLogFile()); CHOKE("hdb::Create: key exists"); }
 
     /* Fashion a new object. */
     Recov_BeginTrans();
@@ -341,7 +341,6 @@ int hdb::Delete(hdb_delete_msg *m, uid_t local_id)
 
 
 /* cuid = ANYUSER_UID is a wildcard meaning "clear all entries." */
-extern FILE *logFile;
 int hdb::Clear(hdb_clear_msg *m, uid_t local_id) {
     LOG(10, ("hdb::Clear: <%d, %d>\n", m->cuid, local_id));
 
@@ -521,7 +520,7 @@ void hdb::ListPriorityQueue() {
     bsnode *b;
     while ((b = next())) {
 	namectxt *n = strbase(namectxt, b, prio_handle);
-	n->print(logFile);
+	n->print(GetLogFile());
     }
 }
 
@@ -1075,7 +1074,7 @@ hdbent::hdbent(VolumeId Vid, char *Realm, char *Name, uid_t Vuid,
 void hdbent::ResetTransient() {
     /* Sanity checks. */
     if (MagicNumber != HDBENT_MagicNumber)
-	{ print(logFile); CHOKE("hdbent::ResetTransient: bogus MagicNumber"); }
+	{ print(GetLogFile()); CHOKE("hdbent::ResetTransient: bogus MagicNumber"); }
 
     Realm *r = REALMDB->GetRealm(realm);
     VenusFid cdir;
@@ -1099,7 +1098,7 @@ hdbent::~hdbent()
     /* Remove from the hash table. */
     hdb_key key(vid, realm, name);
     if (HDB->htab.remove(&key, &tbl_handle) != &tbl_handle)
-	{ print(logFile); CHOKE("hdbent::~hdbent: htab remove"); }
+	{ print(GetLogFile()); CHOKE("hdbent::~hdbent: htab remove"); }
 
     /* Release path. */
     rvmlib_rec_free(name);
@@ -1394,7 +1393,7 @@ namectxt::~namectxt() {
 
     /* Context must not be busy! */
     if (inuse)
-	{ print(logFile); CHOKE("namectxt::~namectxt: context inuse"); }
+	{ print(GetLogFile()); CHOKE("namectxt::~namectxt: context inuse"); }
 
     /* Path was allocated in ctor (and hence only requires free'ing here) if context was meta_expanded. */
     if (meta_expanded) {
@@ -1412,14 +1411,14 @@ namectxt::~namectxt() {
 	case PeIndigent:
 	case PeInconsistent:
 	    if (HDB->prioq->remove(&prio_handle) != &prio_handle)
-		{ print(logFile); CHOKE("namectxt::~namectxt: prioq remove"); }
+		{ print(GetLogFile()); CHOKE("namectxt::~namectxt: prioq remove"); }
 	    if (state == PeSuspect) SuspectCount--;
 	    else if (state == PeIndigent) IndigentCount--;
 	    else InconsistentCount--;
 	    break;
 
 	default:
-	    print(logFile);
+	    print(GetLogFile());
 	    CHOKE("namectxt::~namectxt: bogus state");
     }
 
@@ -1437,7 +1436,7 @@ namectxt::~namectxt() {
 
 	    /* Detach the binder. */
 	    if (expansion.remove(&b->binder_handle) != &b->binder_handle)
-		{ print(logFile); CHOKE("namectxt::~namectxt: remove failed"); }
+		{ print(GetLogFile()); CHOKE("namectxt::~namectxt: remove failed"); }
 
 	    if (children != NULL) {
 	      if (children->IsMember(d) == 1) {
@@ -1451,11 +1450,11 @@ namectxt::~namectxt() {
 	}
 
 	if (next != 0)
-	    { print(logFile); CHOKE("namectxt::~namectxt: next != 0"); }
+	    { print(GetLogFile()); CHOKE("namectxt::~namectxt: next != 0"); }
     }
 
     if (children != 0 || parent != 0)
-	{ print(logFile); CHOKE("namectxt::~namectxt: links still active"); }
+	{ print(GetLogFile()); CHOKE("namectxt::~namectxt: links still active"); }
 }
 
 
@@ -1473,7 +1472,7 @@ void namectxt::operator delete(void *deadobj){
 
 void namectxt::hold() {
     if (inuse)
-	{ print(logFile); CHOKE("namectxt::hold: already inuse"); }
+	{ print(GetLogFile()); CHOKE("namectxt::hold: already inuse"); }
 
     if (dying)
 	{ LOG(0, ("namectxt::hold: dead or dying object %p\n", this)); }
@@ -1484,7 +1483,7 @@ void namectxt::hold() {
 
 void namectxt::release() {
     if (!inuse)
-	{ print(logFile); CHOKE("namectxt::release: not inuse"); }
+	{ print(GetLogFile()); CHOKE("namectxt::release: not inuse"); }
 
     inuse = 0;
 
@@ -1524,7 +1523,7 @@ void namectxt::Transit(enum pestate new_state) {
 		SuspectCount--;
 		if (new_state == PeValid) {
 		    if (HDB->prioq->remove(&prio_handle) != &prio_handle)
-			{ print(logFile); CHOKE("namectxt::Transit: prioq remove"); }
+			{ print(GetLogFile()); CHOKE("namectxt::Transit: prioq remove"); }
 		    state = PeValid;
 		    ValidCount++;
 		}
@@ -1551,7 +1550,7 @@ void namectxt::Transit(enum pestate new_state) {
 		IndigentCount--;
 		if (new_state == PeValid) {
 		    if (HDB->prioq->remove(&prio_handle) != &prio_handle)
-			{ print(logFile); CHOKE("namectxt::Transit: prioq remove"); }
+			{ print(GetLogFile()); CHOKE("namectxt::Transit: prioq remove"); }
 		    state = PeValid;
 		    ValidCount++;
 		}
@@ -1578,7 +1577,7 @@ void namectxt::Transit(enum pestate new_state) {
 		InconsistentCount--;
 		if (new_state == PeValid) {
 		    if (HDB->prioq->remove(&prio_handle) != &prio_handle)
-			{ print(logFile); CHOKE("namectxt::Transit: prioq remove"); }
+			{ print(GetLogFile()); CHOKE("namectxt::Transit: prioq remove"); }
 		    state = PeValid;
 		    ValidCount++;
 		}
@@ -1597,11 +1596,11 @@ void namectxt::Transit(enum pestate new_state) {
 	    }
 
 	default:
-	    print(logFile);
+	    print(GetLogFile());
 	    CHOKE("namectxt::Transit: bogus state");
     }
 
-    print(logFile);
+    print(GetLogFile());
     CHOKE("namectxt::Transit: illegal transition %s --> %s",
 	   PRINT_PESTATE(state), PRINT_PESTATE(new_state));
 }
@@ -1624,11 +1623,11 @@ void namectxt::Kill() {
     /* Discard association between this context and its parent. */
     if (meta_expanded) {
 	if (parent == 0)
-	    { print(logFile); CHOKE("namectxt::Kill: parent == 0"); }
+	    { print(GetLogFile()); CHOKE("namectxt::Kill: parent == 0"); }
 
 	if (parent->children->remove(&child_link) != &child_link) {
-	    print(logFile);
-	    parent->print(logFile);
+	    print(GetLogFile());
+	    parent->print(GetLogFile());
 	    CHOKE("namectxt::Kill: parent->children remove");
 	}
 	parent = 0;
@@ -1644,7 +1643,7 @@ void namectxt::Kill() {
 
 void namectxt::KillChildren() {
     if (children == 0)
-	{ print(logFile); CHOKE("namectxt::KillChildren: children == 0"); }
+	{ print(GetLogFile()); CHOKE("namectxt::KillChildren: children == 0"); }
 
     dlink *d;
     while ((d = children->first())) {
@@ -1666,7 +1665,7 @@ void namectxt::Demote(int recursive) {
     if (recursive) {
 	if (expand_children || expand_descendents) {
 	    if (children == 0)
-		{ print(logFile); CHOKE("namectxt::Demote: children == 0"); }
+		{ print(GetLogFile()); CHOKE("namectxt::Demote: children == 0"); }
 
 	    dlist_iterator cnext(*children);
 	    dlink *d;
@@ -1929,8 +1928,8 @@ int MetaExpand(PDirEntry entry, void *hook)
 		if (STREQ(name, c)) {
 			if (parent->children->remove(&child->child_link) != 
 			    &child->child_link) {
-				parent->print(logFile);
-				child->print(logFile);
+				parent->print(GetLogFile());
+				child->print(GetLogFile());
 				CHOKE("MetaExpand: children->remove failed");
 			}
 			new_children->insert(&child->child_link);
@@ -1966,7 +1965,7 @@ void namectxt::MetaExpand() {
     */
     dlink *d = expansion.last();
     if (d == 0)
-	{ print(logFile); CHOKE("namectxt::MetaExpand: no bindings"); }
+	{ print(GetLogFile()); CHOKE("namectxt::MetaExpand: no bindings"); }
     binding *b = strbase(binding, d, binder_handle);
     CODA_ASSERT(b != NULL);
     fsobj *f = (fsobj *)b->bindee;
@@ -2066,7 +2065,7 @@ void namectxt::CheckComponent(fsobj *f) {
 	      FID_(&cdir), path, PRINT_PESTATE(state), f));
 
     if (state != PeSuspect && state != PeIndigent && state != PeInconsistent)
-	{ print(logFile); CHOKE("namectxt::CheckComponent: bogus state"); }
+	{ print(GetLogFile()); CHOKE("namectxt::CheckComponent: bogus state"); }
 
     /* 
      * Note that next was setup before CheckExpansion called namev, which called
@@ -2093,7 +2092,7 @@ void namectxt::CheckComponent(fsobj *f) {
 
 	    /* Detach the binder. */
 	    if (expansion.remove(&old_b->binder_handle) != &old_b->binder_handle)
-		{ print(logFile); CHOKE("namectxt::CheckComponent: remove failed"); }
+		{ print(GetLogFile()); CHOKE("namectxt::CheckComponent: remove failed"); }
 	    old_b->binder = 0;
 
 	    delete old_b;
@@ -2217,7 +2216,7 @@ int NC_PriorityFN(bsnode *b1, bsnode *b2) {
     namectxt *n2 = strbase(namectxt, b2, prio_handle);
 /*
     if ((char *)n1 == (char *)n2)
-	{ n1->print(logFile); CHOKE("NC_PriorityFN: n1 == n2\n"); }
+	{ n1->print(GetLogFile()); CHOKE("NC_PriorityFN: n1 == n2\n"); }
 */
 
     /* First determinant is explicit priority. */

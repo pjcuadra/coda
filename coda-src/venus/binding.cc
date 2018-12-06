@@ -19,6 +19,7 @@ listed in the file CREDITS.
 /* from venus */
 #include "binding.h"
 #include "venus.private.h"
+#include "venuslog.h"
 
 
 #ifdef VENUSDEBUG
@@ -45,7 +46,7 @@ binding::~binding() {
       LOG(0, ("binding::~binding:  somebody forgot to decrement before delete\n"));
 
     if (binder != 0 || bindee != 0)
-	{ print(logFile); CHOKE("binding::~binding: something bogus");}
+	{ print(GetLogFile()); CHOKE("binding::~binding: something bogus");}
 }
 
 

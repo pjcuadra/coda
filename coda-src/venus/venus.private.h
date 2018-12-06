@@ -56,113 +56,7 @@ extern "C" {
 /* from venus */
 #include "venusstats.h"
 #include "venusfid.h"
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
-/* Replica Control Rights. */
-/* Note that we presently do not distinguish between read and write rights. */
-/* We may well do so in the future, however. */
-#define	RC_STATUSREAD	1
-#define	RC_STATUSWRITE	2
-#define	RC_STATUS	(RC_STATUSREAD | RC_STATUSWRITE)
-#define	RC_DATAREAD	4
-#define	RC_DATAWRITE	8
-#define	RC_DATA		(RC_DATAREAD | RC_DATAWRITE)
-
-#define	EMULTRSLTS	ETOOMANYREFS	    /* external */
-#define	ESYNRESOLVE	155		    /* internal */
-#define	EASYRESOLVE	156		    /* internal */
-#define	ERETRY		157		    /* internal */
-/* The next three are internal, but defined in other modules. */
-/*
-#define	EVOLUME		158
-#define	EINCOMPATIBLE	198
-#define	EINCONS		199
-*/
-/* added for implementing ASRs.  Used to tell the vfs layer that 
-   an ASR was started and it should block */
-#define EASRSTARTED     200
-
-#define ASR_INTERVAL 300
-
-/*  *****  parameter defaults.  ***** */
-#define DFLT_VR "/coda"				/* venus root */
-#define DFLT_CD "/usr/coda/venus.cache"		/* cache directory */
-/* the next two are relative to cachedir if they do not start with '/' */
-#define DFLT_PIDFILE "pid"			/* default pid file */
-#define DFLT_CTRLFILE "VENUS_CTRL"		/* default control file */
-
-#define DFLT_LOGFILE "/usr/coda/etc/venus.log"	/* venus log file */
-#define DFLT_ERRLOG  "/usr/coda/etc/console"	/* venus error log */
-#define MIN_CS "2MB"
-
-/* rule of thumb */
-const int BLOCKS_PER_FILE = 24;
-const int MLES_PER_FILE = 4;
-const int FILES_PER_HDBE = 2;
-
-const int MIN_CB = 2048;
-const int MIN_CF = MIN_CB / BLOCKS_PER_FILE;
-const int MIN_MLE = MIN_CF * MLES_PER_FILE;
-const int MIN_HDBE = MIN_CF / FILES_PER_HDBE;
-
-
-#define UNSET_PRIMARYUSER 0		    /* primary user of this machine */
-const int FREE_FACTOR = 16;
-
-
-/*  *****  Manifest constants for Venus.  *****  */
-#ifdef __CYGWIN32__
-extern uid_t V_UID;    /* UID that the venus process runs under. */
-#else
-const uid_t V_UID = (uid_t)0;	    /* UID that the venus process runs under. */
-#endif
-/* Group id fields are 32 bits in BSD44 (not 16 bits); the use of a small 
-   negative number (-2) means its unsigned long representation is huge
-   (4294967294).  This causes the "ar" program to screw up because it
-   blindly does a sprintf() of the gid into the ".a" file. (Satya, 1/11/97) */
-/* In linux kernel, gid_t is unsigned short, but in venus vgid_t is
-   unsigned int which is 32-bit, so we also need to hardcode the number
-   here.  (Clement 6/10/97) */
-#if defined(__CYGWIN32__)
-const gid_t V_GID = 513;    /* GID that the venus process runs under. */
-#else
-const gid_t V_GID = 65534;    /* GID that the venus process runs under. */
-#endif
-const uid_t ANYUSER_UID = (uid_t)-1;
-const uid_t HOARD_UID = (uid_t)-2; /* uid of hoard daemon */
-const uid_t UNSET_UID = (uid_t)-666; /* beastly but recognizable */
-const unsigned short V_MODE = 0600;
-const int OWNERBITS = 0700;
-const int OWNERREAD = 0400;
-const int OWNERWRITE = 0200;
-const int OWNEREXEC = 0100;
-const uint32_t NO_HOST = (uint32_t)-1;
-const uint32_t V_MAXACLLEN = 1000;
-const int V_BLKSIZE = 8192;
-const int TIMERINTERVAL = 5;
-const int GETDATA = 1;
-#define	ALL_FIDS    (&NullFid)
-typedef void (*PROC_V_UL)(unsigned long);
-#define	STREQ(a, b)		(strcmp((a), (b)) == 0)
-#define	STRNEQ(a, b, n)		(strncmp((a), (b), (n)) == 0)
-#define	NBLOCKS(bytes)		((bytes + 1023) >> 10)
-#define	NBLOCKS_BYTES(bytes)	(NBLOCKS(bytes) << 10)
-
-/* Flags for the various vproc/fsobj name/object lookup routines. */
-#define	FOLLOW_SYMLINKS	0x1	    /* should lookup follow symlinks for last component? */
-#define	TRAVERSE_MTPTS	0x2	    /* should lookup cross covered mount points? */
-#define	REFERENCE	0x8	    /* should cache references be noted? */
-
-
-/*  *****  Debugging macros.  *****  */
-#ifdef	VENUSDEBUG
-#define	LOG(level, stmt) do { if (LogLevel >= (level)) dprint stmt; } while(0)
-#else
-#define	LOG(level, stmt)
-#endif /* !VENUSDEBUG */
+#include "venusconsts.private.h"
 
 /*  *****  Locking macros.  *****  */
 
@@ -276,33 +170,20 @@ struct CacheStats {
 	if (islower(*c)) *c = toupper(*c);\
 }
 
-#define CHOKE(me...) choke(__FILE__, __LINE__, ##me)
-
-/*  *****  Declarations for source files without their own headers.  ***** */
-void dprint(const char * ...);
-void choke(const char *file, int line, const char* ...);
 void rds_printer(char * ...);
-void VenusPrint(int argc, const char **argv);
-void VenusPrint(FILE *, int argc, const char **argv);
-void VenusPrint(int, int argc, const char **argv);
 const char *VenusOpStr(int);
 const char *IoctlOpStr(unsigned char nr);
 const char *VenusRetStr(int);
 void VVPrint(FILE *, ViceVersionVector **);
 int binaryfloor(int);
-void LogInit();
-void DebugOn();
-void DebugOff();
 void Terminate();
 void DumpState();
 void RusagePrint(int);
-void VFSPrint(int);
 void RPCPrint(int);
 void GetCSS(RPCPktStatistics *);
 void SubCSSs(RPCPktStatistics *, RPCPktStatistics *);
 void MallocPrint(int);
 void StatsInit();
-void SwapLog();
 void ToggleMallocTrace();
 const char *lvlstr(LockLevel);
 int GetTime(long *, long *);
@@ -314,11 +195,17 @@ void FireAndForget(const char *name, void (*f)(void), int interval,
 void RegisterDaemon(unsigned long, char *);
 void DispatchDaemons();
 
+void VenusPrint(int argc, const char **argv);
+
+void VenusPrint(FILE *, int argc, const char **argv);
+
+void VenusPrint(int, int argc, const char **argv);
+
+void VFSPrint(int);
+
 /* Helper to add a file descriptor with callback to main select loop. */
 void MUX_add_callback(int fd, void (*cb)(int fd, void *udata), void *udata);
 
-extern FILE *logFile;
-extern int LogLevel;
 extern long int RPC2_DebugLevel;
 extern long int SFTP_DebugLevel;
 extern long int RPC2_Trace;
@@ -346,7 +233,6 @@ extern const char *SpoolDir;
 extern uid_t PrimaryUser;
 extern const char *VenusPidFile;
 extern const char *VenusControlFile;
-extern const char *VenusLogFile;
 extern const char *consoleFile;
 extern const char *MarinerSocketPath;
 extern int   mariner_tcp_enable;

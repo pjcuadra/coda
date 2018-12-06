@@ -432,7 +432,7 @@ fsobj *fsdb::Create(VenusFid *key, int priority, const char *comp,
 
     /* Check whether the key is already in the database. */
     if ((f = Find(key)) != NULL)
-	{ f->print(logFile); CHOKE("fsdb::Create: key found"); }
+	{ f->print(GetLogFile()); CHOKE("fsdb::Create: key found"); }
 
     /* Fashion a new object.  This could be a long-running and wide-ranging transaction! */
     Recov_BeginTrans();
@@ -949,7 +949,7 @@ void fsdb::Put(fsobj **f_addr) {
 	     FID_(&f->fid), f->refcnt, f->readers, f->writers, f->openers));
 
     if (f->readers == 0 && f->writers == 0)
-	{ f->print(logFile); CHOKE("fsdb::Put: no locks!"); }
+	{ f->print(GetLogFile()); CHOKE("fsdb::Put: no locks!"); }
     LockLevel level = (f->readers > 0 ? RD : WR);
     f->UnLock(level);
 
@@ -1064,7 +1064,7 @@ int fsdb::TranslateFid(VenusFid *OldFid, VenusFid *NewFid)
 	/* Can't handle any case but reintegration. */
 	/* in old versions we would choke too  if (!DIRTY(f)) */
 	if (!HAVESTATUS(f)) {
-		f->print(logFile);
+		f->print(GetLogFile());
 		CHOKE("fsdb::TranslateFid: !HAVESTATUS");
 	}
 
@@ -1074,15 +1074,15 @@ int fsdb::TranslateFid(VenusFid *OldFid, VenusFid *NewFid)
 	/* Check that the NewFid is not already known! */
 	fsobj *Newf = Find(NewFid);
 	if (Newf != 0) {
-		f->print(logFile);
-		Newf->print(logFile);
+		f->print(GetLogFile());
+		Newf->print(GetLogFile());
 		CHOKE("fsdb::TranslateFid: NewFid found");
 	}
 
 	/* Remove OldObject from table. */
 	if (htab.remove(&f->fid, &f->primary_handle) !=
 	    &f->primary_handle) {
-		f->print(logFile);
+		f->print(GetLogFile());
 		CHOKE("fsdb::TranslateFid: old object remove");
 	}
 
@@ -1260,7 +1260,7 @@ void fsdb::ReclaimFsos(int priority, int count) {
 	fsobj *f = strbase(fsobj, b, prio_handle);
 
 	if (!REPLACEABLE(f))
-	    { f->print(logFile); CHOKE("fsdb::ReclaimFsos: !REPLACEABLE"); }
+	    { f->print(GetLogFile()); CHOKE("fsdb::ReclaimFsos: !REPLACEABLE"); }
 
 	/* Remaining replaceable entries have equal or higher priority! */
 	if (vp->type == VPT_HDBDaemon) 
@@ -1305,7 +1305,7 @@ int fsdb::FreeBlockCount() {
 	    fsobj *f = strbase(fsobj, o, owrite_handle);
 
 	    if (f->flags.owrite == 0)
-	    { f->print(logFile); CHOKE("fsdb::FreeBlockCount: on owriteq && !owrite"); }
+	    { f->print(GetLogFile()); CHOKE("fsdb::FreeBlockCount: on owriteq && !owrite"); }
 
 	    struct stat tstat;
 	    f->cf.Stat(&tstat);
@@ -1388,7 +1388,7 @@ void fsdb::ReclaimBlocks(int priority, int nblocks) {
 	fsobj *f = strbase(fsobj, b, prio_handle);
 
 	if (!REPLACEABLE(f))
-	    { f->print(logFile); CHOKE("fsdb::ReclaimBlocks: !REPLACEABLE"); }
+	    { f->print(GetLogFile()); CHOKE("fsdb::ReclaimBlocks: !REPLACEABLE"); }
 
 	/* Remaining replaceable entries have higher priority! */
 	if (priority <= f->priority) break;
@@ -1490,7 +1490,7 @@ void fsdb::print(int fd, int SummaryOnly) {
 			break;
 
 		    case Invalid:
-			f->print(logFile);
+			f->print(GetLogFile());
 			CHOKE("fsdb::print: bogus vnode type");
 		}
 	    }

@@ -40,6 +40,9 @@ extern "C" {
 #include <vice.h>
 #include <coda.h>
 
+/* venus */
+#include "venuslog.h"
+
 #define HDB_ASSERT(ex) \
 {\
    if (!(ex)) {\

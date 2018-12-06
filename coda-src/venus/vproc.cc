@@ -447,8 +447,8 @@ int vproc::operator=(vproc& vp) {
 }
 
 vproc::~vproc() {
-    if (LogLevel >= 1)
-	print(logFile);
+    if (GetLoggingLevel() >= 1)
+	print(GetLogFile());
 
     if (!idle) CHOKE("vproc::~vproc: not idle!");
 
@@ -826,7 +826,7 @@ void va_init(struct coda_vattr *vap) {
 
 void VPROC_printvattr(struct coda_vattr *vap)
 {     
-	if (LogLevel >= 1000) {
+	if (GetLoggingLevel() >= 1000) {
 	dprint("\tmode = %#o, uid = %d, gid = %d, rdev = %d\n",
 	       vap->va_mode, vap->va_uid, vap->va_gid,
 	       vap->va_rdev);

@@ -1247,7 +1247,7 @@ inline void worker::op_coda_ioctl(union inputArgs *in, union outputArgs *out,
         RecovFlush(1);
         RecovTerminate();
         VFSUnmount();
-        fflush(logFile);
+        fflush(GetLogFile());
         fflush(stderr);
 
         exit(EXIT_SUCCESS);

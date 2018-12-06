@@ -209,7 +209,7 @@ int repvol::GetVolAttr(uid_t uid)
 
                 LOG(1000, ("volent::GetVolAttr: packing volume %s, vid %p, vvv:\n",
                            rv->GetName(), rv->GetVolumeId()));
-                if (LogLevel >= 1000) FPrintVV(logFile, &rv->VVV);
+                if (GetLoggingLevel() >= 1000) FPrintVV(GetLogFile(), &rv->VVV);
 
                 VidList[nVols].Vid = rv->GetVolumeId();
                 for (i = 0; i < vsg->MaxVSG(); i++) {
@@ -352,22 +352,22 @@ void repvol::CollateVCB(mgrpent *m, RPC2_Integer *sbufs, CallBackStatus *cbufs)
     unsigned int i;
     CallBackStatus collatedCB = CallBackSet;
 
-    if (LogLevel >= 100) {
-	fprintf(logFile, "volent::CollateVCB: vid %08x Current VVV:\n", vid);
-    	FPrintVV(logFile, &VVV);
+    if (GetLoggingLevel() >= 100) {
+	fprintf(GetLogFile(), "volent::CollateVCB: vid %08x Current VVV:\n", vid);
+    	FPrintVV(GetLogFile(), &VVV);
 
-	fprintf(logFile, "volent::CollateVCB: Version stamps returned:");
+	fprintf(GetLogFile(), "volent::CollateVCB: Version stamps returned:");
 	for (i = 0; i < vsg->MaxVSG(); i++)
 	    if (m->rocc.hosts[i].s_addr != 0) 
-		fprintf(logFile, " %u", sbufs[i]);
+		fprintf(GetLogFile(), " %u", sbufs[i]);
 
-	fprintf(logFile, "\nvolent::CollateVCB: Callback status returned:");
+	fprintf(GetLogFile(), "\nvolent::CollateVCB: Callback status returned:");
 	for (i = 0; i < vsg->MaxVSG(); i++) 
 	    if (m->rocc.hosts[i].s_addr != 0)
-	    	fprintf(logFile, " %u", cbufs[i]);
+	    	fprintf(GetLogFile(), " %u", cbufs[i]);
 
-	fprintf(logFile, "\n");
-	fflush(logFile);
+	fprintf(GetLogFile(), "\n");
+	fflush(GetLogFile());
     }
 
     for (i = 0; i < vsg->MaxVSG(); i++) {

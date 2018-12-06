@@ -159,7 +159,7 @@ static void SigControl(int sig)
     char command[80];
 
     if (stat(VenusControlFile, &tstat) != 0) {
-	SwapLog();
+        SwapLog();
         return;
     }
 
@@ -193,7 +193,7 @@ static void SigControl(int sig)
 	found = fscanf(fp, "%d %d %d", &loglevel, &rpc2level, &lwplevel);
 
 	if (found > 0 && loglevel >= 0)
-		LogLevel = loglevel;
+		SetLoggingLevel(loglevel);
 
 	if (found > 1 && rpc2level >= 0) {
 		RPC2_DebugLevel = rpc2level;
@@ -203,13 +203,13 @@ static void SigControl(int sig)
 	if (found > 2 && lwplevel >= 0)
 		lwp_debug = lwplevel;
 
-	LOG(0, ("LogLevel is now %d.\n", LogLevel));
+	LOG(0, ("LogLevel is now %d.\n", GetLoggingLevel()));
 	LOG(0, ("RPC2_DebugLevel is now %d.\n", RPC2_DebugLevel));
 	LOG(0, ("lwp_debug is now %d.\n", lwp_debug));
     }
 
     if (STREQ(command, "SWAPLOGS"))
-	SwapLog();
+        SwapLog();
 
     if (STREQ(command, "STATSINIT"))
 	StatsInit();
@@ -258,7 +258,7 @@ static void SigExit(int sig)
     RecovFlush(1);
     RecovTerminate();
     VFSUnmount();
-    fflush(logFile);
+    fflush(GetLogFile());
     fflush(stderr);
     exit(EXIT_SUCCESS);
 }

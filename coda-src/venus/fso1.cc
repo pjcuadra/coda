@@ -188,7 +188,7 @@ void fsobj::ResetTransient()
 {
     /* Sanity checks. */
     if (MagicNumber != FSO_MagicNumber)
-	{ print(logFile); CHOKE("fsobj::ResetTransient: bogus MagicNumber"); }
+	{ print(GetLogFile()); CHOKE("fsobj::ResetTransient: bogus MagicNumber"); }
 
     /* This is a horrible way of resetting handles! */
     list_head_init(&vol_handle);
@@ -238,7 +238,7 @@ void fsobj::ResetTransient()
 
     /* Link to volume, and initialize volume specific members. */
     if ((vol = VDB->Find(MakeVolid(&fid))) == 0) {
-	print(logFile);
+	print(GetLogFile());
 	CHOKE("fsobj::ResetTransient: couldn't find volume");
     }
 
@@ -257,7 +257,7 @@ fsobj::~fsobj() {
 #ifdef	VENUSDEBUG
     /* Sanity check. */
     if (!GCABLE(this))
-	{ print(logFile); CHOKE("fsobj::~fsobj: !GCABLE"); }
+	{ print(GetLogFile()); CHOKE("fsobj::~fsobj: !GCABLE"); }
 #endif /* VENUSDEBUG */
 
     LOG(10, ("fsobj::~fsobj: fid = (%s), comp = %s\n", FID_(&fid), comp));
@@ -268,7 +268,7 @@ fsobj::~fsobj() {
     /* MLE bindings must already be detached! */
     if (mle_bindings) {
 	if (mle_bindings->count() != 0)
-	    { print(logFile); CHOKE("fsobj::~fsobj: mle_bindings->count() != 0"); }
+	    { print(GetLogFile()); CHOKE("fsobj::~fsobj: mle_bindings->count() != 0"); }
 	delete mle_bindings;
 	mle_bindings = 0;
     }
@@ -277,7 +277,7 @@ fsobj::~fsobj() {
     if (hdb_bindings) {
 	DetachHdbBindings();
 	if (hdb_bindings->count() != 0)
-	    { print(logFile); CHOKE("fsobj::~fsobj: hdb_bindings->count() != 0"); }
+	    { print(GetLogFile()); CHOKE("fsobj::~fsobj: hdb_bindings->count() != 0"); }
 	delete hdb_bindings;
 	hdb_bindings = 0;
     }
@@ -303,7 +303,7 @@ fsobj::~fsobj() {
 	    cf->pfso = 0;
 	}
 	if (children->count() != 0)
-	    { print(logFile); CHOKE("fsobj::~fsobj: children->count() != 0"); }
+	    { print(GetLogFile()); CHOKE("fsobj::~fsobj: children->count() != 0"); }
 	delete children;
     }
 
@@ -318,12 +318,12 @@ fsobj::~fsobj() {
 	    {
 		fsobj *root_fso = u.root;
 		if (root_fso == 0) {
-		    print(logFile);
+		    print(GetLogFile());
 		    CHOKE("fsobj::~fsobj: root_fso = 0");
 		}
 		if (root_fso->u.mtpoint != this) {
-		    print(logFile);
-		    root_fso->print(logFile);
+		    print(GetLogFile());
+		    root_fso->print(GetLogFile());
 		    CHOKE("fsobj::~fsobj: rf->mtpt != mf");
 		}
 		root_fso->UnmountRoot();
@@ -342,7 +342,7 @@ fsobj::~fsobj() {
 	    break;
 
 	default:
-	    print(logFile);
+	    print(GetLogFile());
 	    CHOKE("fsobj::~fsobj: bogus mvstat");
     }
 
@@ -358,11 +358,11 @@ fsobj::~fsobj() {
 
     /* Remove from the delete queue. */
     if (FSDB->delq->remove(&del_handle) != &del_handle)
-	{ print(logFile); CHOKE("fsobj::~fsobj: delq remove"); }
+	{ print(GetLogFile()); CHOKE("fsobj::~fsobj: delq remove"); }
 
     /* Remove from the table. */
     if ((FSDB->htab).remove(&fid, &primary_handle) != &primary_handle)
-	{ print(logFile); CHOKE("fsobj::~fsobj: htab remove"); }
+	{ print(GetLogFile()); CHOKE("fsobj::~fsobj: htab remove"); }
 
     /* Notify waiters of dead runts. */
     if (!HAVESTATUS(this)) {
@@ -411,7 +411,7 @@ void fsobj::Recover()
 	    break;
 
 	default:
-	    print(logFile);
+	    print(GetLogFile());
 	    CHOKE("fsobj::Recover: bogus state");
     }
 
@@ -511,7 +511,7 @@ void fsobj::Recover()
 	CHOKE("fsobj::Recover: bogus VnodeType (%d)", stat.VnodeType);
     }
 
-    if (LogLevel >= 1) print(logFile);
+    if (GetLoggingLevel() >= 1) print(GetLogFile());
     return;
 
 FailSafe:
@@ -531,7 +531,7 @@ Failure:
     {
 	LOG(0, ("fsobj::Recover: invalid fso (%s, %s), attempting to GC...\n",
 		comp, FID_(&fid)));
-	print(logFile);
+	print(GetLogFile());
 
         /* Scavenge data for bogus objects. */
         /* Note that any store of this file in the CML must be cancelled (in
@@ -570,7 +570,7 @@ Failure:
 void fsobj::Matriculate()
 {
     if (HAVESTATUS(this))
-	{ print(logFile); CHOKE("fsobj::Matriculate: HAVESTATUS"); }
+	{ print(GetLogFile()); CHOKE("fsobj::Matriculate: HAVESTATUS"); }
 
     LOG(10, ("fsobj::Matriculate: (%s)\n", FID_(&fid)));
 
@@ -686,7 +686,7 @@ void fsobj::UpdateStatus(ViceStatus *vstat, ViceVersionVector *UpdateSet, uid_t 
 
     /* Mount points are never updated. */
     if (IsMtPt())
-	{ print(logFile); CHOKE("fsobj::UpdateStatus: IsMtPt!"); }
+	{ print(GetLogFile()); CHOKE("fsobj::UpdateStatus: IsMtPt!"); }
 
     LOG(100, ("fsobj::UpdateStatus: (%s), uid = %d\n", FID_(&fid), uid));
 
@@ -1129,7 +1129,7 @@ void fsobj::MakeClean() {
 int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
 {
     if (!HAVEALLDATA(this))
-	{ print(logFile); CHOKE("fsobj::TryToCover: called without data"); }
+	{ print(GetLogFile()); CHOKE("fsobj::TryToCover: called without data"); }
 
     LOG(10, ("fsobj::TryToCover: fid = (%s)\n", FID_(&fid)));
 
@@ -1263,7 +1263,7 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
 		    UncoverMtPt();
 	    } else {
 		    if (mf->u.root != rf)
-			    { mf->print(logFile); rf->print(logFile); CHOKE("TryToCover: mf->root != rf"); }
+			    { mf->print(GetLogFile()); rf->print(GetLogFile()); CHOKE("TryToCover: mf->root != rf"); }
 		    mf->UncoverMtPt();
 	    }
 	    rf->UnmountRoot();
@@ -1291,9 +1291,9 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
 /* Call with object write-locked. */
 void fsobj::CoverMtPt(fsobj *root_fso) {
     if (!IsNormal())
-	{ print(logFile); CHOKE("fsobj::CoverMtPt: mvstat != NORMAL"); }
+	{ print(GetLogFile()); CHOKE("fsobj::CoverMtPt: mvstat != NORMAL"); }
     if (!data.symlink)
-	{ print(logFile); CHOKE("fsobj::CoverMtPt: no data.symlink!"); }
+	{ print(GetLogFile()); CHOKE("fsobj::CoverMtPt: no data.symlink!"); }
 
     LOG(10, ("fsobj::CoverMtPt: fid = (%s), rootfid = (%s)\n",
 	     FID_(&fid), FID_(&root_fso->fid)));
@@ -1314,9 +1314,9 @@ void fsobj::CoverMtPt(fsobj *root_fso) {
 /* Call with object write-locked. */
 void fsobj::UncoverMtPt() {
     if (!IsMtPt()) 
-	{ print(logFile); CHOKE("fsobj::UncoverMtPt: mvstat != MOUNTPOINT"); }
+	{ print(GetLogFile()); CHOKE("fsobj::UncoverMtPt: mvstat != MOUNTPOINT"); }
     if (!u.root)
-	{ print(logFile); CHOKE("fsobj::UncoverMtPt: no u.root!"); }
+	{ print(GetLogFile()); CHOKE("fsobj::UncoverMtPt: no u.root!"); }
 
     LOG(10, ("fsobj::UncoverMtPt: fid = (%s), rootfid = (%s)\n",
 	      FID_(&fid), FID_(&u.root->fid)));
@@ -1338,9 +1338,9 @@ void fsobj::UncoverMtPt() {
 /* Call with object write-locked. */
 void fsobj::MountRoot(fsobj *mtpt_fso) {
     if (!IsRoot())
-	{ print(logFile); CHOKE("fsobj::MountRoot: mvstat != ROOT"); }
+	{ print(GetLogFile()); CHOKE("fsobj::MountRoot: mvstat != ROOT"); }
     if (u.mtpoint)
-	{ print(logFile); CHOKE("fsobj::MountRoot: u.mtpoint exists!"); }
+	{ print(GetLogFile()); CHOKE("fsobj::MountRoot: u.mtpoint exists!"); }
 
     LOG(10, ("fsobj::MountRoot: fid = %s, mtptfid = %s\n",
 	     FID_(&fid), FID_(&mtpt_fso->fid)));
@@ -1359,9 +1359,9 @@ void fsobj::MountRoot(fsobj *mtpt_fso) {
 /* Call with object write-locked. */
 void fsobj::UnmountRoot() {
     if (!IsRoot())
-	{ print(logFile); CHOKE("fsobj::UnmountRoot: mvstat != ROOT"); }
+	{ print(GetLogFile()); CHOKE("fsobj::UnmountRoot: mvstat != ROOT"); }
     if (!u.mtpoint)
-	{ print(logFile); CHOKE("fsobj::UnmountRoot: no u.mtpoint!"); }
+	{ print(GetLogFile()); CHOKE("fsobj::UnmountRoot: no u.mtpoint!"); }
 
     LOG(10, ("fsobj::UnmountRoot: fid = (%s), mtptfid = (%s)\n",
 	      FID_(&fid), FID_(&u.mtpoint->fid)));
@@ -1383,7 +1383,7 @@ void fsobj::UnmountRoot() {
 /* Need not be called from within transaction. */
 void fsobj::AttachChild(fsobj *child) {
     if (!IsDir())
-	{ print(logFile); child->print(logFile); CHOKE("fsobj::AttachChild: not dir"); }
+	{ print(GetLogFile()); child->print(GetLogFile()); CHOKE("fsobj::AttachChild: not dir"); }
 
     LOG(100, ("fsobj::AttachChild: (%s), (%s)\n",
 	       FID_(&fid), FID_(&child->fid)));
@@ -1391,7 +1391,7 @@ void fsobj::AttachChild(fsobj *child) {
     DisableReplacement();
 
     if (child->child_link.is_linked())
-	{ print(logFile); child->print(logFile); CHOKE("fsobj::AttachChild: bad child"); }
+	{ print(GetLogFile()); child->print(GetLogFile()); CHOKE("fsobj::AttachChild: bad child"); }
     if (!children)
 	children = new dlist;
     children->prepend(&child->child_link);
@@ -1403,7 +1403,7 @@ void fsobj::AttachChild(fsobj *child) {
 /* Need not be called from within transaction. */
 void fsobj::DetachChild(fsobj *child) {
     if (!IsDir())
-	{ print(logFile); child->print(logFile); CHOKE("fsobj::DetachChild: not dir"); }
+	{ print(GetLogFile()); child->print(GetLogFile()); CHOKE("fsobj::DetachChild: not dir"); }
 
     LOG(100, ("fsobj::DetachChild: (%s), (%s)\n",
 	       FID_(&fid), FID_(&child->fid)));
@@ -1412,9 +1412,9 @@ void fsobj::DetachChild(fsobj *child) {
 
     if (child->pfso != this || !child->child_link.is_linked() ||
 	!children || children->count() == 0)
-	{ print(logFile); child->print(logFile); CHOKE("fsobj::DetachChild: bad child"); }
+	{ print(GetLogFile()); child->print(GetLogFile()); CHOKE("fsobj::DetachChild: bad child"); }
     if (children->remove(&child->child_link) != &child->child_link)
-	{ print(logFile); child->print(logFile); CHOKE("fsobj::DetachChild: remove failed"); }
+	{ print(GetLogFile()); child->print(GetLogFile()); CHOKE("fsobj::DetachChild: remove failed"); }
 
     EnableReplacement();
 }
@@ -1502,7 +1502,7 @@ void fsobj::EnableReplacement() {
 /*
     if (DYING(this)) {
 	if (*((dlink **)&del_handle) == 0)
-	    { print(logFile); CHOKE("fsobj::EnableReplacement: dying && del_handle = 0"); }
+	    { print(GetLogFile()); CHOKE("fsobj::EnableReplacement: dying && del_handle = 0"); }
 	return;
     }
 */
@@ -1527,15 +1527,15 @@ void fsobj::EnableReplacement() {
 	      FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]));
 
 #ifdef	VENUSDEBUG
-    if (LogLevel >= 10000)
-	FSDB->prioq->print(logFile);
+    if (GetLoggingLevel() >= 10000)
+	FSDB->prioq->print(GetLogFile());
 #endif
 
     FSDB->prioq->insert(&prio_handle);
 
 #ifdef	VENUSDEBUG
-    if (LogLevel >= 10000 && !(FSDB->prioq->IsOrdered()))
-	{ print(logFile); FSDB->prioq->print(logFile); CHOKE("fsobj::EnableReplacement: !IsOrdered after insert"); }
+    if (GetLoggingLevel() >= 10000 && !(FSDB->prioq->IsOrdered()))
+	{ print(GetLogFile()); FSDB->prioq->print(GetLogFile()); CHOKE("fsobj::EnableReplacement: !IsOrdered after insert"); }
 #endif
 }
 
@@ -1547,7 +1547,7 @@ void fsobj::DisableReplacement() {
 /*
     if (DYING(this)) {
 	if (*((dlink **)&del_handle) == 0)
-	    { print(logFile); CHOKE("fsobj::DisableReplacement: dying && del_handle = 0"); }
+	    { print(GetLogFile()); CHOKE("fsobj::DisableReplacement: dying && del_handle = 0"); }
 	return;
     }
 */
@@ -1561,16 +1561,16 @@ void fsobj::DisableReplacement() {
 	      FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]));
 
 #ifdef	VENUSDEBUG
-    if (LogLevel >= 10000)
-	FSDB->prioq->print(logFile);
+    if (GetLoggingLevel() >= 10000)
+	FSDB->prioq->print(GetLogFile());
 #endif
 
     if (FSDB->prioq->remove(&prio_handle) != &prio_handle)
-	{ print(logFile); CHOKE("fsobj::DisableReplacement: prioq remove"); }
+	{ print(GetLogFile()); CHOKE("fsobj::DisableReplacement: prioq remove"); }
 
 #ifdef	VENUSDEBUG
-    if (LogLevel >= 10000 && !(FSDB->prioq->IsOrdered()))
-	{ print(logFile); FSDB->prioq->print(logFile); CHOKE("fsobj::DisableReplacement: !IsOrdered after remove"); }
+    if (GetLoggingLevel() >= 10000 && !(FSDB->prioq->IsOrdered()))
+	{ print(GetLogFile()); FSDB->prioq->print(GetLogFile()); CHOKE("fsobj::DisableReplacement: !IsOrdered after remove"); }
 #endif
 }
 
@@ -1612,9 +1612,9 @@ binding *fsobj::AttachHdbBinding(namectxt *binder)
     b->binder = binder;
     b->bindee = this;
 
-    if (LogLevel >= 1000) {
+    if (GetLoggingLevel() >= 1000) {
 	dprint("fsobj::AttachHdbBinding:\n");
-	print(logFile);
+	print(GetLogFile());
     }
 
     /* Attach ourselves to the binding. */
@@ -1623,10 +1623,10 @@ binding *fsobj::AttachHdbBinding(namectxt *binder)
     hdb_bindings->insert(&b->bindee_handle);
     b->IncrRefCount();
 
-    if (LogLevel >= 10) {
+    if (GetLoggingLevel() >= 10) {
       dprint("fsobj::AttachHdbBinding:\n");
-      print(logFile);
-      b->print(logFile);
+      print(GetLogFile());
+      b->print(GetLogFile());
     }
 
     if (IsSymLink())
@@ -1659,14 +1659,14 @@ void fsobj::DemoteHdbBindings() {
 void fsobj::DemoteHdbBinding(binding *b) {
     /* Sanity checks. */
     if (b->bindee != this) {
-	print(logFile);
-	if (b != 0) b->print(logFile);
+	print(GetLogFile());
+	if (b != 0) b->print(GetLogFile());
 	CHOKE("fsobj::DemoteHdbBinding: bindee != this");
     }
-    if (LogLevel >= 1000) {
+    if (GetLoggingLevel() >= 1000) {
 	dprint("fsobj::DemoteHdbBinding:\n");
-	print(logFile);
-	b->print(logFile);
+	print(GetLogFile());
+	b->print(GetLogFile());
     }
 
     /* Update the state of the binder. */
@@ -1695,19 +1695,19 @@ void fsobj::DetachHdbBinding(binding *b, int DemoteNameCtxt) {
 
     /* Sanity checks. */
     if (b->bindee != this) {
-	print(logFile);
-	if (b != 0) b->print(logFile);
+	print(GetLogFile());
+	if (b != 0) b->print(GetLogFile());
 	CHOKE("fsobj::DetachHdbBinding: bindee != this");
     }
-    if (LogLevel >= 1000) {
+    if (GetLoggingLevel() >= 1000) {
 	dprint("fsobj::DetachHdbBinding:\n");
-	print(logFile);
-	b->print(logFile);
+	print(GetLogFile());
+	b->print(GetLogFile());
     }
 
     /* Detach ourselves from the binding. */
     if (hdb_bindings->remove(&b->bindee_handle) != &b->bindee_handle)
-	{ print(logFile); b->print(logFile); CHOKE("fsobj::DetachHdbBinding: bindee remove"); }
+	{ print(GetLogFile()); b->print(GetLogFile()); CHOKE("fsobj::DetachHdbBinding: bindee remove"); }
     b->bindee = 0;
     b->DecrRefCount();
     if (IsSymLink() && hdb_bindings->count() == 0)
@@ -1752,14 +1752,14 @@ void fsobj::DetachHdbBinding(binding *b, int DemoteNameCtxt) {
 void fsobj::AttachMleBinding(binding *b) {
     /* Sanity checks. */
     if (b->bindee != 0) {
-	print(logFile);
-	b->print(logFile);
+	print(GetLogFile());
+	b->print(GetLogFile());
 	CHOKE("fsobj::AttachMleBinding: bindee != 0");
     }
-    if (LogLevel >= 1000) {
+    if (GetLoggingLevel() >= 1000) {
 	dprint("fsobj::AttachMleBinding:\n");
-	print(logFile);
-	b->print(logFile);
+	print(GetLogFile());
+	b->print(GetLogFile());
     }
 
     /* Attach ourselves to the binding. */
@@ -1783,21 +1783,21 @@ void fsobj::AttachMleBinding(binding *b) {
 void fsobj::DetachMleBinding(binding *b) {
     /* Sanity checks. */
     if (b->bindee != this) {
-	print(logFile);
-	if (b != 0) b->print(logFile);
+	print(GetLogFile());
+	if (b != 0) b->print(GetLogFile());
 	CHOKE("fsobj::DetachMleBinding: bindee != this");
     }
-    if (LogLevel >= 1000) {
+    if (GetLoggingLevel() >= 1000) {
 	dprint("fsobj::DetachMleBinding:\n");
-	print(logFile);
-	b->print(logFile);
+	print(GetLogFile());
+	b->print(GetLogFile());
     }
     FSO_ASSERT(this, DIRTY(this));
     FSO_ASSERT(this, mle_bindings != 0);
 
     /* Detach ourselves from the binding. */
     if (mle_bindings->remove(&b->bindee_handle) != &b->bindee_handle)
-	{ print(logFile); b->print(logFile); CHOKE("fsobj::DetachMleBinding: bindee remove"); }
+	{ print(GetLogFile()); b->print(GetLogFile()); CHOKE("fsobj::DetachMleBinding: bindee remove"); }
     b->bindee = 0;
     b->DecrRefCount();
 
@@ -1815,9 +1815,9 @@ void fsobj::DetachMleBinding(binding *b) {
 /* If there are readers of this file, they will have it change from underneath them! */
 void fsobj::DiscardData() {
     if (!HAVEDATA(this))
-	{ print(logFile); CHOKE("fsobj::DiscardData: !HAVEDATA"); }
+	{ print(GetLogFile()); CHOKE("fsobj::DiscardData: !HAVEDATA"); }
     if (ACTIVE(this))
-	{ print(logFile); CHOKE("fsobj::DiscardData: ACTIVE"); }
+	{ print(GetLogFile()); CHOKE("fsobj::DiscardData: ACTIVE"); }
 
     LOG(10, ("fsobj::DiscardData: (%s)\n", FID_(&fid)));
 
@@ -2050,7 +2050,7 @@ void fsobj::Lock(LockLevel level) {
 	       FID_(&fid), ((level == RD)?"RD":"WR")));
 
     if (level != RD && level != WR)
-	{ print(logFile); CHOKE("fsobj::Lock: bogus lock level %d", level); }
+	{ print(GetLogFile()); CHOKE("fsobj::Lock: bogus lock level %d", level); }
 
     FSO_HOLD(this);
     while (level == RD ? (writers > 0) : (writers > 0 || readers > 0))
@@ -2087,13 +2087,13 @@ void fsobj::UnLock(LockLevel level) {
 	       FID_(&fid), ((level == RD)?"RD":"WR")));
 
     if (level != RD && level != WR)
-	{ print(logFile); CHOKE("fsobj::UnLock: bogus lock level %d", level); }
+	{ print(GetLogFile()); CHOKE("fsobj::UnLock: bogus lock level %d", level); }
 
     if (refcnt <= 0)
-	{ print(logFile); CHOKE("fsobj::UnLock: refcnt <= 0"); }
+	{ print(GetLogFile()); CHOKE("fsobj::UnLock: refcnt <= 0"); }
     (level == RD) ? (readers--) : (writers--);
     if (readers < 0 || writers < 0)
-	{ print(logFile); CHOKE("fsobj::UnLock: readers = %d, writers = %d", readers, writers); }
+	{ print(GetLogFile()); CHOKE("fsobj::UnLock: readers = %d, writers = %d", readers, writers); }
     if (level == RD ? (readers == 0) : (writers == 0))
 	VprocSignal(&fso_sync);
     FSO_RELE(this);
