@@ -16,24 +16,15 @@ listed in the file CREDITS.
 
 #*/
 
-
-
-
-
-
-
-
 /*
- *
- *    Specification of the Venus Signal Handler facility.
- *
+ *  Venus signal handling subsystem API
  */
 
 
-#ifndef	_VENUS_SIGHAND_H_
-#define	_VENUS_SIGHAND_H_ 1
+#ifndef	_VENUS_SIGHAND_SUBSYSTEM_H_
+#define	_VENUS_SIGHAND_SUBSYSTEM_H_ 1
 
-int SigGetTerminate();
-int SigIsMountDone();
+void SigInit(void);
+void SigSetup();
 
-#endif /* _VENUS_SIGHAND_H_ */
+#endif /* _VENUS_SIGHAND_SUBSYSTEM_H_ */

@@ -59,8 +59,20 @@ static void SigExit(int);
 static void SigMounted(int);
 static void SigASR(int);
 
-int TerminateVenus;
-int mount_done;
+struct sighand_subsystem_instance_t {
+    bool initialized;
+    int TerminateVenus;
+    int mount_done;
+};
+
+static sighand_subsystem_instance_t sighand_sub_inst;
+
+void SigSetup() {
+    sighand_sub_inst.initialized = false;
+    sighand_sub_inst.TerminateVenus = 0;
+    sighand_sub_inst.mount_done = 0;
+}
+
 
 void SigInit(void)
 {
@@ -150,6 +162,14 @@ void SigInit(void)
     sigaction(SIGCHLD, &sa, NULL);
     ASRpid = NO_ASR; 
 #endif
+}
+
+int SigGetTerminate() {
+    return sighand_sub_inst.TerminateVenus;
+}
+
+int SigIsMountDone() {
+    return sighand_sub_inst.mount_done;
 }
 
 static void SigControl(int sig)
@@ -253,7 +273,7 @@ static void SigExit(int sig)
     LOG(0, ("TERM: About to terminate venus\n"));
     MarinerLog("shutdown in progress\n");
 
-    TerminateVenus = 1;
+    sighand_sub_inst.TerminateVenus = 1;
 
     RecovFlush(1);
     RecovTerminate();

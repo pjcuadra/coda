@@ -52,7 +52,6 @@ extern "C" {
 #include "hdb.h"
 #include "local.h"
 #include "mariner.h"
-#include "sighand.h"
 #include "user.h"
 #include "venus.private.h"
 #include "venuscb.h"
@@ -63,6 +62,7 @@ extern "C" {
 #include "codaconf.h"
 #include "realmdb.h"
 #include "daemonizer.h"
+#include "sighand.h"
 
 /* venus subsystems */
 #include "subsystem.h"
@@ -70,6 +70,7 @@ extern "C" {
 #include "vproc.subsystem.h"
 #include "daemon.subsystem.h"
 #include "venusstats.subsystem.h"
+#include "sighand.subsystem.h"
 
 #include "nt_util.h"
 #ifdef __CYGWIN32__
@@ -430,6 +431,7 @@ int main(int argc, char **argv)
     StatsSetup();
     StatsInit();
 
+    SigSetup();
     SigInit();      /* set up signal handlers */
 
     DIR_Init(RvmType == VM ? DIR_DATA_IN_VM : DIR_DATA_IN_RVM);
@@ -474,7 +476,7 @@ int main(int argc, char **argv)
             _MUX_Dispatch(&rfds);
 
 	/* set in sighand.cc whenever we want to perform a clean shutdown */
-	if (TerminateVenus)
+	if (SigGetTerminate())
 	    break;
 
 	/* Fire daemons that are ready to run. */
