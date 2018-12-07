@@ -214,7 +214,6 @@ extern struct timeval DaemonExpiry;
 
 /* venus.c */
 class vproc;
-extern vproc *Main;
 extern VenusFid rootfid;
 extern int parent_fd;
 extern long rootnodeid;
