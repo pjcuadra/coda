@@ -58,7 +58,6 @@ extern "C" {
 #include "venuscb.h"
 #include "venusrecov.h"
 #include "venusvol.h"
-#include "vproc.h"
 #include "worker.h"
 #include "coda_assert.h"
 #include "codaconf.h"
@@ -68,6 +67,7 @@ extern "C" {
 /* venus subsystems */
 #include "subsystem.h"
 #include "venuslog.subsystem.h"
+#include "vproc.subsystem.h"
 
 #include "nt_util.h"
 #ifdef __CYGWIN32__
@@ -82,7 +82,6 @@ uid_t V_UID;
 
 /* *****  Exported variables  ***** */
 /* globals in the .bss are implicitly initialized to 0 according to ANSI-C standards */
-vproc *Main;
 VenusFid rootfid;
 long rootnodeid;
 int CleanShutDown;
@@ -406,6 +405,7 @@ int main(int argc, char **argv)
      * The logging routines return without doing anything if LoggingInit 
      * hasn't yet been called. 
      */
+    VprocSetup();
     VprocInit();    /* init LWP/IOMGR support */
 
     /* Set Logging Configuration */

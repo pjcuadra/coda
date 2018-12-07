@@ -152,7 +152,6 @@ struct uarea {
 typedef void (*PROCBODY)(void);
 
 class vproc : public olink {
-  friend void VprocInit();
   friend void Rtry_Wait();
   friend void Rtry_Signal();
   friend vproc *FindVproc(int);
@@ -167,7 +166,6 @@ class vproc : public olink {
 
   private:
     static olist tbl;
-    static int counter;
     static char rtry_sync;
 
     void do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data);
@@ -315,7 +313,6 @@ class vproc_iterator : public olist_iterator {
 
 /* *****  Exported routines  ***** */
 void VPROC_printvattr(struct coda_vattr *vap);
-extern void VprocInit();
 extern void Rtry_Wait();
 extern void Rtry_Signal();
 extern vproc *FindVproc(int);

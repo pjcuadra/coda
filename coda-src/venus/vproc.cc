@@ -64,27 +64,42 @@ extern "C" {
 #endif
 
 olist vproc::tbl;
-int vproc::counter;
 char vproc::rtry_sync;
 
 extern const int  RVM_THREAD_DATA_ROCK_TAG;
 
 static const int VPROC_ROCK_TAG = 1776;
 
+struct vproc_subsystem_instance_t {
+    vproc *Main;
+    int counter;
+    bool initialized;
+};
+
+static struct vproc_subsystem_instance_t vproc_sub_inst;
+
 
 static void DoNothing(void) { return; }
 
+void VprocSetup() {
+    vproc_sub_inst.Main = NULL;
+    vproc_sub_inst.counter = 0;
+    vproc_sub_inst.initialized = false;
+}
+
 void VprocInit() {
-    vproc::counter = 0;
+    vproc_sub_inst.counter = 0;
 
     /* 
      * Create main process.
      * This call initializes LWP and IOMGR support. 
      * That's why it doesn't pass in a function.
      */
-    Main = new vproc("Main", &DoNothing, VPT_Main);
+    vproc_sub_inst.Main = new vproc("Main", &DoNothing, VPT_Main);
 
     VprocSetRetry();
+
+    vproc_sub_inst.initialized = true;
 }
 
 
@@ -165,7 +180,7 @@ vproc *VprocSelf() {
     }
 
     /* Presumably, we are in the midst of handling a signal. */
-    return(Main);
+    return(vproc_sub_inst.Main);
 }
 
 
@@ -352,7 +367,7 @@ void PrintVprocs(FILE *fp) {
 
 void PrintVprocs(int fd) {
     fdprint(fd, "Vprocs: tbl = %#08x, counter = %d, nprocs = %d\n",
-	     (long)&vproc::tbl, vproc::counter, vproc::tbl.count());
+	     (long)&vproc::tbl, vproc_sub_inst.counter, vproc::tbl.count());
 
     vproc_iterator next;
     vproc *vp;
@@ -368,7 +383,7 @@ vproc::vproc(const char *n, PROCBODY f, vproctype t, int stksize, int priority)
     lwpid = NULL;
     name = strdup(n);
     func = f;
-    vpid = counter++;
+    vpid = vproc_sub_inst.counter++;
     memset((void *)&rvm_data, 0, (int) sizeof(rvm_perthread_t));
     /*    rvm_data.die = &CHOKE; */
     type = t;
