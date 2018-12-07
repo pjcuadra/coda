@@ -41,8 +41,15 @@ extern "C" {
 #include "vproc.h"
 #include "venus.private.h"
 #include "venuslog.h"
+#include "daemon.subsystem.h"
 
 static struct TM_Elem *DaemonList;
+
+struct daemon_subsystem_instance_t {
+    bool intialized;
+};
+
+static daemon_subsystem_instance_t daemon_sub_inst;
 
 void InitOneADay();
 
@@ -51,12 +58,17 @@ struct DaemonInfo {
 	char *sync;              /* who to signal, if anyone */
 };
 
+void DaemonSetup() {
+    daemon_sub_inst.intialized = false;
+}
+
 void DaemonInit() {
     if (TM_Init(&DaemonList))
-	CHOKE("Couldn't create DaemonList!");
+        CHOKE("Couldn't create DaemonList!");
 
     /* set timer for once-a-day log messages */
-    InitOneADay(); 
+    InitOneADay();
+    daemon_sub_inst.intialized = true;
 }
 
 void RegisterDaemon(unsigned long interval, char *sync) {

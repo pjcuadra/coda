@@ -68,6 +68,7 @@ extern "C" {
 #include "subsystem.h"
 #include "venuslog.subsystem.h"
 #include "vproc.subsystem.h"
+#include "daemon.subsystem.h"
 
 #include "nt_util.h"
 #ifdef __CYGWIN32__
@@ -418,9 +419,11 @@ int main(int argc, char **argv)
     /* Init Logging Subsystem */
     LoggingInit();
 
+    /* Finish configuring logs of LWP and RPC2 */
     LWP_SetLog(GetLogFile(), lwp_debug);
     RPC2_SetLog(GetLogFile(), RPC2_DebugLevel);
 
+    DaemonSetup();
     DaemonInit();   /* before any Daemons initialize and after LogInit */
 
     StatsInit();
