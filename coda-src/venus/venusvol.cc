@@ -288,7 +288,7 @@ static void GetRootVolume(Realm *realm, char **buf)
     if (realm->GetAdmConn(&c) != 0) {
 	LOG(100, ("GetRootVolume: can't get admin connection for realm %s!\n",
 		  realm->Name()));
-	RPCOpStats.RPCOps[ViceGetRootVolume_OP].bad++;
+	GetRPCOpt(ViceGetRootVolume_OP).bad++;
 	goto err_exit;
     }
 

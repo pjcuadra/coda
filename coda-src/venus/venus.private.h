@@ -183,7 +183,6 @@ void RPCPrint(int);
 void GetCSS(RPCPktStatistics *);
 void SubCSSs(RPCPktStatistics *, RPCPktStatistics *);
 void MallocPrint(int);
-void StatsInit();
 void ToggleMallocTrace();
 const char *lvlstr(LockLevel);
 int GetTime(long *, long *);
@@ -211,8 +210,6 @@ extern long int RPC2_Trace;
 extern int MallocTrace;
 extern const VenusFid NullFid;
 extern const ViceVersionVector NullVV;
-extern VFSStatistics VFSStats;
-extern RPCOpStatistics RPCOpStats;
 extern struct timeval DaemonExpiry;
 
 /* venus.c */

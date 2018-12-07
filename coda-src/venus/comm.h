@@ -415,12 +415,12 @@ extern struct CommQueueStruct CommQueue;
     }
 #define	MULTI_START_MESSAGE(viceop)\
     START_COMMSYNC();\
-    LOG(10, ("(Multi)%s: start\n", RPCOpStats.RPCOps[viceop].name));\
+    LOG(10, ("(Multi)%s: start\n", GetRPCOpt(viceop).name));\
     START_TIMING();\
     START_COMMSTATS();
 #define	UNI_START_MESSAGE(viceop)\
     START_COMMSYNC();\
-    LOG(10, ("%s: start\n", RPCOpStats.RPCOps[viceop].name));\
+    LOG(10, ("%s: start\n", GetRPCOpt(viceop).name));\
     START_TIMING();\
     START_COMMSTATS();
 
@@ -432,7 +432,7 @@ extern struct CommQueueStruct CommQueue;
     END_TIMING();\
     END_COMMSYNC();\
     END_COMMSTATS();\
-    LOG(10, ("(Multi)%s: code = %d, elapsed = %3.1f\n", RPCOpStats.RPCOps[viceop].name, code, elapsed));\
+    LOG(10, ("(Multi)%s: code = %d, elapsed = %3.1f\n", GetRPCOpt(viceop).name, code, elapsed));\
     LOG(1000, ("RPC2_SStats: Total = %d\n", endCS.RPC2_SStats_Multi.Multicasts));\
     LOG(1000, ("SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", endCS.SFTP_SStats_Multi.Starts, endCS.SFTP_SStats_Multi.Datas, endCS.SFTP_SStats_Multi.DataRetries, endCS.SFTP_SStats_Multi.Acks));\
     LOG(1000, ("RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n", endCS.RPC2_RStats_Multi.Replies, endCS.RPC2_RStats_Multi.Busies, endCS.RPC2_RStats_Multi.Naks, endCS.RPC2_RStats_Multi.Bogus));\
@@ -442,63 +442,63 @@ extern struct CommQueueStruct CommQueue;
     END_TIMING();\
     END_COMMSYNC();\
     END_COMMSTATS();\
-    LOG(10, ("(Multi)%s: code = %d, elapsed = %3.1f\n", RPCOpStats.RPCOps[viceop].name, code, elapsed));\
+    LOG(10, ("(Multi)%s: code = %d, elapsed = %3.1f\n", GetRPCOpt(viceop).name, code, elapsed));\
     LOG(1000, ("RPC2_SStats: Total = %d\n", endCS.RPC2_SStats_Multi.Multicasts));\
     LOG(1000, ("SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", endCS.SFTP_SStats_Multi.Starts, endCS.SFTP_SStats_Multi.Datas, endCS.SFTP_SStats_Multi.DataRetries, endCS.SFTP_SStats_Multi.Acks));\
     LOG(1000, ("RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n", endCS.RPC2_RStats_Multi.Replies, endCS.RPC2_RStats_Multi.Busies, endCS.RPC2_RStats_Multi.Naks, endCS.RPC2_RStats_Multi.Bogus));\
     LOG(1000, ("SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n", endCS.SFTP_RStats_Multi.Datas, endCS.SFTP_RStats_Multi.Acks, endCS.SFTP_RStats_Multi.Busies));\
     if (elapsed > 1000.0)\
 	LOG(0, ("*** Long Running (Multi)%s: code = %d, elapsed = %3.1f ***\n",\
-		RPCOpStats.RPCOps[viceop].name, code, elapsed));
+		GetRPCOpt(viceop).name, code, elapsed));
 #endif
 
 #define UNI_END_MESSAGE(viceop)\
     END_TIMING();\
     END_COMMSYNC();\
     END_COMMSTATS();\
-    LOG(10, ("%s: code = %d, elapsed = %3.1f\n", RPCOpStats.RPCOps[viceop].name, code, elapsed));\
+    LOG(10, ("%s: code = %d, elapsed = %3.1f\n", GetRPCOpt(viceop).name, code, elapsed));\
     LOG(1000, ("RPC2_SStats: Total = %d\n", endCS.RPC2_SStats_Uni.Total));\
     LOG(1000, ("SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", endCS.SFTP_SStats_Uni.Starts, endCS.SFTP_SStats_Uni.Datas, endCS.SFTP_SStats_Uni.DataRetries, endCS.SFTP_SStats_Uni.Acks));\
     LOG(1000, ("RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n", endCS.RPC2_RStats_Uni.Replies, endCS.RPC2_RStats_Uni.Busies, endCS.RPC2_RStats_Uni.Naks, endCS.RPC2_RStats_Uni.Bogus));\
     LOG(1000, ("SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n", endCS.SFTP_RStats_Uni.Datas, endCS.SFTP_RStats_Uni.Acks, endCS.SFTP_RStats_Uni.Busies));\
     if (elapsed > 1000.0)\
 	LOG(0, ("*** Long Running %s: code = %d, elapsed = %3.1f ***\n",\
-		RPCOpStats.RPCOps[viceop].name, code, elapsed));
+		GetRPCOpt(viceop).name, code, elapsed));
 #define MULTI_RECORD_STATS(viceop)\
-    if (code < 0) RPCOpStats.RPCOps[viceop].Mrpc_retries++;\
-    else if (code > 0) RPCOpStats.RPCOps[viceop].Mbad++;\
+    if (code < 0) GetRPCOpt(viceop).Mrpc_retries++;\
+    else if (code > 0) GetRPCOpt(viceop).Mbad++;\
     else {\
-	RPCOpStats.RPCOps[viceop].Mgood++;\
-	RPCOpStats.RPCOps[viceop].Mtime += elapsed;\
+	GetRPCOpt(viceop).Mgood++;\
+	GetRPCOpt(viceop).Mtime += elapsed;\
     }
 #define UNI_RECORD_STATS(viceop)\
-    if (code < 0) RPCOpStats.RPCOps[viceop].rpc_retries++;\
-    else if (code > 0) RPCOpStats.RPCOps[viceop].bad++;\
+    if (code < 0) GetRPCOpt(viceop).rpc_retries++;\
+    else if (code > 0) GetRPCOpt(viceop).bad++;\
     else {\
-	RPCOpStats.RPCOps[viceop].good++;\
-	RPCOpStats.RPCOps[viceop].time += elapsed;\
+	GetRPCOpt(viceop).good++;\
+	GetRPCOpt(viceop).time += elapsed;\
     }
 #else
 #define	MULTI_START_MESSAGE(viceop)\
     START_COMMSYNC();\
-    LOG(10, ("(Multi)%s: start\n", RPCOpStats.RPCOps[viceop].name));
+    LOG(10, ("(Multi)%s: start\n", GetRPCOpt(viceop).name));
 #define	UNI_START_MESSAGE(viceop)\
     START_COMMSYNC();\
-    LOG(10, ("%s: start\n", RPCOpStats.RPCOps[viceop].name));
+    LOG(10, ("%s: start\n", GetRPCOpt(viceop).name));
 #define MULTI_END_MESSAGE(viceop)\
     END_COMMSYNC();\
-    LOG(10, ("(Multi)%s: code = %d\n", RPCOpStats.RPCOps[viceop].name, code));
+    LOG(10, ("(Multi)%s: code = %d\n", GetRPCOpt(viceop).name, code));
 #define UNI_END_MESSAGE(viceop)\
     END_COMMSYNC();\
-    LOG(10, ("%s: code = %d\n", RPCOpStats.RPCOps[viceop].name, code));
+    LOG(10, ("%s: code = %d\n", GetRPCOpt(viceop).name, code));
 #define MULTI_RECORD_STATS(viceop)\
-    if (code < 0) RPCOpStats.RPCOps[viceop].Mrpc_retries++;\
-    else if (code > 0) RPCOpStats.RPCOps[viceop].Mbad++;\
-    else RPCOpStats.RPCOps[viceop].Mgood++;
+    if (code < 0) GetRPCOpt(viceop).Mrpc_retries++;\
+    else if (code > 0) GetRPCOpt(viceop).Mbad++;\
+    else GetRPCOpt(viceop).Mgood++;
 #define UNI_RECORD_STATS(viceop)\
-    if (code < 0) RPCOpStats.RPCOps[viceop].rpc_retries++;\
-    else if (code > 0) RPCOpStats.RPCOps[viceop].bad++;\
-    else RPCOpStats.RPCOps[viceop].good++;
+    if (code < 0) GetRPCOpt(viceop).rpc_retries++;\
+    else if (code > 0) GetRPCOpt(viceop).bad++;\
+    else GetRPCOpt(viceop).good++;
 #endif /* !TIMING */
 
 #define VENUS_MAXBSLEN 1024   /* For use in ARG_MARSHALL_BS */

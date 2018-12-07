@@ -153,4 +153,13 @@ typedef struct VenusStatistics {
     CommStatistics CommStats;
 } VenusStatistics;
 
+void StatsReset();
+void VFSPrint(int afd);
+void RPCPrint(int afd);
+void GetCSS(RPCPktStatistics *cs);
+void SubCSSs(RPCPktStatistics *cs1, RPCPktStatistics *cs2);
+RPCOpStat & GetRPCOpt(int opcode);
+VFSStatistics & GetVFSStats();
+RPCOpStatistics & GetRPCOpStats();
+
 #endif /* _VENUS_STATS_H_ */

@@ -634,7 +634,7 @@ int k_Purge() {
 	    CHOKE("k_Purge: Flush, message write returns %d", errno);
 
     LOG(1, ("k_Purge: Flush, returns 0\n"));
-    VFSStats.VFSOps[CODA_FLUSH].success++;
+    GetVFSStats().VFSOps[CODA_FLUSH].success++;
 
     return(1);
 }
@@ -683,10 +683,10 @@ int k_Purge(VenusFid *fid, int severely) {
 	      msg.oh.opcode == CODA_PURGEFID ? "CODA_PURGEFID" :
 	      msg.oh.opcode == CODA_ZAPFILE ? "CODA_ZAPFILE" : "CODA_ZAPDIR", retcode));
     if (retcode == 0) {
-	VFSStats.VFSOps[msg.oh.opcode].success++;
+	GetVFSStats().VFSOps[msg.oh.opcode].success++;
     }
     else {
-	VFSStats.VFSOps[msg.oh.opcode].failure++;
+	GetVFSStats().VFSOps[msg.oh.opcode].failure++;
     }
 
     return(retcode == 0);
@@ -717,7 +717,7 @@ int k_Purge(uid_t uid)
 	CHOKE("k_Purge: PurgeUser, message write");
 
     LOG(1, ("k_Purge: PurgeUser, returns 0\n"));
-    VFSStats.VFSOps[CODA_PURGEUSER].success++;
+    GetVFSStats().VFSOps[CODA_PURGEUSER].success++;
 
     return(1);
 }
@@ -745,7 +745,7 @@ int k_Replace(VenusFid *fid_1, VenusFid *fid_2) {
 	CHOKE("k_Replace: message write");
 
     LOG(0, ("k_Replace: returns 0\n"));
-    VFSStats.VFSOps[CODA_REPLACE].success++;
+    GetVFSStats().VFSOps[CODA_REPLACE].success++;
 
     return(1);
 }

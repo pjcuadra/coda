@@ -1573,8 +1573,8 @@ OI_FreeLocks:
 
 		    VenusStatistics *Stats = (VenusStatistics *)data->out;
 		    memset((void *)Stats, 0, (int)sizeof(VenusStatistics));
-		    Stats->VFSStats = VFSStats;
-		    Stats->CommStats.RPCOpStats = RPCOpStats;
+		    Stats->VFSStats = GetVFSStats();
+		    Stats->CommStats.RPCOpStats = GetRPCOpStats();
 		    GetCSS(&Stats->CommStats.RPCPktStats);
 
 		    data->out_size = (short)sizeof(VenusStatistics);

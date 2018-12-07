@@ -69,6 +69,7 @@ extern "C" {
 #include "venuslog.subsystem.h"
 #include "vproc.subsystem.h"
 #include "daemon.subsystem.h"
+#include "venusstats.subsystem.h"
 
 #include "nt_util.h"
 #ifdef __CYGWIN32__
@@ -426,7 +427,9 @@ int main(int argc, char **argv)
     DaemonSetup();
     DaemonInit();   /* before any Daemons initialize and after LogInit */
 
+    StatsSetup();
     StatsInit();
+
     SigInit();      /* set up signal handlers */
 
     DIR_Init(RvmType == VM ? DIR_DATA_IN_VM : DIR_DATA_IN_RVM);

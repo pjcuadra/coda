@@ -212,7 +212,7 @@ static void SigControl(int sig)
         SwapLog();
 
     if (STREQ(command, "STATSINIT"))
-	StatsInit();
+        StatsReset();
 
     if (STREQ(command, "STATS"))
 	DumpState();

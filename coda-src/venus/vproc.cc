@@ -761,7 +761,7 @@ Exit:
 
     /* Update VFS statistics. */
     if (u.u_vfsop >= 0 && u.u_vfsop < NVFSOPS) {
-	VFSStat *t = &VFSStats.VFSOps[u.u_vfsop];
+	VFSStat *t = &GetVFSStats().VFSOps[u.u_vfsop];
 	float elapsed = 0.0;
 
 	if (u.u_error == 0) {

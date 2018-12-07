@@ -28,7 +28,7 @@ libvenus_la_SOURCES = binding.cc binding.h comm.cc comm.h comm_daemon.cc daemon.
     spool.cc tallyent.cc tallyent.h user.cc user.h nt_util.cc nt_util.h \
     realmdb.cc realmdb.h realm.cc realm.h rec_dllist.h refcounted.h archive.c \
     archive.h 9pfs.cc 9pfs.h SpookyV2.cc SpookyV2.h venuslog.h venuslog.cc \
-    venuslog.subsystem.h
+    venuslog.subsystem.h venusstats.cc venusstats.subsystem.h
 venus_SOURCES = venus.cc
 vutil_SOURCES = vutil.cc
 
