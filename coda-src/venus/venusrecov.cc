@@ -68,28 +68,28 @@ void rpc2_InitRandom();
 #include "venus.private.h"
 #include "venusrecov.h"
 #include "worker.h"
+#include "venusrecov.subsystem.h"
 
 /*  *****  Exported Variables  *****  */
 
-int RecovInited = 0;
-RecovVenusGlobals *rvg = 0;
-int TransCount = 0;
-float TransElapsed = 0.0;
-int MapPrivate = 0;
+struct venusrecov_subsystem_instance_t {
+    int RecovInited;
+    RecovVenusGlobals *rvg;
+    int TransCount;
+    float TransElapsed;
+    int MapPrivate;
+    struct venusrecov_config config;
+};
 
-int InitMetaData = UNSET_IMD, InitNewInstance = UNSET_IMD;
-const char *VenusLogDevice = NULL;
-unsigned long VenusLogDeviceSize = UNSET_VLDS;
-const char *VenusDataDevice = NULL;
-unsigned long VenusDataDeviceSize = UNSET_VDDS;
-int RdsChunkSize = UNSET_RDSCS;
-int RdsNlists = UNSET_RDSNL;
-int CMFP = UNSET_CMFP;
-int DMFP = UNSET_DMFP;
-int MAXFP = UNSET_MAXFP;
-int WITT = UNSET_WITT;
-unsigned long MAXFS = UNSET_MAXFS;
-unsigned long MAXTS = UNSET_MAXTS;
+static venusrecov_subsystem_instance_t venusrecov_sub_inst = {
+    .RecovInited = false,
+    .rvg = NULL,
+    .TransCount = 0,
+    .TransElapsed = 0.0,
+    .MapPrivate = 0,
+    .config = venusrecov_default_config
+};
+
 
 #ifndef MAX
 #define MAX(a,b)  ( ((a) > (b)) ? (a) : (b) )
@@ -209,15 +209,19 @@ static void RecovNewInstance(void)
     rpc2_InitRandom();
 
     Recov_BeginTrans();
-    RVMLIB_REC_OBJECT(rvg->recov_UUID);
-    RVMLIB_REC_OBJECT(rvg->recov_StoreId);
+    RVMLIB_REC_OBJECT(venusrecov_sub_inst.rvg->recov_UUID);
+    RVMLIB_REC_OBJECT(venusrecov_sub_inst.rvg->recov_StoreId);
 
     VenusGenID = rpc2_NextRandom(NULL);
 
     /* server disables replay detection when storeid.uniquifier > INT_MAX */
-    rvg->recov_StoreId =
+    venusrecov_sub_inst.rvg->recov_StoreId =
 	detect_reintegration_retry ? 0 : ((unsigned int)INT_MAX+1);
     Recov_EndTrans(0);
+}
+
+void RecovSetup(struct venusrecov_config config) {
+    venusrecov_sub_inst.config = config;
 }
 
 void RecovInit(void)
@@ -226,16 +230,16 @@ void RecovInit(void)
     Recov_CheckParms();
 
     if (RvmType == VM) {
-	if ((rvg = (RecovVenusGlobals *)malloc(sizeof(RecovVenusGlobals))) == 0)
+	if ((venusrecov_sub_inst.rvg = (RecovVenusGlobals *)malloc(sizeof(RecovVenusGlobals))) == 0)
 	    CHOKE("RecovInit: malloc failed");
-	memset(rvg, 0, sizeof(RecovVenusGlobals));
-	rvg->recov_MagicNumber   = RecovMagicNumber;
-	rvg->recov_VersionNumber = RecovVersionNumber;
-	rvg->recov_LastInit      = Vtime();
+	memset(venusrecov_sub_inst.rvg, 0, sizeof(RecovVenusGlobals));
+	venusrecov_sub_inst.rvg->recov_MagicNumber   = RecovMagicNumber;
+	venusrecov_sub_inst.rvg->recov_VersionNumber = RecovVersionNumber;
+	venusrecov_sub_inst.rvg->recov_LastInit      = Vtime();
 
 	RecovNewInstance();
 
-	RecovInited = 1;
+	venusrecov_sub_inst.RecovInited = 1;
 	return;
     }
 
@@ -245,7 +249,7 @@ void RecovInit(void)
     Recov_LoadRDS();
 
     /* Read-in bounds for bounded recoverable data structures. */
-    if (!InitMetaData) {
+    if (!venusrecov_sub_inst.config.InitMetaData) {
 	int override = 0;
 	if (MLEs != VDB->MaxMLEs) {
 	    eprint("Ignoring requested # of cml entries (%ld), "
@@ -272,7 +276,7 @@ void RecovInit(void)
 		 MLEs, CacheFiles, HDBEs));
     }
 
-    RecovInited = 1;
+    venusrecov_sub_inst.RecovInited = 1;
 
     /* Fire up the daemon. */
     RECOVD_Init();
@@ -291,7 +295,7 @@ static void Recov_CheckParms()
         exit(EXIT_FAILURE);
         break;
     case VM:
-        InitMetaData = 1; /* VM RvmType forces a brain-wipe! */
+        venusrecov_sub_inst.config.InitMetaData = 1; /* VM RvmType forces a brain-wipe! */
         // Fall through
     case UFS:
         break;
@@ -299,25 +303,25 @@ static void Recov_CheckParms()
         CHOKE("Recov_CheckParms: bogus RvmType (%d)", RvmType);
     }
 
-    if (InitMetaData) {
+    if (venusrecov_sub_inst.config.InitMetaData) {
 	/* Compute recoverable storage requirements, and verify that log/data sizes are adequate. */
         unsigned long RecovBytesNeeded = RECOV_BYTES_NEEDED();
 
         /* Set segment sizes if necessary. */
-        if (VenusDataDeviceSize == UNSET_VDDS)
-            VenusDataDeviceSize = RecovBytesNeeded;
-        if (VenusLogDeviceSize == UNSET_VLDS)
-            VenusLogDeviceSize = VenusDataDeviceSize / DataToLogSizeRatio;
+        if (venusrecov_sub_inst.config.VenusDataDeviceSize == UNSET_VDDS)
+            venusrecov_sub_inst.config.VenusDataDeviceSize = RecovBytesNeeded;
+        if (venusrecov_sub_inst.config.VenusLogDeviceSize == UNSET_VLDS)
+            venusrecov_sub_inst.config.VenusLogDeviceSize = venusrecov_sub_inst.config.VenusDataDeviceSize / DataToLogSizeRatio;
 
         /* Check that sizes meet minimums. */
-        if (VenusLogDeviceSize < MIN_VLDS) {
+        if (venusrecov_sub_inst.config.VenusLogDeviceSize < MIN_VLDS) {
             eprint("log segment too small (%#x); minimum %#x",
-                   VenusLogDeviceSize, MIN_VLDS);
+                   venusrecov_sub_inst.config.VenusLogDeviceSize, MIN_VLDS);
             exit(EXIT_FAILURE);
         }
-        if (VenusDataDeviceSize < MAX(RecovBytesNeeded, MIN_VDDS)) {
+        if (venusrecov_sub_inst.config.VenusDataDeviceSize < MAX(RecovBytesNeeded, MIN_VDDS)) {
             eprint("data segment too small (%#x); minimum %#x",
-                   VenusDataDeviceSize, MAX(RecovBytesNeeded, MIN_VDDS));
+                   venusrecov_sub_inst.config.VenusDataDeviceSize, MAX(RecovBytesNeeded, MIN_VDDS));
             exit(EXIT_FAILURE);
         }
 
@@ -329,20 +333,20 @@ static void Recov_CheckParms()
         const char *failure = NULL;
 
         /* Specifying log or data size requires a brain-wipe! */
-        if (VenusLogDeviceSize != UNSET_VLDS) {
+        if (venusrecov_sub_inst.config.VenusLogDeviceSize != UNSET_VLDS) {
             failure = "VLDS";
             goto fail;
         }
-        if (VenusDataDeviceSize != UNSET_VDDS) {
+        if (venusrecov_sub_inst.config.VenusDataDeviceSize != UNSET_VDDS) {
             failure = "VDDS";
             goto fail;
         }
         /* These parameters are only needed for a brain-wipe anyway! */
-        if (RdsChunkSize != UNSET_RDSCS) {
+        if (venusrecov_sub_inst.config.RdsChunkSize != UNSET_RDSCS) {
             failure = "RDS chunk size";
             goto fail;
         }
-        if (RdsNlists != UNSET_RDSNL) {
+        if (venusrecov_sub_inst.config.RdsNlists != UNSET_RDSNL) {
             failure = "RDS nlists";
 fail:
             eprint("setting %s requires InitMetaData", failure);
@@ -350,16 +354,16 @@ fail:
         }
     }
 
-    if (RdsChunkSize == UNSET_RDSCS) RdsChunkSize = DFLT_RDSCS;
-    if (RdsNlists    == UNSET_RDSNL) RdsNlists = DFLT_RDSNL;
+    if (venusrecov_sub_inst.config.RdsChunkSize == UNSET_RDSCS) venusrecov_sub_inst.config.RdsChunkSize = DFLT_RDSCS;
+    if (venusrecov_sub_inst.config.RdsNlists    == UNSET_RDSNL) venusrecov_sub_inst.config.RdsNlists = DFLT_RDSNL;
 
     /* Flush/Truncate parameters. */
-    if (CMFP  == UNSET_CMFP)  CMFP = DFLT_CMFP;
-    if (DMFP  == UNSET_DMFP)  DMFP = DFLT_DMFP;
-    if (MAXFP == UNSET_MAXFP) MAXFP = DFLT_MAXFP;
-    if (WITT  == UNSET_WITT)  WITT = DFLT_WITT;
-    if (MAXFS == UNSET_MAXFS) MAXFS = DFLT_MAXFS;
-    if (MAXTS == UNSET_MAXTS) MAXTS = DFLT_MAXTS;
+    if (GetCMFP()  == UNSET_CMFP)  venusrecov_sub_inst.config.CMFP = DFLT_CMFP;
+    if (GetDMFP()  == UNSET_DMFP)  venusrecov_sub_inst.config.DMFP = DFLT_DMFP;
+    if (GetMaxFP() == UNSET_MAXFP) venusrecov_sub_inst.config.MAXFP = DFLT_MAXFP;
+    if (venusrecov_sub_inst.config.WITT  == UNSET_WITT)  venusrecov_sub_inst.config.WITT = DFLT_WITT;
+    if (venusrecov_sub_inst.config.MAXFS == UNSET_MAXFS) venusrecov_sub_inst.config.MAXFS = DFLT_MAXFS;
+    if (venusrecov_sub_inst.config.MAXTS == UNSET_MAXTS) venusrecov_sub_inst.config.MAXTS = DFLT_MAXTS;
 
 /* If you are looking for the checks and calculations for MLEs, CacheFiles,
  * and HDBEs. They have been moved to venus.cc:DefaultCmdlineParms --JH */
@@ -368,27 +372,28 @@ fail:
 static void Recov_InitRVM()
 {
     rvm_return_t ret;
-    char *logdev = strdup(VenusLogDevice);
+    char *logdev = strdup(venusrecov_sub_inst.config.VenusLogDevice);
 
     rvm_init_options(&Recov_Options);
     Recov_Options.log_dev = logdev;
     Recov_Options.truncate = 0;
     //Recov_Options.flags = RVM_COALESCE_TRANS;  /* oooh, daring */
     Recov_Options.flags = RVM_ALL_OPTIMIZATIONS;
-    if (MapPrivate)
+    if (venusrecov_sub_inst.MapPrivate)
         Recov_Options.flags |= RVM_MAP_PRIVATE;
 
     rvm_init_statistics(&Recov_Statistics);
 
-    if (InitMetaData) /* Initialize log. */
+    if (venusrecov_sub_inst.config.InitMetaData) /* Initialize log. */
     {
         /* Get rid of any old log */
-	unlink(VenusLogDevice);
+	unlink(venusrecov_sub_inst.config.VenusLogDevice);
 
         /* Pass in the correct parameters so that RVM_INIT can create
          * a new logfile */
         Recov_Options.create_log_file = rvm_true;
-        Recov_Options.create_log_size = RVM_MK_OFFSET(0, VenusLogDeviceSize);
+        Recov_Options.create_log_size = RVM_MK_OFFSET(0, 
+           venusrecov_sub_inst.config.VenusLogDeviceSize);
         Recov_Options.create_log_mode = 0600;
         /* as far as the log is concerned RVM_INIT will now handle the
          * rest of the creation. */
@@ -397,32 +402,36 @@ static void Recov_InitRVM()
     {
         struct stat tstat;
 
-        if (stat(VenusLogDevice, &tstat) < 0) {
+        if (stat(venusrecov_sub_inst.config.VenusLogDevice, &tstat) < 0) {
             eprint("Recov_InitRVM: stat of (%s) failed (%d)",
-                   VenusLogDevice, errno);
+                   venusrecov_sub_inst.config.VenusLogDevice, errno);
             exit(EXIT_FAILURE);
         }
 
-        VenusLogDeviceSize = tstat.st_size;
-        if (VenusLogDeviceSize == 0) {
+        venusrecov_sub_inst.config.VenusLogDeviceSize = tstat.st_size;
+        if (venusrecov_sub_inst.config.VenusLogDeviceSize == 0) {
             eprint("Recov_InitRVM: Unexpected empty RVM log (%s) found",
-                   VenusLogDevice);
+                   venusrecov_sub_inst.config.VenusLogDevice);
             exit(EXIT_FAILURE);
         }
 
-        if (stat(VenusDataDevice, &tstat) < 0)
+        if (stat(venusrecov_sub_inst.config.VenusDataDevice, &tstat) < 0)
             CHOKE("ValidateDevice: stat of (%s) failed (%d)",
-                  VenusDataDevice, errno);
+                  venusrecov_sub_inst.config.VenusDataDevice, errno);
 
-        VenusDataDeviceSize = tstat.st_size;
-        if (VenusDataDeviceSize == 0) {
+        venusrecov_sub_inst.config.VenusDataDeviceSize = tstat.st_size;
+        if (venusrecov_sub_inst.config.VenusDataDeviceSize == 0) {
             eprint("Recov_InitRVM: Unexpected empty RVM data (%s) found",
-                   VenusDataDevice);
+                   venusrecov_sub_inst.config.VenusDataDevice);
             exit(EXIT_FAILURE);
         }
     }
-    eprint("%s size is %ld bytes", VenusLogDevice, VenusLogDeviceSize);
-    eprint("%s size is %ld bytes", VenusDataDevice, VenusDataDeviceSize);
+    eprint("%s size is %ld bytes",
+           venusrecov_sub_inst.config.VenusLogDevice,
+           venusrecov_sub_inst.config.VenusLogDeviceSize);
+    eprint("%s size is %ld bytes",
+           venusrecov_sub_inst.config.VenusDataDevice,
+           venusrecov_sub_inst.config.VenusDataDeviceSize);
 
     ret = RVM_INIT(&Recov_Options);
     free(logdev);
@@ -442,39 +451,43 @@ static void Recov_InitRDS()
     rvm_length_t devsize;
     char *datadev;
 
-    devsize = RVM_ROUND_LENGTH_DOWN_TO_PAGE_SIZE(VenusDataDeviceSize);
+    devsize = RVM_ROUND_LENGTH_DOWN_TO_PAGE_SIZE(venusrecov_sub_inst.config.VenusDataDeviceSize);
     Recov_RdsAddr = (char *)VM_RVMADDR;
     Recov_RvgLength=RVM_ROUND_LENGTH_UP_TO_PAGE_SIZE(sizeof(RecovVenusGlobals));
     Recov_RdsLength= devsize - Recov_RvgLength - RVM_SEGMENT_HDR_SIZE;
 
-    eprint("%s size is %ld bytes", VenusDataDevice, VenusDataDeviceSize);
+    eprint("%s size is %ld bytes", 
+           venusrecov_sub_inst.config.VenusDataDevice,
+           venusrecov_sub_inst.config.VenusDataDeviceSize);
 
-    if (!InitMetaData) return;
+    if (!venusrecov_sub_inst.config.InitMetaData) return;
 
     /* Initialize data segment. */
     int fd;
-    fd = open(VenusDataDevice, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0600);
+    fd = open(venusrecov_sub_inst.config.VenusDataDevice, 
+              O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0600);
     if (fd < 0) {
         eprint("Recov_InitRVM: create of %s failed (%d)",
-               VenusDataDevice, errno);
+               venusrecov_sub_inst.config.VenusDataDevice, errno);
         exit(EXIT_FAILURE);
     }
-    if (ftruncate(fd, VenusDataDeviceSize) < 0) {
+    if (ftruncate(fd, venusrecov_sub_inst.config.VenusDataDeviceSize) < 0) {
         eprint("Recov_InitRVM: growing %s failed (%d)",
-               VenusDataDevice, errno);
+               venusrecov_sub_inst.config.VenusDataDevice, errno);
         exit(EXIT_FAILURE);
     }
     if (close(fd) < 0) {
         eprint("Recov_InitRVM: close of %s failed (%d)",
-               VenusDataDevice, errno);
+               venusrecov_sub_inst.config.VenusDataDevice, errno);
         exit(EXIT_FAILURE);
     }
 
     eprint("Initializing RVM data...");
-    datadev = strdup(VenusDataDevice);
+    datadev = strdup(venusrecov_sub_inst.config.VenusDataDevice);
     rds_zap_heap(datadev, RVM_LENGTH_TO_OFFSET(devsize),
 		 Recov_RdsAddr, Recov_RvgLength, Recov_RdsLength,
-		 (unsigned long)RdsNlists,(unsigned long)RdsChunkSize,&ret);
+		 (unsigned long)venusrecov_sub_inst.config.RdsNlists,
+         (unsigned long)venusrecov_sub_inst.config.RdsChunkSize,&ret);
     free(datadev);
     if (ret != SUCCESS) {
         eprint("Recov_InitRDS: rds_zap_heap failed (%s)", rvm_return(ret));
@@ -490,53 +503,54 @@ static void Recov_LoadRDS()
     int detecting_retries;
 
     eprint("Loading RVM data");
-    datadev = strdup(VenusDataDevice);
-    rds_load_heap(datadev, RVM_LENGTH_TO_OFFSET(VenusDataDeviceSize),
-		  &Recov_RvgAddr, &ret);
+    datadev = strdup(venusrecov_sub_inst.config.VenusDataDevice);
+    rds_load_heap(datadev,
+                  RVM_LENGTH_TO_OFFSET(venusrecov_sub_inst.config.VenusDataDeviceSize),
+                  &Recov_RvgAddr, &ret);
     free(datadev);
     if (ret != SUCCESS) {
         eprint("Recov_InitRDS: rds_load_heap failed (%s)", rvm_return(ret));
         exit(EXIT_FAILURE);
     }
-    rvg = (RecovVenusGlobals *)Recov_RvgAddr;
+    venusrecov_sub_inst.rvg = (RecovVenusGlobals *)Recov_RvgAddr;
 
     /* Initialize or validate the segment. */
-    if (InitMetaData) {
+    if (venusrecov_sub_inst.config.InitMetaData) {
         Recov_BeginTrans();
         /* Initialize the block of recoverable Venus globals. */
-        RVMLIB_REC_OBJECT(*rvg);
-        memset((void *)rvg, 0, (int)sizeof(RecovVenusGlobals));
-        rvg->recov_MagicNumber = RecovMagicNumber;
-        rvg->recov_VersionNumber = RecovVersionNumber;
-        rvg->recov_LastInit = Vtime();
-        rvg->recov_HeapAddr = Recov_RdsAddr;
-        rvg->recov_HeapLength = (unsigned int)Recov_RdsLength;
+        RVMLIB_REC_OBJECT(*venusrecov_sub_inst.rvg);
+        memset((void *)venusrecov_sub_inst.rvg, 0, (int)sizeof(RecovVenusGlobals));
+        venusrecov_sub_inst.rvg->recov_MagicNumber = RecovMagicNumber;
+        venusrecov_sub_inst.rvg->recov_VersionNumber = RecovVersionNumber;
+        venusrecov_sub_inst.rvg->recov_LastInit = Vtime();
+        venusrecov_sub_inst.rvg->recov_HeapAddr = Recov_RdsAddr;
+        venusrecov_sub_inst.rvg->recov_HeapLength = (unsigned int)Recov_RdsLength;
         Recov_EndTrans(0);
     } else {
         /* Sanity check RVG fields. */
-        if (rvg->recov_HeapAddr   != Recov_RdsAddr ||
-            rvg->recov_HeapLength != Recov_RdsLength)
+        if (venusrecov_sub_inst.rvg->recov_HeapAddr   != Recov_RdsAddr ||
+            venusrecov_sub_inst.rvg->recov_HeapLength != Recov_RdsLength)
             CHOKE("Recov_LoadRDS: heap mismatch (%p, %lx) vs (%p, %lx)",
-                  rvg->recov_HeapAddr, rvg->recov_HeapLength,
+                  venusrecov_sub_inst.rvg->recov_HeapAddr, venusrecov_sub_inst.rvg->recov_HeapLength,
                   Recov_RdsAddr, Recov_RdsLength);
-        if (!rvg->validate()) {
-            rvg->print(stderr); CHOKE("Recov_InitSeg: rvg validation failed, "
+        if (!venusrecov_sub_inst.rvg->validate()) {
+            venusrecov_sub_inst.rvg->print(stderr); CHOKE("Recov_InitSeg: venusrecov_sub_inst.rvg validation failed, "
                                       "restart venus with -init");
         }
 
-        eprint("Last init was %s", strtok(ctime((time_t *)&rvg->recov_LastInit), "\n"));
+        eprint("Last init was %s", strtok(ctime((time_t *)&venusrecov_sub_inst.rvg->recov_LastInit), "\n"));
 
         /* Copy CleanShutDown to VM global, then set it FALSE. */
-        CleanShutDown = rvg->recov_CleanShutDown;
+        CleanShutDown = venusrecov_sub_inst.rvg->recov_CleanShutDown;
         eprint("Last shutdown was %s", (CleanShutDown ? "clean" : "dirty"));
         Recov_BeginTrans();
-        RVMLIB_REC_OBJECT(rvg->recov_CleanShutDown);
-        rvg->recov_CleanShutDown = 0;
+        RVMLIB_REC_OBJECT(venusrecov_sub_inst.rvg->recov_CleanShutDown);
+        venusrecov_sub_inst.rvg->recov_CleanShutDown = 0;
         Recov_EndTrans(0);
     }
 
-    detecting_retries = rvg->recov_StoreId <= INT_MAX;
-    if (InitMetaData || InitNewInstance ||
+    detecting_retries = venusrecov_sub_inst.rvg->recov_StoreId <= INT_MAX;
+    if (venusrecov_sub_inst.config.InitMetaData || venusrecov_sub_inst.config.InitNewInstance ||
         (detect_reintegration_retry && !detecting_retries) || 
 	(!detect_reintegration_retry && detecting_retries))
 	RecovNewInstance();
@@ -586,9 +600,9 @@ void RecovFlush(int Force) {
 
     const char *reason = (Force) ? "F" :
 	(Recov_TimeToFlush <= 0) ? "T" :
-	    (FlushSize >= MAXFS) ? "S" : "I";
+	    (FlushSize >= venusrecov_sub_inst.config.MAXFS) ? "S" : "I";
 
-    Recov_TimeToFlush = MAXFP;
+    Recov_TimeToFlush = GetMaxFP();
     if (FlushSize == 0) return;
 
     LOG(0, ("BeginRvmFlush (%d, %d, %s)\n", FlushCount, FlushSize, reason));
@@ -613,7 +627,7 @@ void RecovTruncate(int Force) {
     unsigned long TruncateSize = RVM_OFFSET_TO_LENGTH(Recov_Statistics.log_written);
 
     const char *reason = (Force) ? "F" :
-	 (TruncateSize >= MAXTS) ? "S" : "I";
+	 (TruncateSize >= venusrecov_sub_inst.config.MAXTS) ? "S" : "I";
 
     if (TruncateSize == 0) return;
 
@@ -633,7 +647,7 @@ void RecovTruncate(int Force) {
 
 void RecovTerminate() {
     if (RvmType == VM) return;
-    if (!RecovInited) return;
+    if (!venusrecov_sub_inst.RecovInited) return;
 
     /* Record clean shutdown indication if possible. */
     Recov_GetStatistics();
@@ -647,10 +661,10 @@ void RecovTerminate() {
 	    rvm_return_t ret;
 	    ret = rvm_begin_transaction(&tid, no_restore);
 	    CODA_ASSERT(ret == RVM_SUCCESS);
-	    ret = rvm_set_range(&tid, (char *)&rvg->recov_CleanShutDown,
-				sizeof(rvg->recov_CleanShutDown));
+	    ret = rvm_set_range(&tid, (char *)&venusrecov_sub_inst.rvg->recov_CleanShutDown,
+				sizeof(venusrecov_sub_inst.rvg->recov_CleanShutDown));
 	    CODA_ASSERT(ret == RVM_SUCCESS);
-	    rvg->recov_CleanShutDown = 1;
+	    venusrecov_sub_inst.rvg->recov_CleanShutDown = 1;
 	    ret = rvm_end_transaction(&tid, flush);
 	    CODA_ASSERT(ret == RVM_SUCCESS);
 	}
@@ -679,14 +693,16 @@ void RecovTerminate() {
 
 void RecovPrint(int fd) {
     if (RvmType == VM) return;
-    if (!RecovInited) return;
+    if (!venusrecov_sub_inst.RecovInited) return;
 
-    fdprint(fd, "Recoverable Storage: (%s, %x)\n", VenusDataDevice, VenusDataDeviceSize);
+    fdprint(fd, "Recoverable Storage: (%s, %x)\n", 
+            venusrecov_sub_inst.config.VenusDataDevice, 
+            venusrecov_sub_inst.config.VenusDataDeviceSize);
     fdprint(fd, "\tTransactions = (%d, %3.1f)\n",
-	     TransCount, (TransCount > 0 ? TransElapsed / TransCount : 0.0));
+	     venusrecov_sub_inst.TransCount, (venusrecov_sub_inst.TransCount > 0 ? venusrecov_sub_inst.TransElapsed / venusrecov_sub_inst.TransCount : 0.0));
     fdprint(fd, "\tHeap: chunks = %d, nlists = %d, bytes = (%d, %d)\n",
-	     RdsChunkSize, RdsNlists, 0, 0);
-    fdprint(fd, "\tLast initialized %s\n", ctime((time_t *)&rvg->recov_LastInit));
+	     venusrecov_sub_inst.config.RdsChunkSize, venusrecov_sub_inst.config.RdsNlists, 0, 0);
+    fdprint(fd, "\tLast initialized %s\n", ctime((time_t *)&venusrecov_sub_inst.rvg->recov_LastInit));
 
     fdprint(fd, "***RVM Statistics***\n");
     Recov_GetStatistics();
@@ -756,14 +772,16 @@ void RecovDaemon(void) {
 
 	/* Consider truncating. */
 	unsigned long TruncateSize = RVM_OFFSET_TO_LENGTH(Recov_Statistics.log_written);
-	if (TruncateSize >= MAXTS || WorkerIdleTime >= WITT)
-	    RecovTruncate();
+    if (TruncateSize >= venusrecov_sub_inst.config.MAXTS || 
+        WorkerIdleTime >= venusrecov_sub_inst.config.WITT)
+        RecovTruncate();
 
 	/* Consider flushing. */
 	Recov_TimeToFlush -= RecovDaemonInterval;
 	unsigned long FlushSize = RVM_OFFSET_TO_LENGTH(Recov_Statistics.no_flush_length);
-	if (Recov_TimeToFlush <= 0 || FlushSize >= MAXFS || WorkerIdleTime >= WITT)
-	    RecovFlush();
+    if (Recov_TimeToFlush <= 0 || FlushSize >= venusrecov_sub_inst.config.MAXFS || 
+        WorkerIdleTime >= venusrecov_sub_inst.config.WITT)
+       RecovFlush();
 
 	/* Bump sequence number. */
 	vp->seq++;
@@ -778,14 +796,29 @@ void Recov_GenerateStoreId(ViceStoreId *sid)
      * But that would require changing in the venus-vice protocol to either
      * add this UUID to every operation, or send it once per (volume-)
      * connection setup with ViceNewConnectFS. -JH */
-    sid->HostId = (RPC2_Unsigned)VenusGenID;
-    sid->Uniquifier = rvg->recov_StoreId;
+    sid->HostId = (RPC2_Unsigned)*VenusGenID();
+    sid->Uniquifier = venusrecov_sub_inst.rvg->recov_StoreId;
 
     /* Avoid overflow past UINT_MAX, server stopped replay detection once
      * we passed INT_MAX so we stop incrementing */
-    if (rvg->recov_StoreId == UINT_MAX) return;
+    if (venusrecov_sub_inst.rvg->recov_StoreId == UINT_MAX) return;
 
-    RVMLIB_REC_OBJECT(rvg->recov_StoreId);
-    rvg->recov_StoreId++;
+    RVMLIB_REC_OBJECT(venusrecov_sub_inst.rvg->recov_StoreId);
+    venusrecov_sub_inst.rvg->recov_StoreId++;
 }
 
+int RecovIsDataInited() {
+    return venusrecov_sub_inst.config.InitMetaData;
+}
+
+RecovVenusGlobals * GetRVG() {
+    return venusrecov_sub_inst.rvg;
+}
+
+int RecovIsInitialized() {
+    return venusrecov_sub_inst.RecovInited;
+}
+
+unsigned int * VenusGenID() {
+    return &(venusrecov_sub_inst.rvg->recov_UUID.fields.time_low);
+}

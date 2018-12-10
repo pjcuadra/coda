@@ -184,7 +184,7 @@ void ClientModifyLog::CancelPending() {
 	    }
 
     } while (cancellation);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 }
 
 /*
@@ -201,7 +201,7 @@ void ClientModifyLog::ClearPending() {
 	    Recov_BeginTrans();
 		   RVMLIB_REC_OBJECT(m->flags);
 		   m->flags.cancellation_pending = 0;
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
 }
 
@@ -334,7 +334,7 @@ int ClientModifyLog::GetReintegrateable(int tid, unsigned long *reint_time,
 	 */
 	Recov_BeginTrans();
 	err = m->Freeze();
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
 	if (err) break;
 
 	/*
@@ -405,7 +405,7 @@ cmlent *ClientModifyLog::GetFatHead(int tid)
      */
     Recov_BeginTrans();
     CODA_ASSERT(m->Freeze() == 0);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     return m;
 }
@@ -1849,7 +1849,7 @@ int cmlent::cancelstore()
 	    /* we could be partial/trickle reintegrating, so cancel may fail */
 	    if (cancel())
 		vol->RestoreObj(&f->fid);
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	    cancelled = 1;
 	}
     }
@@ -2132,7 +2132,7 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
 
 	    Recov_BeginTrans();
 	    f->Kill();
-	    Recov_EndTrans(DMFP);
+	    Recov_EndTrans(GetDMFP());
 	}
 
 	/* Fashion the update set. */
@@ -2254,7 +2254,7 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
 
 		    Recov_BeginTrans();
 		    f->Kill();
-		    Recov_EndTrans(DMFP);
+		    Recov_EndTrans(GetDMFP());
 		}
 	    }
     }
@@ -2371,7 +2371,7 @@ int ClientModifyLog::COP1_NR(char *buf, int bufsize, ViceVersionVector *UpdateSe
 
         Recov_BeginTrans();
         f->Kill();
-        Recov_EndTrans(DMFP);
+        Recov_EndTrans(GetDMFP());
     }
 
     /* Fashion the update set. */
@@ -2415,7 +2415,7 @@ void ClientModifyLog::IncCommit(ViceVersionVector *UpdateSet, int Tid)
 		m->commit(UpdateSet);
 	    }
 	}
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     /* flush COP2 for this volume */
     if (vol->IsReplicated()) ((repvol *)vol)->FlushCOP2();
@@ -2474,7 +2474,7 @@ int cmlent::realloc()
 	    if ((code = FSDB->TranslateFid(&OldFid, &NewFid)) != 0)
 		    CHOKE("cmlent::realloc: couldn't translate %s -> %s (%d)",
 		    FID_(&OldFid), FID_(&NewFid), code);
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
     }
 
 Exit:
@@ -2775,7 +2775,7 @@ void cmlent::ClearReintegrationHandle()
 	u.u_store.Offset = 0;
 	u.u_store.ReintPH.s_addr = 0;
 	u.u_store.ReintPHix = -1;
-   Recov_EndTrans(MAXFP);
+   Recov_EndTrans(GetMaxFP());
 }
 
 
@@ -2841,7 +2841,7 @@ int cmlent::GetReintegrationHandle()
 	    u.u_store.Offset    = 0;
 	    u.u_store.ReintPH   = phost;
 	    u.u_store.ReintPHix = ph_ix;
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 
 Exit:
@@ -2888,7 +2888,7 @@ int cmlent::ValidateReintegrationHandle()
 	Recov_BeginTrans();
 	    RVMLIB_REC_OBJECT(u);   
 	    u.u_store.Offset = Offset;
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 
 Exit:
@@ -2980,7 +2980,7 @@ int cmlent::WriteReintegrationHandle(unsigned long *reint_time)
 	Recov_BeginTrans();
 	    RVMLIB_REC_OBJECT(u);
 	    u.u_store.Offset += length;
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 
  Exit:
@@ -3253,7 +3253,7 @@ int reintvol::PurgeMLEs(uid_t uid)
 		      delete m;
 		   else 
 		      m->abort();
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
 	VOL_ASSERT(this, CML.count() == 0);
     }
@@ -3583,7 +3583,7 @@ void ClientModifyLog::IncAbort(int Tid)
 		d = next();
 	    }
 	}
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 }
 
 /* MUST be called from within transaction! */
@@ -4008,7 +4008,7 @@ void ClientModifyLog::ClearToBeRepaired(void)
 	Recov_BeginTrans();
 	RVMLIB_REC_OBJECT(m->flags);
 	m->flags.to_be_repaired = 0;
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
 	num++;
       }
     LOG(0, ("ClientModifyLog::ClearRepairFlags: cleared %d entries\n", num));

@@ -84,7 +84,7 @@ enum VolLockType { EX_VOL_LK, SH_VOL_LK };
 
 /*  *****  Constants  *****  */
 
-#define	VDB	(rvg->recov_VDB)
+#define	VDB	(GetRVG()->recov_VDB)
 const int VDB_MagicNumber = 6820348;
 const int VDB_NBUCKETS = 512;
 const int VOLENT_MagicNumber = 3614246;

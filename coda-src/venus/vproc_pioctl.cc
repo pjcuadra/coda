@@ -170,7 +170,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
 			f = FSDB->Find(fid);
 			if (f != 0) {
 			    u.u_error = f->Flush();
-			    Recov_SetBound(DMFP);
+			    Recov_SetBound(GetDMFP());
 			    f = 0;
 			}
 
@@ -332,7 +332,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
 				       root_fso && root_fso->u.mtpoint == target_fso);
 			    root_fso->UnmountRoot();
 			    target_fso->UncoverMtPt();
-			    Recov_EndTrans(MAXFP);
+			    Recov_EndTrans(GetMaxFP());
 			}
 
 			/* Do the remove. */
@@ -914,7 +914,7 @@ OI_FreeLocks:
 		    (void)k_Purge();
 
 		    FSDB->Flush(MakeVolid(fid));
-		    Recov_SetBound(DMFP);
+		    Recov_SetBound(GetDMFP());
 
 		    break;
 		    }
@@ -1588,7 +1588,7 @@ OI_FreeLocks:
 		    (void)k_Purge();
 
 		    FSDB->Flush();
-		    Recov_SetBound(DMFP);
+		    Recov_SetBound(GetDMFP());
 
 		    break;
 		    }

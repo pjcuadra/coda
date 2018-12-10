@@ -148,7 +148,7 @@ class namectxt;
 
 /*  *****  Constants  *****  */
 
-#define	HDB	(rvg->recov_HDB)
+#define	HDB	(GetRVG()->recov_HDB)
 const int HDB_MagicNumber = 5551212;
 const int HDB_NBUCKETS = 2048;
 const int HDBENT_MagicNumber = 8204933;

@@ -188,7 +188,7 @@ int fsobj::SetLocalVV(ViceVersionVector *newvv)
     Recov_BeginTrans();
     RVMLIB_REC_OBJECT(stat);
     stat.VV = *newvv;
-    Recov_EndTrans(CMFP);
+    Recov_EndTrans(GetCMFP());
 
     return(0);
 }

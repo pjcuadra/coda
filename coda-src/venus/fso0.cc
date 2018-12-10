@@ -75,7 +75,7 @@ void FSOInit() {
     int i; 
 
     /* Allocate the database if requested. */
-    if (InitMetaData) {					/* <==> FSDB == 0 */
+    if (RecovIsDataInited()) {					/* <==> FSDB == 0 */
 	    Recov_BeginTrans();
 	    RVMLIB_REC_OBJECT(FSDB);
 	    FSDB = new fsdb;
@@ -86,8 +86,8 @@ void FSOInit() {
     Recov_BeginTrans();
     RVMLIB_REC_OBJECT(*FSDB);
 
-    if (InitMetaData || FSDB->MaxBlocks != CacheBlocks) {
-	    if (!InitMetaData)
+    if (RecovIsDataInited() || FSDB->MaxBlocks != CacheBlocks) {
+	    if (!RecovIsDataInited())
 		    eprint("Warning: CacheBlocks changing from %d to %d",
 			   FSDB->MaxBlocks, CacheBlocks);
 	    
@@ -95,11 +95,11 @@ void FSOInit() {
     }
     FSDB->FreeBlockMargin = FSDB->MaxBlocks / FREE_FACTOR;
     
-    if (InitMetaData || (FSO_SWT != UNSET_SWT && FSDB->swt != FSO_SWT))
+    if (RecovIsDataInited() || (FSO_SWT != UNSET_SWT && FSDB->swt != FSO_SWT))
 	    FSDB->swt = (FSO_SWT == UNSET_SWT ? DFLT_SWT : FSO_SWT);
-    if (InitMetaData || (FSO_MWT != UNSET_MWT && FSDB->mwt != FSO_MWT))
+    if (RecovIsDataInited() || (FSO_MWT != UNSET_MWT && FSDB->mwt != FSO_MWT))
 	    FSDB->mwt = (FSO_MWT == UNSET_MWT ? DFLT_MWT : FSO_MWT);
-    if (InitMetaData || (FSO_SSF != UNSET_SSF && FSDB->ssf != FSO_SSF))
+    if (RecovIsDataInited() || (FSO_SSF != UNSET_SSF && FSDB->ssf != FSO_SSF))
 	    FSDB->ssf = (FSO_SSF == UNSET_SSF ? DFLT_SSF : FSO_SSF);
     FSDB->maxpri = FSDB->MakePri(FSO_MAX_SPRI, FSO_MAX_MPRI);
     FSDB->stdpri = FSDB->MakePri(FSO_MAX_SPRI, FSO_MAX_MPRI / 2);
@@ -113,7 +113,7 @@ void FSOInit() {
     /* Recovery is needed because cache files are in UFS, not RVM. */
     {
 	/* Validate Meta- and Non-Meta-Data version stamps. */
-	if (!InitMetaData) {
+	if (!RecovIsDataInited()) {
 	    FILE *fp = fopen("CacheInfo", "r");
 	    if (fp == NULL)
 		eprint("Warning: no CacheInfo file");
@@ -129,12 +129,12 @@ void FSOInit() {
 	}
 
 	/* Allocate the fsobj's if requested. */
-	if (InitMetaData) {
+	if (RecovIsDataInited()) {
 	    /* Do this in a loop to avoid one mongo transaction! */
 		for (i = 0; i < FSDB->MaxFiles; i++) {
 			Recov_BeginTrans();
 			(void)new (FROMHEAP) fsobj(i);
-			Recov_EndTrans(MAXFP);
+			Recov_EndTrans(GetMaxFP());
 		}
 	}
 
@@ -463,7 +463,7 @@ fsobj *fsdb::Create(VenusFid *key, int priority, const char *comp,
 	if (parent)
 	    f->SetParent(parent->Vnode, parent->Unique);
     }
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     if (!f)
 	LOG(0, ("fsdb::Create: (%s, %d) failed\n", FID_(key), priority));
@@ -627,7 +627,7 @@ RestartFind:
 				f->GetComp(), FID_(&f->fid)));
 		Recov_BeginTrans();
 		f->Kill();
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 		Put(&f);  		 /* will unlock and garbage collect */
 		return(EIO);
 	  }
@@ -652,7 +652,7 @@ RestartFind:
 	if (GCABLE(f)) {
 	  Recov_BeginTrans();
 	  f->GC();
-	  Recov_EndTrans(MAXFP);
+	  Recov_EndTrans(GetMaxFP());
 	  goto RestartFind;
 	}
 	
@@ -665,14 +665,14 @@ RestartFind:
 	{
 	    Recov_BeginTrans();
 	    f->SetComp(comp);
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
 
 	/* Update parent linkage */
 	if (parent && !f->pfso) {
 	    Recov_BeginTrans();
 	    f->SetParent(parent->Vnode, parent->Unique);
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
     }
 
@@ -703,7 +703,7 @@ RestartFind:
 		  Recov_BeginTrans();
 		  RVMLIB_REC_OBJECT(f->flags);
 		  f->flags.fake = 1;
-		  Recov_EndTrans(MAXFP);
+		  Recov_EndTrans(GetMaxFP());
 
 		  k_Purge(&f->fid, 0);
 
@@ -758,7 +758,7 @@ RestartFind:
 				int fd = f->GetContainerFD();
 				CODA_ASSERT(fd != -1);
 				f->cf.Close(fd);
-				Recov_EndTrans(MAXFP);
+				Recov_EndTrans(GetMaxFP());
 			} else {
 				/* Let fsobj::Fetch go ahead and fetch the object */
 				code = f->Fetch(uid);
@@ -959,7 +959,7 @@ void fsdb::Put(fsobj **f_addr) {
 
 	Recov_BeginTrans();
 	f->GC();
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 
     (*f_addr) = 0;
@@ -1341,7 +1341,7 @@ int fsdb::AllocBlocks(int priority, int nblocks) {
     if (delq->count() > 0) {
 	Recov_BeginTrans();
 	GarbageCollect();
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
 	if (GrabFreeBlocks(priority, nblocks))
 	    return(0);
     }
@@ -1350,14 +1350,14 @@ int fsdb::AllocBlocks(int priority, int nblocks) {
     /* Try regular GetDown first, specific replacement second. */
     Recov_BeginTrans();
     GetDown();
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
     if (GrabFreeBlocks(priority, nblocks))
 	return(0);
     Recov_BeginTrans();
     int BlocksNeeded = nblocks +
 	    (priority >= MarginPri() ? 0 : FreeBlockMargin) - FreeBlockCount();
     ReclaimBlocks(priority, BlocksNeeded);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
     if (GrabFreeBlocks(priority, nblocks))
 	return(0);
 

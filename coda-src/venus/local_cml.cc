@@ -1058,7 +1058,7 @@ void cmlent::SetRepairFlag()
 	RVMLIB_REC_OBJECT(*this);
 	flags.to_be_repaired = 1;
 	this->tid = 0;	/* also reset its tid, may not be necessary */
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 }
 
@@ -1219,7 +1219,7 @@ void cmlent::SetTid(int Tid)
     Recov_BeginTrans();
     RVMLIB_REC_OBJECT(this->tid);
     this->tid = Tid;
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 }
 
 

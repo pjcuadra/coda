@@ -89,7 +89,7 @@ extern int global_kernfd;
 
 /*  *****  Constants  ***** */
 
-#define	FSDB	(rvg->recov_FSDB)
+#define	FSDB	(GetRVG()->recov_FSDB)
 const int FSDB_MagicNumber = 3620289;
 const int FSDB_NBUCKETS = 2048;
 const int FSO_MagicNumber = 2687694;

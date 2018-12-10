@@ -121,7 +121,7 @@ void CacheFile::Reset()
     if (access(name, F_OK) == 0 && length != 0) {
 	Recov_BeginTrans();
 	Truncate(0);
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 }
 

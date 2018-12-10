@@ -115,7 +115,7 @@ void RealmDB::GetDown(void)
 	    Recov_BeginTrans();
 	    realm->Rec_GetRef();
 	    realm->Rec_PutRef();
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
     }
 }
@@ -142,7 +142,7 @@ static void RealmDB_GetDown(void)
 
 void RealmDBInit(void)
 {
-    if (InitMetaData) {
+    if (RecovIsDataInited()) {
 	Recov_BeginTrans();
 	RVMLIB_REC_OBJECT(REALMDB);
 	REALMDB = new RealmDB;

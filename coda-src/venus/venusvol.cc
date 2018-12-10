@@ -174,7 +174,7 @@ int default_reintegration_time; /* how long a reintegration attempt may take */
 void VolInit(void)
 {
     /* Allocate the database if requested. */
-    if (InitMetaData) {					/* <==> VDB == 0 */
+    if (RecovIsDataInited()) {					/* <==> VDB == 0 */
 	Recov_BeginTrans();
 	RVMLIB_REC_OBJECT(VDB);
 	VDB = new vdb;
@@ -501,7 +501,7 @@ volent *vdb::Create(Realm *realm, VolumeInfo *volinfo, const char *volname)
             Recov_BeginTrans();
             vp = new repvol(realm, volinfo->Vid, volname, volreps);
             v = vp;
-            Recov_EndTrans(MAXFP);
+            Recov_EndTrans(GetMaxFP());
         }
         /* we can safely put the replicas as the new repvol has grabbed
          * refcounts on all of them */
@@ -524,7 +524,7 @@ volent *vdb::Create(Realm *realm, VolumeInfo *volinfo, const char *volname)
                         volinfo->Type != RWVOL,
                         (&volinfo->Type0)[replicatedVolume]);
         v = vp;
-        Recov_EndTrans(MAXFP);
+        Recov_EndTrans(GetMaxFP());
         break;
         }
     }
@@ -671,7 +671,7 @@ int vdb::Get(volent **vpp, Realm *prealm, const char *name, fsobj *f)
 	v->name = (char *)rvmlib_rec_malloc(strlen(fakename) + 1);
 	rvmlib_set_range(v->name, strlen(fakename) + 1);
 	strcpy(v->name, fakename);
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
 
 	/* Should we flush the old volent? */
 
@@ -962,7 +962,7 @@ void volent::release(void)
 	delete (repvol *)this;
     } else
 	delete (volrep *)this;
-    if (!intrans) Recov_EndTrans(MAXFP);
+    if (!intrans) Recov_EndTrans(GetMaxFP());
 }
 
 int volent::IsReadWriteReplica()
@@ -1413,7 +1413,7 @@ void volent::TakeTransition()
     }
 
     /* Bound RVM persistence out of paranoia. */
-    Recov_SetBound(DMFP);
+    Recov_SetBound(GetDMFP());
 }
 
 void volrep::DownMember(struct in_addr *host)
@@ -1511,7 +1511,7 @@ int reintvol::WriteDisconnect(unsigned int age, unsigned int hogtime)
 	ReintLimit = hogtime;
     }
 
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
     return 0;
 }
 
@@ -1709,7 +1709,7 @@ void repvol::ResetTransient(void)
 	    DirFids.Count = 0;
 	    RVMLIB_REC_OBJECT(SymlinkFids);
 	    SymlinkFids.Count = 0;
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 
     ResetVolTransients();
@@ -2004,7 +2004,7 @@ int reintvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid, int f
                Fids->Vnode += Fids->Stride;
                Fids->Unique++;
                Fids->Count--;
-            Recov_EndTrans(MAXFP);
+            Recov_EndTrans(GetMaxFP());
 
             LOG(100, ("reintvol::AllocFid: target_fid = %s\n", FID_(target_fid)));
             return(0);
@@ -2090,7 +2090,7 @@ int reintvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid, int f
     Fids->Vnode += Fids->Stride;
     Fids->Unique++;
     Fids->Count--;
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
     
 AllocFidError:
     PutConn(&c);
@@ -2205,7 +2205,7 @@ int repvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid, int for
 		    Fids->Vnode += Fids->Stride;
 		    Fids->Unique++;
 		    Fids->Count--;
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 	    }
 	}
 Exit:
@@ -2399,7 +2399,7 @@ VenusFid reintvol::GenerateLocalFid(ViceDataType fidtype)
     Recov_BeginTrans();
     RVMLIB_REC_OBJECT(FidUnique);
     FidUnique++;
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     return(fid);
 }
@@ -2611,7 +2611,7 @@ int volent::SetVolStat(VolumeStatus *volstat, RPC2_BoundedBS *Name,
 
 	    Recov_BeginTrans();
 	    Recov_GenerateStoreId(&sid);
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 
 	    code = vp->GetMgrp(&m, uid, (PIGGYCOP2 ? &PiggyBS : 0));
 	    if (code != 0) goto RepExit;

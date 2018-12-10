@@ -426,7 +426,7 @@ void fsobj::Recover()
 
 	RVMLIB_REC_OBJECT(mvstat);
 	mvstat = NORMAL;
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 
     /* Rebuild priority queue. */
@@ -543,7 +543,7 @@ Failure:
 		 * decided that there is no other way. */
 		flags.dirty = 0;
 		DiscardData();
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 	    }
 	    if (cf.ValidData()) {
 		/* Reclaim cache-file blocks. */
@@ -557,7 +557,7 @@ Failure:
 	{
 	    Recov_BeginTrans();
 	    Kill();
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
     }
 }
@@ -671,7 +671,7 @@ int fsobj::Flush() {
     Recov_BeginTrans();
     Kill();
     GC();
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     return(0);
 }
@@ -1268,7 +1268,7 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
 	    }
 	    rf->UnmountRoot();
     }
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     /* Do the mount magic. */
     Recov_BeginTrans();
@@ -1279,7 +1279,7 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
     rf->MountRoot(this);
     CoverMtPt(rf);
 
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     FSDB->Put(&rf);
     VDB->Put(&tvol);
@@ -2037,7 +2037,7 @@ done:
     DisableReplacement();
     /* notify blocked threads that the fso is ready. */
     Matriculate();
-    Recov_EndTrans(CMFP);
+    Recov_EndTrans(GetCMFP());
 
     return(0);
 }

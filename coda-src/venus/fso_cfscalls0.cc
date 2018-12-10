@@ -143,7 +143,7 @@ int fsobj::LookAside(void)
     RVMLIB_REC_OBJECT(flags);
     flags.fetching = 1;
     fd = GetContainerFD();
-    Recov_EndTrans(CMFP);
+    Recov_EndTrans(GetCMFP());
 
     if (fd != -1) {
 	memset(emsg, 0, sizeof(emsg));
@@ -170,7 +170,7 @@ int fsobj::LookAside(void)
 
     if (lka_successful)
 	cf.SetValidData(cf.Length()); 
-    Recov_EndTrans(CMFP);
+    Recov_EndTrans(GetCMFP());
 
     /* If we received any callbacks during the lookaside, the validity of the
      * found data is suspect and we shouldn't set the status to valid */
@@ -222,7 +222,7 @@ int fsobj::FetchFileRPC(connent *con, ViceStatus *status, uint64_t offset,
     if (IsFile()) {
         Recov_BeginTrans();
         cf.SetValidData(offset, len);
-        Recov_EndTrans(CMFP);
+        Recov_EndTrans(GetCMFP());
     }
 
     return code;
@@ -403,7 +403,7 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 		case Invalid:
 		    FSO_ASSERT(this, 0);
 	    }
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
     }
 
     long cbtemp = cbbreaks;
@@ -474,7 +474,7 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
 	Recov_BeginTrans();
 	UpdateStatus(&status, NULL, uid);
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 
 RepExit:
         if (c) PutConn(&c);
@@ -529,7 +529,7 @@ RepExit:
 
 	Recov_BeginTrans();
 	UpdateStatus(&status, NULL, uid);
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 
 NonRepExit:
 	PutConn(&c);
@@ -583,7 +583,7 @@ NonRepExit:
 	/* Demote existing status. */
 	Demote();
     }
-    Recov_EndTrans(CMFP);
+    Recov_EndTrans(GetCMFP());
     return(code);
 }
 
@@ -816,7 +816,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 				  LOG(1, ("fsobj::GetAttr: Killing (%s), REPLACEABLE and !BUSY\n", pobj->GetComp()));
 				    Recov_BeginTrans();
 				    pobj->Kill(0);
-				    Recov_EndTrans(MAXFP);
+				    Recov_EndTrans(GetMaxFP());
 				} else
 				    pobj->Demote();
 
@@ -841,7 +841,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 						      : &FSDB->FileDataStats),
 						     REPLACE, BLOCKS(pobj));
 				    pobj->DiscardData();
-				    Recov_EndTrans(MAXFP);
+				    Recov_EndTrans(GetMaxFP());
 				}
 			    }
 			}
@@ -980,7 +980,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 		    UpdateCacheStats((IsDir() ? &FSDB->DirDataStats : &FSDB->FileDataStats),
 				     REPLACE, BLOCKS(this));
 		    DiscardData();
-		    Recov_EndTrans(CMFP);
+		    Recov_EndTrans(GetCMFP());
 		    code = ERETRY;
 		    
 		    goto RepExit;
@@ -1006,7 +1006,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 	    if (mysha.SeqLen != SHA_DIGEST_LENGTH)
 		memset(&VenusSHA, 0, SHA_DIGEST_LENGTH);
 	}
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 
 RepExit:
 	if (m) m->Put();
@@ -1050,7 +1050,7 @@ RepExit:
 
 			if (n) FSO_RELE(n);
 		    }
-		    Recov_EndTrans(CMFP);
+		    Recov_EndTrans(GetCMFP());
 		}
 		break;
 
@@ -1058,7 +1058,7 @@ RepExit:
 		/* Object no longer exists, discard if possible. */
 		Recov_BeginTrans();
 		Kill();
-		Recov_EndTrans(CMFP);
+		Recov_EndTrans(GetCMFP());
 		break;
 
 	    default:
@@ -1127,7 +1127,7 @@ RepExit:
             		 REPLACE, BLOCKS(this));
             DiscardData();
             code = ERETRY;
-            Recov_EndTrans(CMFP);
+            Recov_EndTrans(GetCMFP());
 
             goto NonRepExit;
         }
@@ -1150,7 +1150,7 @@ RepExit:
 	    if (mysha.SeqLen != SHA_DIGEST_LENGTH)
 		memset(&VenusSHA, 0, SHA_DIGEST_LENGTH);
 	}
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 
 NonRepExit:
 	PutConn(&c);
@@ -1163,7 +1163,7 @@ NonRepExit:
 	Demote();
       else
 	  Kill();
-      Recov_EndTrans(DMFP);
+      Recov_EndTrans(GetDMFP());
     }
 
     return(code);
@@ -1232,7 +1232,7 @@ int fsobj::DisconnectedStore(Date_t Mtime, uid_t uid, unsigned long NewLength,
 	     * which basically means it is a repair-related operation,
 	     * and doing it again would trigger an assertion. */
 	    LocalStore(Mtime, NewLength);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     return(code);
 }
@@ -1246,7 +1246,7 @@ int fsobj::Store(unsigned long NewLength, Date_t Mtime, uid_t uid)
     if (IsPioctlFile()) {
         Recov_BeginTrans();
         LocalStore(Mtime, NewLength);
-        Recov_EndTrans(DMFP);
+        Recov_EndTrans(GetDMFP());
     }
     else
         code = DisconnectedStore(Mtime, uid, NewLength);
@@ -1256,7 +1256,7 @@ int fsobj::Store(unsigned long NewLength, Date_t Mtime, uid_t uid)
 	/* Stores cannot be retried, so we have no choice but to nuke the file. */
 	if (code == ERETRY) code = EINVAL;
 	Kill();
-	Recov_EndTrans(DMFP);
+	Recov_EndTrans(GetDMFP());
     }
     
     return(code);
@@ -1335,7 +1335,7 @@ int fsobj::DisconnectedSetAttr(Date_t Mtime, uid_t uid, unsigned long NewLength,
 	     * which basically means it is a repair-related operation,
 	     * and doing it again would trigger an assertion. */
 	    LocalSetAttr(Mtime, NewLength, NewDate, NewOwner, NewMode);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     return(code);
 }
@@ -1375,14 +1375,14 @@ int fsobj::SetAttr(struct coda_vattr *vap, uid_t uid)
 	    RVMLIB_REC_OBJECT(cf);
 	    data.file = &cf;
             data.file->Create();
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
 
 	/* Only update cache file when truncating and open for write! */
 	if (NewLength != (unsigned long)-1 && WRITING(this)) {
 		Recov_BeginTrans();
 		data.file->Truncate((unsigned) NewLength);
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 		NewLength = (unsigned long)VA_IGNORE_SIZE;
 	}
 
@@ -1475,7 +1475,7 @@ int fsobj::SetACL(RPC2_CountedBS *acl, uid_t uid)
 
 	Recov_BeginTrans();
 	Recov_GenerateStoreId(&sid);
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
 	{
 	    /* Make multiple copies of the IN/OUT and OUT parameters. */
 	    int ph_ix; unsigned long ph;
@@ -1525,7 +1525,7 @@ int fsobj::SetACL(RPC2_CountedBS *acl, uid_t uid)
 
 	Recov_BeginTrans();
 	UpdateStatus(&status, &UpdateSet, uid);
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 	if (ASYNCCOP2) ReturnEarly();
 
 	/* Send the COP2 message or add an entry for piggybacking. */
@@ -1581,7 +1581,7 @@ RepExit:
 	/* Do setattr locally. */
 	Recov_BeginTrans();
 	UpdateStatus(&status, &UpdateSet, uid);
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 
 NonRepExit:
 	PutConn(&c);
@@ -1687,7 +1687,7 @@ int fsobj::DisconnectedCreate(Date_t Mtime, uid_t uid, fsobj **t_fso_addr,
 	    target_fso->CleanStat.Length = target_fso->stat.Length;
 	    target_fso->CleanStat.Date = target_fso->stat.Date;
 	   }
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
 Exit:
     if (code == 0) {
@@ -1698,7 +1698,7 @@ Exit:
 	    FSO_ASSERT(target_fso, !HAVESTATUS(target_fso));
 	    Recov_BeginTrans();
 	    target_fso->Kill();
-	    Recov_EndTrans(DMFP);
+	    Recov_EndTrans(GetDMFP());
 	    FSDB->Put(&target_fso);
 	}
     }

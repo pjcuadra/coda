@@ -211,7 +211,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 
     Recov_BeginTrans();
     Recov_GenerateStoreId(&sid);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     mgrpent *m = 0;
 
@@ -514,7 +514,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 	    code = LogRemove(modtime, uid, rFid, rep_ent[i].name,
 			     &(fidarr[i]), LCarr[i], UNSET_TID);
 	    CML.cancelFreezes(0);
-	    Recov_EndTrans(CMFP);
+	    Recov_EndTrans(GetCMFP());
 	    break;
 	  case REPAIR_REMOVED:   /* Remove dir */
 	    Recov_BeginTrans();
@@ -522,7 +522,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 	    code = LogRmdir(modtime, uid, rFid, rep_ent[i].name,
 			    &(fidarr[i]), UNSET_TID);
 	    CML.cancelFreezes(0);
-	    Recov_EndTrans(CMFP);
+	    Recov_EndTrans(GetCMFP());
 	    break;
 	  case REPAIR_SETMODE:
 	    Recov_BeginTrans();
@@ -530,7 +530,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 	    code = LogChmod(modtime, uid, rFid,
 			    (RPC2_Unsigned)rep_ent[i].parms[0], UNSET_TID);
 	    CML.cancelFreezes(0);
-	    Recov_EndTrans(CMFP);
+	    Recov_EndTrans(GetCMFP());
 	    break;
 	  case REPAIR_SETOWNER: /* Have to be a sys administrator for this */
 	    Recov_BeginTrans();
@@ -538,7 +538,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 	    code = LogChown(modtime, uid, rFid,
 			    (UserId)rep_ent[i].parms[0], UNSET_TID);
 	    CML.cancelFreezes(0);
-	    Recov_EndTrans(CMFP);
+	    Recov_EndTrans(GetCMFP());
 	    break;
 	  case REPAIR_SETMTIME:
 	    Recov_BeginTrans();
@@ -546,7 +546,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 	    code = LogUtimes(modtime, uid, rFid,
 			     (Date_t)rep_ent[i].parms[0], UNSET_TID);
 	    CML.cancelFreezes(0);
-	    Recov_EndTrans(CMFP);
+	    Recov_EndTrans(GetCMFP());
 	    break;
 	  case REPAIR_RENAME:
 	    Recov_BeginTrans();
@@ -557,7 +557,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 			     &(fidarr[(l->repairCount + i)]),
 			     LCarr[(l->repairCount + i)], UNSET_TID);
 	    CML.cancelFreezes(0);
-	    Recov_EndTrans(CMFP);
+	    Recov_EndTrans(GetCMFP());
 	    break;
 
 	    /* These should never occur in the fixfile for the local replica */
@@ -622,7 +622,7 @@ Exit:
 	    Recov_BeginTrans();
 	    f->flags.fake = 0; /* so we can refetch status before death?? */
 	    f->Kill();
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	    FSDB->Put(&f);
 	}
 	/* Invoke an asynchronous resolve for directories. */
@@ -806,7 +806,7 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile,
 	    f->Lock(WR);
 	    Recov_BeginTrans();
 	    f->Kill();
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 
 	    if (f->refcnt > 1) {
 	      LOG(0, ("DisconnectedRepair: (%s) has %d active references - cannot repair\n", FID_(RepairFid), f->refcnt));
@@ -856,13 +856,13 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile,
 	       code = LocalRepair(f, &status,
 				  RepairF ? RepairF->data.file->Name() : RepairFile,
 				  &tpfid);
-	  Recov_EndTrans(DMFP);
+	  Recov_EndTrans(GetDMFP());
 	  
 	if (code != 0) {
 	    /* kill the object? - XXX */
 	    Recov_BeginTrans();
 		   f->Kill();
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
 	FSDB->Put(&f);
     }	    

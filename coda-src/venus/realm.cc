@@ -150,7 +150,7 @@ void Realm::PutRef(void)
     delete this;
 
     if (!intrans)
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
 #endif
 }
 
@@ -256,7 +256,7 @@ retry:
 		    Fid.Unique = realmid;
 		    f->dir_Create(name, &Fid);
 
-		    Recov_EndTrans(MAXFP);
+		    Recov_EndTrans(GetMaxFP());
 		}
 	    }
 	    goto exit_done;
@@ -287,7 +287,7 @@ void Realm::SetRootVolName(char *name)
     rvmlib_rec_free(rootvolname);
     rootvolname = rvmlib_rec_strdup(name);
     CODA_ASSERT(rootvolname);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 }
 
 void Realm::print(FILE *f)

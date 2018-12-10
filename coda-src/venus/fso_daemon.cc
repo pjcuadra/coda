@@ -103,7 +103,7 @@ void FSODaemon(void) {
 	    if (curr_time - LastGetDown >= GetDownInterval) {
 		Recov_BeginTrans();
 		FSDB->GetDown();
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 		LastGetDown = curr_time;
 	    }
 
@@ -220,7 +220,7 @@ void fsdb::FlushRefVec() {
     LastRefCounter = RefCounter;
     Recov_BeginTrans();
     rvmlib_set_range(LastRef, MaxFiles * sizeof(long));
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 }
 
 

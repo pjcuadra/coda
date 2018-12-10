@@ -112,7 +112,7 @@ int fsobj::DisconnectedRemove(Date_t Mtime, uid_t uid, char *name,
 	     * which basically means it is a repair-related operation,
 	     * and doing it again would trigger an assertion. */
 	    LocalRemove(Mtime, name, target_fso);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     return(code);
 }
@@ -184,7 +184,7 @@ int fsobj::DisconnectedLink(Date_t Mtime, uid_t uid, char *name,
 	     * which basically means it is a repair-related operation,
 	     * and doing it again would trigger an assertion. */
 	    LocalLink(Mtime, name, source_fso);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     return(code);
 }
@@ -319,7 +319,7 @@ int fsobj::DisconnectedRename(Date_t Mtime, uid_t uid, fsobj *s_parent_fso,
 	     * which basically means it is a repair-related operation,
 	     * and doing it again would trigger an assertion. */
 	    LocalRename(Mtime, s_parent_fso, s_name, s_fso, t_name, t_fso);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     return(code);
 }
@@ -444,7 +444,7 @@ int fsobj::DisconnectedMkdir(Date_t Mtime, uid_t uid, fsobj **t_fso_addr,
 	    target_fso->CleanStat.Length = target_fso->stat.Length;
 	    target_fso->CleanStat.Date = target_fso->stat.Date;
 	   }
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
 Exit:
     if (code == 0) {
@@ -455,7 +455,7 @@ Exit:
 	    FSO_ASSERT(target_fso, !HAVESTATUS(target_fso));
 	    Recov_BeginTrans();
 	    target_fso->Kill();
-	    Recov_EndTrans(DMFP);
+	    Recov_EndTrans(GetDMFP());
 	    FSDB->Put(&target_fso);
 	}
     }
@@ -537,7 +537,7 @@ int fsobj::DisconnectedRmdir(Date_t Mtime, uid_t uid, char *name,
 	     * which basically means it is a repair-related operation,
 	     * and doing it again would trigger an assertion. */
 	    LocalRmdir(Mtime, name, target_fso);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     return(code);
 }
@@ -656,7 +656,7 @@ int fsobj::DisconnectedSymlink(Date_t Mtime, uid_t uid, fsobj **t_fso_addr,
 	    target_fso->CleanStat.Length = target_fso->stat.Length;
 	    target_fso->CleanStat.Date = target_fso->stat.Date;
 	   }
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
 Exit:
     if (code == 0) {
@@ -667,7 +667,7 @@ Exit:
 	    FSO_ASSERT(target_fso, !HAVESTATUS(target_fso));
 	    Recov_BeginTrans();
 	    target_fso->Kill();
-	    Recov_EndTrans(DMFP);
+	    Recov_EndTrans(GetDMFP());
 	    FSDB->Put(&target_fso);
 	}
     }
@@ -755,7 +755,7 @@ int fsobj::SetVV(ViceVersionVector *newvv, uid_t uid)
 	Recov_BeginTrans();
 	RVMLIB_REC_OBJECT(stat);
 	stat.VV = *newvv;
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 
 RepExit:
 	if (m) m->Put();
@@ -799,7 +799,7 @@ RepExit:
 	Recov_BeginTrans();
 	RVMLIB_REC_OBJECT(stat);
 	stat.VV = *newvv;
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 
 NonRepExit:
 	PutConn(&c);

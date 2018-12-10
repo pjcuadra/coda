@@ -145,7 +145,7 @@ PioctlErrOut:
     FSDB->ChangeDiskUsage(-NBLOCKS(data.file->Length()));
     Recov_BeginTrans();
     data.file->SetLength(0);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     /* get arguments ready for the ioctl */
     struct ViceIoctl vidata;
@@ -190,7 +190,7 @@ PioctlErrOut:
     FSDB->ChangeDiskUsage(NBLOCKS(tstat.st_size));
     Recov_BeginTrans();
     data.file->SetLength(tstat.st_size);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
     return 0;
 }
 
@@ -235,7 +235,7 @@ int fsobj::Open(int writep, int truncp, struct venus_cnode *cp, uid_t uid)
 	    FSDB->owriteq->append(&owrite_handle);
 	    RVMLIB_REC_OBJECT(flags);
 	    flags.owrite = 1;
-	    Recov_EndTrans(DMFP);
+	    Recov_EndTrans(GetDMFP());
 	}
 	/* Do truncate if necessary. */
 	if (truncp) {
@@ -267,7 +267,7 @@ int fsobj::Open(int writep, int truncp, struct venus_cnode *cp, uid_t uid)
 	    data.dir->udcf = &cf;
             data.dir->udcf->Create();
 	    data.dir->udcfvalid = 0;
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
 
 	/* Recompute udir contents if necessary. */
@@ -311,7 +311,7 @@ int fsobj::Open(int writep, int truncp, struct venus_cnode *cp, uid_t uid)
 	    Recov_BeginTrans();
 	    data.dir->udcf->SetLength((int) tstat.st_size);
         data.dir->udcf->SetValidData((int) tstat.st_size);
-	    Recov_EndTrans(MAXFP);
+	    Recov_EndTrans(GetMaxFP());
 	}
     }
 
@@ -384,7 +384,7 @@ int fsobj::Sync(uid_t uid)
     Recov_BeginTrans();
     data.file->SetLength((unsigned int) NewLength);
     data.file->SetValidData((unsigned int) NewLength);
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
 
     /* Attempt the Store. */
     vproc *v = VprocSelf();
@@ -442,13 +442,13 @@ void fsobj::Release(int writep)
                 RVMLIB_REC_OBJECT(stat.Length);
                 stat.Length = 0;	    /* Necessary for blocks maintenance! */
             }
-            Recov_EndTrans(DMFP);
+            Recov_EndTrans(GetDMFP());
         }
     } else if (IsPioctlFile()) {
         LOG(10, ("fsobj::Release: dropping pioctl file (%s)\n", FID_(&fid)));
         Recov_BeginTrans();
         Kill();
-        Recov_EndTrans(DMFP);
+        Recov_EndTrans(GetDMFP());
     }
 
     FSO_RELE(this);	    /* Unpin object. */
@@ -698,7 +698,7 @@ get_object:
 		Recov_BeginTrans();
 		root_fso->UnmountRoot();
 		target_fso->UncoverMtPt();
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 		target_fso->flags.ckmtpt = 0;
 	    }
 

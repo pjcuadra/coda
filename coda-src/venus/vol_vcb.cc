@@ -256,7 +256,7 @@ int repvol::GetVolAttr(uid_t uid)
 		Recov_BeginTrans();
 		   RVMLIB_REC_OBJECT(VVV);
 		   VVV = NullVV;
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 		goto RepExit;
 	    }
 
@@ -331,7 +331,7 @@ int repvol::GetVolAttr(uid_t uid)
 		    Recov_BeginTrans();
 		    RVMLIB_REC_OBJECT(vp->VVV);
 		    vp->VVV = NullVV;   
-		    Recov_EndTrans(MAXFP);
+		    Recov_EndTrans(GetMaxFP());
 		    break;
 		}
 		v->release();
@@ -382,7 +382,7 @@ void repvol::CollateVCB(mgrpent *m, RPC2_Integer *sbufs, CallBackStatus *cbufs)
 	    for (i = 0; i < vsg->MaxVSG(); i++)
 	        if (m->rocc.hosts[i].s_addr != 0)
 		   (&VVV.Versions.Site0)[i] = sbufs[i];
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     } else {
 	ClearCallBack();
 
@@ -393,7 +393,7 @@ void repvol::CollateVCB(mgrpent *m, RPC2_Integer *sbufs, CallBackStatus *cbufs)
 		Recov_BeginTrans();
 		   RVMLIB_REC_OBJECT(VVV);
 		   VVV = NullVV;
-		Recov_EndTrans(MAXFP);
+		Recov_EndTrans(GetMaxFP());
 		break;
 	    }
     }
@@ -491,7 +491,7 @@ int repvol::CallBackBreak()
 	Recov_BeginTrans();
 	    RVMLIB_REC_OBJECT(VVV);
 	    VVV = NullVV;   
-	Recov_EndTrans(MAXFP);
+	Recov_EndTrans(GetMaxFP());
     }
 
     return(rc);    

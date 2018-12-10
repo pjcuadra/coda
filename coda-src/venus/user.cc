@@ -562,7 +562,7 @@ RetryConnect:
 
 	/* This UUID identifies this client during it's lifetime.
 	 * It is only reset when RVM is reinitialized */
-	memcpy(vc.VenusUUID, &VenusGenID, sizeof(ViceUUID));
+	memcpy(vc.VenusUUID, VenusGenID(), sizeof(ViceUUID));
 
     srvent *sv = FindServer(&hid.Value.InetAddress);
 	char *sname = sv->name;

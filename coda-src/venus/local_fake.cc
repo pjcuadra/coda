@@ -193,7 +193,7 @@ int fsobj::ExpandObject(void)
     FSO_HOLD(this);
 
     FSDB->Put(&fakedir);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     /* make sure we tell the kernel about the changes */
     k_Purge(&mod_fso->fid, 1);
@@ -404,7 +404,7 @@ int fsobj::CollapseObject(void)
      * It could be that the FSO_HOLD in ExpandObject
      * is not recorded in RVM and gets lost. This conditional
      * may not fix every case of this problem. -AW */
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     FSDB->Put(&localcache);
     return rc;

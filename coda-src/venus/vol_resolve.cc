@@ -290,7 +290,7 @@ void resent::HandleResult(int code) {
 	    f->Lock(WR);
 	    Recov_BeginTrans();
 	    f->Kill();
-	    Recov_EndTrans(CMFP);
+	    Recov_EndTrans(GetCMFP());
 	    FSDB->Put(&f);
 	}
     }

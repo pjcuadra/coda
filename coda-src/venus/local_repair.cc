@@ -107,7 +107,7 @@ int ClientModifyLog::DiscardLocalMutation(char *msg)
     cancelFreezes(1);
     rc = m->cancel();
     cancelFreezes(0);
-    Recov_EndTrans(CMFP);
+    Recov_EndTrans(GetCMFP());
 
     if(rc != 1) {
       LOG(0, ("ClientModifyLog::DiscardLocalMutation: cancel failed: %d\n", rc));
@@ -163,7 +163,7 @@ void ClientModifyLog::PreserveLocalMutation(char *msg)
 	cancelFreezes(1);
 	rc = m->cancel();
 	cancelFreezes(0);
-	Recov_EndTrans(CMFP);
+	Recov_EndTrans(GetCMFP());
 	sprintf(msg, "reintegrated:\n\t%s\n", opmsg);
       }
       else

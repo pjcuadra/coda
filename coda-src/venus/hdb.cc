@@ -124,7 +124,7 @@ extern int SearchForNOreFind;
 void HDB_Init()
 {
     /* Allocate the database if requested. */
-    if (InitMetaData) {					/* <==> HDB == 0 */
+    if (RecovIsDataInited()) {					/* <==> HDB == 0 */
 	Recov_BeginTrans();
 	RVMLIB_REC_OBJECT(HDB);
 	HDB = new hdb;
@@ -263,7 +263,7 @@ hdbent *hdb::Create(VolumeId vid, char *realm, char *name, uid_t local_id,
     Recov_BeginTrans();
     h = new hdbent(vid, realm, name, local_id, priority, expand_children,
 		   expand_descendents);
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     if (h == 0)
 	LOG(0, ("hdb::Create: (%x@%s, %s) failed\n", vid, realm, name));
@@ -334,7 +334,7 @@ int hdb::Delete(hdb_delete_msg *m, uid_t local_id)
 
     Recov_BeginTrans();
     delete h;
-    Recov_EndTrans(DMFP);
+    Recov_EndTrans(GetDMFP());
 
     return(0);
 }
@@ -362,8 +362,8 @@ int hdb::Clear(hdb_clear_msg *m, uid_t local_id) {
 	    delete h;
 	    h = succ;
     }
-    Recov_EndTrans(MAXFP);
-    Recov_SetBound(DMFP);
+    Recov_EndTrans(GetMaxFP());
+    Recov_SetBound(GetDMFP());
 
     return(0);
 }

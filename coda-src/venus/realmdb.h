@@ -27,7 +27,7 @@ listed in the file CREDITS.
 extern Realm *LocalRealm;
 
 /* persistent reference to the RealmDB object */
-#define REALMDB (rvg->recov_REALMDB)
+#define REALMDB (GetRVG()->recov_REALMDB)
 
 class RealmDB {
     friend void RealmDBInit(void);

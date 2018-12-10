@@ -67,6 +67,6 @@ int reintvol::GetReintId()
     Recov_BeginTrans();
     RVMLIB_REC_OBJECT(reint_id_gen);
     reint_id_gen++;
-    Recov_EndTrans(MAXFP);
+    Recov_EndTrans(GetMaxFP());
     return reint_id_gen;
 }

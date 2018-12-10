@@ -71,6 +71,7 @@ extern "C" {
 #include "daemon.subsystem.h"
 #include "venusstats.subsystem.h"
 #include "sighand.subsystem.h"
+#include "venusrecov.subsystem.h"
 
 #include "nt_util.h"
 #ifdef __CYGWIN32__
@@ -172,6 +173,8 @@ static const char * GBYTES_UNIT[] = { "GB", "gb", "Gb", "gB", "G", "g"};
 static const unsigned int GBYTE_UNIT_SCALE = 1024 * MBYTE_UNIT_SCALE;
 static const char * TBYTES_UNIT[] = { "TB", "tb", "Tb", "tB", "T", "t"};
 static const unsigned int TBYTE_UNIT_SCALE = 1024 * GBYTE_UNIT_SCALE;
+
+static struct venusrecov_config venusrecov_conf = venusrecov_default_config;
 
 /* Some helpers to add fd/callbacks to the inner select loop */
 struct mux_cb_entry {
@@ -634,23 +637,23 @@ static void ParseCmdline(int argc, char **argv)
 	    else if (STREQ(argv[i], "-ps"))           /* sftp packet size */
 		i++, sftp_packetsize = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-init"))        /* brain wipe rvm */
-		InitMetaData = 1;
+		venusrecov_conf.InitMetaData = 1;
 	    else if (STREQ(argv[i], "-newinstance")) /* fake a 'reinit' */
-		InitNewInstance = 1;
+		venusrecov_conf.InitNewInstance = 1;
 	    else if (STREQ(argv[i], "-rvmt"))
 		i++, RvmType = (rvm_type_t)(atoi(argv[i]));
 	    else if (STREQ(argv[i], "-vld"))          /* location of log device */
-		i++, VenusLogDevice = argv[i];        /* normally /usr/coda/LOG */
+		i++, venusrecov_conf.VenusLogDevice = argv[i];        /* normally /usr/coda/LOG */
 	    else if (STREQ(argv[i], "-vlds"))         /* log device size */
-		i++, VenusLogDeviceSize = atoi(argv[i]);  
+		i++, venusrecov_conf.VenusLogDeviceSize = atoi(argv[i]);  
 	    else if (STREQ(argv[i], "-vdd"))          /* location of data device */
-                i++, VenusDataDevice = argv[i];       /* normally /usr/coda/DATA */
+                i++, venusrecov_conf.VenusDataDevice = argv[i];       /* normally /usr/coda/DATA */
 	    else if (STREQ(argv[i], "-vdds"))         /* meta-data device size */
-		i++, VenusDataDeviceSize = atoi(argv[i]);
+		i++, venusrecov_conf.VenusDataDeviceSize = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-rdscs"))        
-		i++, RdsChunkSize = atoi(argv[i]);    
+		i++, venusrecov_conf.RdsChunkSize = atoi(argv[i]);    
 	    else if (STREQ(argv[i], "-rdsnl"))
-		i++, RdsNlists = atoi(argv[i]);
+		i++, venusrecov_conf.RdsNlists = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-logopts"))
 		i++, LogOpts = atoi(argv[i]);
 	    else if (STREQ(argv[i], "-swt"))         /* short term pri weight */
@@ -694,7 +697,7 @@ static void ParseCmdline(int argc, char **argv)
   	    else if (STREQ(argv[i], "-nomasquerade")) /* always on */;
 	    /* Private mapping ... */
 	    else if (STREQ(argv[i], "-mapprivate"))
-		MapPrivate = true;
+		venusrecov_conf.MapPrivate = true;
 	    else if (STREQ(argv[i], "-codatunnel")) {
                 codatunnel_enabled = 1;
                 eprint("codatunnel enabled");
@@ -813,15 +816,15 @@ static void DefaultCmdlineParms()
     CODACONF_STR(VenusLogFile,	    "logfile",	     DFLT_LOGFILE);
     CODACONF_STR(consoleFile,	    "errorlog",      DFLT_ERRLOG);
     CODACONF_STR(kernDevice,	    "kerneldevice",  "/dev/cfs0,/dev/coda/0");
-    CODACONF_INT(MapPrivate,	    "mapprivate",     0);
+    CODACONF_INT(venusrecov_conf.MapPrivate,	    "mapprivate",     0);
     CODACONF_STR(MarinerSocketPath, "marinersocket", "/usr/coda/spool/mariner");
     CODACONF_INT(masquerade_port,   "masquerade_port", 0);
     CODACONF_INT(allow_backfetch,   "allow_backfetch", 0);
     CODACONF_STR(venusRoot,	    "mountpoint",     DFLT_VR);
     CODACONF_INT(PrimaryUser,	    "primaryuser",    UNSET_PRIMARYUSER);
     CODACONF_STR(realmtab,	    "realmtab",	      "/etc/coda/realms");
-    CODACONF_STR(VenusLogDevice,    "rvm_log",        "/usr/coda/LOG");
-    CODACONF_STR(VenusDataDevice,   "rvm_data",       "/usr/coda/DATA");
+    CODACONF_STR(venusrecov_conf.VenusLogDevice,    "rvm_log",        "/usr/coda/LOG");
+    CODACONF_STR(venusrecov_conf.VenusDataDevice,   "rvm_data",       "/usr/coda/DATA");
 
     CODACONF_INT(rpc2_timeout,	    "RPC2_timeout",   DFLT_TO);
     CODACONF_INT(rpc2_retries,	    "RPC2_retries",   DFLT_RT);
@@ -982,8 +985,8 @@ static void CheckInitFile() {
     /* See if it's there */ 
     if (stat(initPath, &tstat) == 0) {
         /* If so, set InitMetaData */
-	InitMetaData = 1;
-    } else if ((errno == ENOENT) && (InitMetaData == 1)) {
+        venusrecov_conf.InitMetaData = 1;
+    } else if ((errno == ENOENT) && (venusrecov_conf.InitMetaData == 1)) {
         int initFD;
 
 	/* If not and it should be, create it. */

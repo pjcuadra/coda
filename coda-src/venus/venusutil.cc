@@ -79,6 +79,7 @@ extern "C" {
 #include "venuslog.h"
 #include "venuslog.subsystem.h"
 #include "venusconsts.private.h"
+#include "venusrecov.subsystem.h"
 
 
 /* *****  Exported variables  ***** */
@@ -487,16 +488,16 @@ void VenusPrint(int fd, int argc, const char **argv)
     fclose(f);
 
     if (rusagep || allp)  RusagePrint(fd);
-    if (recovp || allp)   if (RecovInited) RecovPrint(fd);
+    if (recovp || allp)   if (RecovIsInitialized()) RecovPrint(fd);
     if (vprocp || allp)   PrintVprocs(fd);
     if (userp || allp)    UserPrint(fd);
     if (connp || allp)    ConnPrint(fd);
-    if (volumep || allp)  if (RecovInited && VDB) VDB->print(fd);
-    if (fsop || allp)     if (RecovInited && FSDB) FSDB->print(fd);
-    if (fsosump && !allp) if (RecovInited && FSDB) FSDB->print(fd, 1);
+    if (volumep || allp)  if (RecovIsInitialized() && VDB) VDB->print(fd);
+    if (fsop || allp)     if (RecovIsInitialized() && FSDB) FSDB->print(fd);
+    if (fsosump && !allp) if (RecovIsInitialized() && FSDB) FSDB->print(fd, 1);
     if (vfsp || allp)     VFSPrint(fd);
     if (rpcp || allp)     RPCPrint(fd);
-    if (hdbp || allp)     if (RecovInited && HDB) HDB->print(fd);
+    if (hdbp || allp)     if (RecovIsInitialized() && HDB) HDB->print(fd);
     if (mallocp || allp)  MallocPrint(fd);
     fdprint(fd, "************************\n\n");
 }
