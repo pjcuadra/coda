@@ -64,6 +64,7 @@ extern "C" {
 #include "codaconf.h"
 #include "realmdb.h"
 #include "daemonizer.h"
+#include "venusmux.h"
 
 #include "nt_util.h"
 #ifdef __CYGWIN32__
@@ -165,87 +166,6 @@ static const char * GBYTES_UNIT[] = { "GB", "gb", "Gb", "gB", "G", "g"};
 static const unsigned int GBYTE_UNIT_SCALE = 1024 * MBYTE_UNIT_SCALE;
 static const char * TBYTES_UNIT[] = { "TB", "tb", "Tb", "tB", "T", "t"};
 static const unsigned int TBYTE_UNIT_SCALE = 1024 * GBYTE_UNIT_SCALE;
-
-/* Some helpers to add fd/callbacks to the inner select loop */
-struct mux_cb_entry {
-    struct mux_cb_entry *next;
-    int fd;
-    void (*cb)(int fd, void *udata);
-    void *udata;
-};
-static struct mux_cb_entry *_MUX_CBEs;
-
-/* Add file descriptors that have a callback to the fd_set */
-static int _MUX_FD_SET(fd_set *fds)
-{
-    struct mux_cb_entry *cbe = _MUX_CBEs;
-    int maxfd = -1;
-
-    for (; cbe; cbe = cbe->next) {
-        FD_SET(cbe->fd, fds);
-        if (cbe->fd > maxfd)
-            maxfd = cbe->fd;
-    }
-    return maxfd;
-}
-
-/* Dispatch callbacks for file descriptors in the fd_set */
-static void _MUX_Dispatch(fd_set *fds)
-{
-    struct mux_cb_entry *cbe = _MUX_CBEs, *next;
-    while(cbe)
-    {
-        /* allow callback to remove itself without messing with the iterator */
-        next = cbe->next;
-
-        if (FD_ISSET(cbe->fd, fds))
-            cbe->cb(cbe->fd, cbe->udata);
-
-        cbe = next;
-    }
-}
-
-
-/* Helper to add a file descriptor with callback to main select loop.
- *
- * Call with cb == NULL to remove existing callback.
- * cb is called with fd == -1 when an existing callback is removed or updated.
- */
-void MUX_add_callback(int fd, void (*cb)(int fd, void *udata), void *udata)
-{
-    struct mux_cb_entry *cbe = _MUX_CBEs, *prev = NULL;
-
-    for (; cbe; cbe = cbe->next)
-    {
-        if (cbe->fd == fd) {
-            /* remove old callback entry */
-            if (prev)
-                prev->next = cbe->next;
-            else
-                _MUX_CBEs = cbe->next;
-
-            /* allow cb to free udata resources */
-            cbe->cb(-1, cbe->udata);
-
-            free(cbe);
-            break;
-        }
-        prev = cbe;
-    }
-    /* if we are not adding a new callback, we're done */
-    if (cb == NULL)
-        return;
-
-    cbe = (struct mux_cb_entry *)malloc(sizeof(*cbe));
-    assert(cbe != NULL);
-
-    cbe->fd = fd;
-    cbe->cb = cb;
-    cbe->udata = udata;
-
-    cbe->next = _MUX_CBEs;
-    _MUX_CBEs = cbe;
-}
 
 /*
  * Parse size value and converts into amount of 1K-Blocks
