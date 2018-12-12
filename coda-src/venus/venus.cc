@@ -1,7 +1,7 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
           Copyright (c) 1987-2018 Carnegie Mellon University
                   Additional copyrights listed below
@@ -36,6 +36,7 @@ extern "C" {
 #include <stdlib.h>
 #include <math.h>
 #include <rpc2/codatunnel.h>
+#include <getopt.h>
 
 #include "archive.h"
 
@@ -110,6 +111,7 @@ VenusFid ASRfid;
 uid_t ASRuid;
 int detect_reintegration_retry;
 int option_isr;
+extern char PeriodicWalksAllowed;
 /* exit codes (http://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic/iniscrptact.html) */
 // EXIT_SUCCESS             0   /* stdlib.h - success */
 // EXIT_FAILURE             1   /* stdlib.h - generic or unspecified error */
@@ -151,6 +153,8 @@ static void SetRlimits();
 extern int testKernDevice();
 
 struct in_addr venus_relay_addr = { INADDR_LOOPBACK };
+
+#define NO_SHORT_OPT(c) c + 256
 
 /* *****  venus.c  ***** */
 
@@ -398,240 +402,594 @@ int main(int argc, char **argv)
     exit(EXIT_SUCCESS);
 }
 
+#define NO_SHORT(name) venus_no_short_##name
+
+enum venus_no_short_e {
+    venus_no_short_short_last = 255, // DO NOT USE
+    NO_SHORT(primaryuser),
+    NO_SHORT(rpc2_debug_level),
+    NO_SHORT(lwp_debug_level),
+    NO_SHORT(cache_files),
+    NO_SHORT(cache_size),
+    NO_SHORT(cache_chunk_size),
+    NO_SHORT(console),
+    NO_SHORT(ws),
+    NO_SHORT(sa),
+    NO_SHORT(ap),
+    NO_SHORT(ps),
+    NO_SHORT(rvmt),
+    NO_SHORT(vld),
+    NO_SHORT(vlds),
+    NO_SHORT(vdd),
+    NO_SHORT(vdds),
+    NO_SHORT(rdscs),
+    NO_SHORT(rdsnl),
+    NO_SHORT(logopts),
+    NO_SHORT(swt),
+    NO_SHORT(mwt),
+    NO_SHORT(ssf),
+    NO_SHORT(alpha),
+    NO_SHORT(beta),
+    NO_SHORT(gamma),
+    NO_SHORT(novcb),
+    NO_SHORT(nowalk),
+    NO_SHORT(spooldir),
+    NO_SHORT(mles),
+    NO_SHORT(hdbes),
+    NO_SHORT(rdstrace),
+    NO_SHORT(maxworkers),
+    NO_SHORT(maxcbservers),
+    NO_SHORT(maxprefetchers),
+    NO_SHORT(retries),
+    NO_SHORT(timeout),
+    NO_SHORT(whole_file_max)
+};
+
+struct venus_option {
+    struct option long_option;
+    const char * description;
+    const char * value_name;
+};
+
+static struct venus_option venus_options[] = {
+    {
+        .long_option = {"help", no_argument, 0, 'h'},
+        .description = "Print venus command usage",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"version", no_argument, 0, 'V'},
+        .description = "Print venus version",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"init", no_argument, 0, 'i'},
+        .description = "Wipe and reinitialize persistent state",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"primaryuser", required_argument, 0, NO_SHORT(primaryuser)},
+        .description = "Primary user",
+        .value_name = "uid"
+    },
+    {
+        .long_option = {"mapprivate", no_argument, &MapPrivate, 1},
+        .description = "Use private mmap for RVM",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"newinstance", no_argument, &InitNewInstance, 1},
+        .description = "Fake a 'reinit'",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"debug-level", required_argument, 0, 'd'},
+        .description = "Set the logging level",
+        .value_name = "debug level"
+    },
+    {
+        .long_option = {"rpc2-debug-level", required_argument, 0, NO_SHORT(rpc2_debug_level)},
+        .description = "Set RPC2's logging level",
+        .value_name = "debug level"
+    },
+    {
+        .long_option = {"lwp-debug-level", required_argument, 0, NO_SHORT(lwp_debug_level)},
+        .description = "Set LWP's logging level",
+        .value_name = "debug level"
+    },
+    {
+        .long_option = {"cache-files", required_argument, 0, NO_SHORT(cache_files)},
+        .description = "Number of cache files",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"cache-size", required_argument, 0, NO_SHORT(cache_size)},
+        .description = "Cache size in the given units (e.g. 10MB)",
+        .value_name = "n[KB|MB|GB|TB]"
+    },
+    {
+        .long_option = {"cache-chunk-size", required_argument, 0, NO_SHORT(cache_chunk_size)},
+        .description = "Cache chunk block size (shall be power of 2)",
+        .value_name = "n[KB|MB|GB|TB]"
+    },
+    {
+        .long_option = {"mles", required_argument, 0, NO_SHORT(mles)},
+        .description = "Number of CML entries",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"hdbes", required_argument, 0, NO_SHORT(hdbes)},
+        .description = "Number of hoard database entries",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"rdstrace", no_argument, 0, NO_SHORT(rdstrace)},
+        .description = "enable RDS heap tracing",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"kernel-dev", required_argument, 0, 'k'},
+        .description = "Take kernel device to be the device for",
+        .value_name = "kernel device"
+    },
+    {
+        .long_option = {"cache-dir", required_argument, 0, 'f'},
+        .description = "location of cache files",
+        .value_name = "cache dir"
+    },
+    {
+        .long_option = {"console", required_argument, 0, NO_SHORT(console)},
+        .description = "Location of error log file",
+        .value_name = "log file"
+    },
+    {
+        .long_option = {"cop-modes", required_argument, 0, 'm'},
+        .description = "COP modes",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"maxworkers", required_argument, 0, NO_SHORT(maxworkers)},
+        .description = "Number of worker threads",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"maxcbservers", required_argument, 0, NO_SHORT(maxcbservers)},
+        .description = "Number of callback server threads",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"maxprefetchers", required_argument, 0, NO_SHORT(maxprefetchers)},
+        .description = "Number of threads servicing pre-fetch ioctl",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"retries", required_argument, 0, NO_SHORT(retries)},
+        .description = "# of rpc2 retries",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"timeout", required_argument, 0, NO_SHORT(timeout)},
+        .description = "rpc2 timeout",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"ws", required_argument, 0, NO_SHORT(ws)},
+        .description = "SFTP window size",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"sa", required_argument, 0, NO_SHORT(sa)},
+        .description = "SFTP send ahead",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"ap", required_argument, 0, NO_SHORT(ap)},
+        .description = "SFTP ack point",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"ps", required_argument, 0, NO_SHORT(ps)},
+        .description = "SFTP packet size",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"rvmt", required_argument, 0, NO_SHORT(rvmt)},
+        .description = "RVM type",
+        .value_name = "type"
+    },
+    {
+        .long_option = {"vld", required_argument, 0, NO_SHORT(vld)},
+        .description = "Location of RVM log",
+        .value_name = "RVM log"
+    },
+    {
+        .long_option = {"vlds", required_argument, 0, NO_SHORT(vlds)},
+        .description = "Size of RVM log",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"vdd", required_argument, 0, NO_SHORT(vdd)},
+        .description = "Location of RVM data",
+        .value_name = "RVM data"
+    },
+    {
+        .long_option = {"vdds", required_argument, 0, NO_SHORT(vdds)},
+        .description = "Size of RVM data",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"rdscs", required_argument, 0, NO_SHORT(rdscs)},
+        .description = "RDS chunk size",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"rdsnl", required_argument, 0, NO_SHORT(rdsnl)},
+        .description = "RDS # lists",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"logopts", required_argument, 0, NO_SHORT(logopts)},
+        .description = "RVM log optimizations",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"swt", required_argument, 0, NO_SHORT(swt)},
+        .description = "Short term weight",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"mwt", required_argument, 0, NO_SHORT(mwt)},
+        .description = "Medium term weight",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"ssf", required_argument, 0, NO_SHORT(ssf)},
+        .description = "Short term scale factor",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"alpha", required_argument, 0, NO_SHORT(alpha)},
+        .description = "Patience ALPHA value",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"beta", required_argument, 0, NO_SHORT(beta)},
+        .description = "Patience BETA valu",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"gamma", required_argument, 0, NO_SHORT(gamma)},
+        .description = "Patience GAMMA value",
+        .value_name = "n"
+    },
+    {
+        .long_option = {"von", no_argument, &rpc2_timeflag, 1},
+        .description = "Enable RPC2 timing",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"voff", no_argument, &rpc2_timeflag, 0},
+        .description = "Disable RPC2 timing",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"vmon", no_argument, &mrpc2_timeflag, 1},
+        .description = "Enable multi-RPC2 timing",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"vmoff", no_argument, &mrpc2_timeflag, 0},
+        .description = "Disable multi-RPC2 timing",
+        .value_name = NULL
+    },
+//****************REMOVE??********** " -SearchForNOreFind\t\tsomething, forgot what\n"
+//**********REMOVE?**************************// " -noskk\t\t\t\tdisable venus sidekick\n"
+    {
+        .long_option = {"noasr", no_argument, &ASRallowed, 0},
+        .description = "Disable application specific resolvers",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"novcb", no_argument, 0, NO_SHORT(novcb)},
+        .description = "Disable volume callbacks",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"nowalk", no_argument, 0, NO_SHORT(nowalk)},
+        .description = "Disable hoard walks",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"spooldir", required_argument, 0, NO_SHORT(spooldir)},
+        .description = "Spooldir to hold CML snapshots",
+        .value_name = "spool directory"
+    },
+    {
+        .long_option = {"mariner-tcp", no_argument, &mariner_tcp_enable, 1},
+        .description = "Disable mariner TCP port",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"no-mariner-tcp", no_argument, &mariner_tcp_enable, 0},
+        .description = "Disable mariner TCP port",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"allow-reattach", no_argument, &allow_reattach, 1},
+        .description = "Allow reattach to already mounted tree",
+        .value_name = NULL
+    },
+//*****REMOVE?*************// " -relay <addr>\t\t\trelay socket address (windows only)\n"
+    {
+        .long_option = {"codatunnel", no_argument, &codatunnel_enabled, 1},
+        .description = "Enable codatunneld helper",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"no-codatunnel", no_argument, &codatunnel_enabled, -1},
+        .description = "Disable codatunneld helper",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"onlytcp", no_argument, &codatunnel_onlytcp, 1},
+        .description = "Only use TCP tunnel connections to servers",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"no-9pfs", no_argument, &plan9server_enabled, -1},
+        .description = "Disable embedded 9pfs server",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"9pfs", no_argument, &plan9server_enabled, 1},
+        .description = "Enable embedded 9pfs server (experimental, INSECURE!)",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"no-codafs", no_argument, &codafs_enabled, -1},
+        .description = "Do not automatically mount /coda",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"codafs", no_argument, &codafs_enabled, 1},
+        .description = "Automatically mount /coda",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"nofork", no_argument, &nofork, 1},
+        .description = "Do not daemonize the process",
+        .value_name = NULL
+    },
+    {
+        .long_option = {"whole-file-max", required_argument, 0, NO_SHORT(whole_file_max)},
+        .description = "Maximum file size to allow whole-file caching",
+        .value_name = "file size"
+    }
+};
+
 static void Usage(char *argv0)
 {
-    printf("Usage: %s [OPTION]...\n\n"
-"Options:\n"
-" -init\t\t\t\twipe and reinitialize persistent state\n"
-" -newinstance\t\t\tfake a 'reinit'\n"
-" -primaryuser <n>\t\tprimary user\n"
-" -mapprivate\t\t\tuse private mmap for RVM\n"
-" -d <debug level>\t\tdebug level\n"
-" -rpcdebug <n>\t\t\trpc2 debug level\n"
-" -lwpdebug <n>\t\t\tlwp debug level\n"
-" -cf <n>\t\t\t# of cache files\n"
-" -c <n>[KB|MB|GB|TB]\t\t\t\tcache size in the given units (e.g. 10MB)\n"
-" -ccbs <n>[KB|MB|GB|TB]\t\t\t\tcache chunk block size (shall be power of 2)\n"
-" -mles <n>\t\t\t# of CML entries\n"
-" -hdbes <n>\t\t\t# of hoard database entries\n"
-" -rdstrace\t\t\tenable RDS heap tracing\n"
-" -k <kernel device>\t\tTake kernel device to be the device for\n"
-"\t\t\t\tkernel/venus communication (/dev/cfs0)\n"
-" -f <cache dir>\t\t\tlocation of cache files\n"
-" -console <error log>\t\tlocation of error log file\n"
-" -m <n>\t\t\t\tCOP modes\n"
-" -maxworkers <n>\t\t# of worker threads\n"
-" -maxcbservers <n>\t\t# of callback server threads\n"
-" -maxprefetchers <n>\t\t# of threads servicing prefetch ioctl\n"
-" -retries <n>\t\t\t# of rpc2 retries\n"
-" -timeout <n>\t\t\trpc2 timeout\n"
-" -ws <n>\t\t\tsftp window size\n"
-" -sa <n>\t\t\tsftp send ahead\n"
-" -ap <n>\t\t\tsftp ack point\n"
-" -ps <n>\t\t\tsftp packet size\n"
-" -rvmt <n>\t\t\tRVM type\n"
-" -vld <RVM log>\t\t\tlocation of RVM log\n"
-" -vlds <n>\t\t\tsize of RVM log\n"
-" -vdd <RVM data>\t\tlocation of RVM data\n"
-" -vdds <n>\t\t\tsize of RVM data\n"
-" -rdscs <n>\t\t\tRDS chunk size\n"
-" -rdsnl <n>\t\t\tRDS # lists\n"
-" -logopts <n>\t\t\tRVM log optimizations\n"
-" -swt <n>\t\t\tshort term weight\n"
-" -mwt <n>\t\t\tmedium term weight\n"
-" -ssf <n>\t\t\tshort term scale factor\n"
-" -alpha <n>\t\t\tpatience ALPHA value\n"
-" -beta <n>\t\t\tpatience BETA value\n"
-" -gamma <n>\t\t\tpatience GAMMA value\n"
-" -von\t\t\t\tenable rpc2 timing\n"
-" -voff\t\t\t\tdisable rpc2 timing\n"
-" -vmon\t\t\t\tenable multirpc2 timing\n"
-" -vmoff\t\t\t\tdisable multirpc2 timing\n"
-" -SearchForNOreFind\t\tsomething, forgot what\n"
-" -noskk\t\t\t\tdisable venus sidekick\n"
-" -noasr\t\t\t\tdisable application specific resolvers\n"
-" -novcb\t\t\t\tdisable volume callbacks\n"
-" -nowalk\t\t\tdisable hoard walks\n"
-" -spooldir <spool directory>\tspooldir to hold CML snapshots\n"
-" -MarinerTcp\t\t\tenable mariner tcp port\n"
-" -noMarinerTcp\t\t\tdisable mariner tcp port\n"
-" -allow-reattach\t\tallow reattach to already mounted tree\n"
-" -relay <addr>\t\t\trelay socket address (windows only)\n"
-" -codatunnel\t\t\tenable codatunneld helper\n"
-" -no-codatunnel\t\t\tdisable codatunneld helper\n"
-" -onlytcp\t\t\tonly use TCP tunnel connections to servers\n"
-" -9pfs\t\t\tenable embedded 9pfs server (experimental, INSECURE!)\n"
-" -no-codafs\t\t\tdo not automatically mount /coda\n"
-" -nofork\t\t\tdo not daemonize the process\n\n"
-" -wfmax\t\t\tmaximum file size to allow whole-file caching\n\n"
-"For more information see http://www.coda.cs.cmu.edu/\n"
-"Report bugs to <bugs@coda.cs.cmu.edu>.\n", argv0);
+    const char * value_name = "";
+    int noptions = sizeof(venus_options) / sizeof(struct venus_option);
+
+    printf("Usage: %s [OPTION]...\n\nOptions:\n\n", argv0);
+
+    for (int i = 0; i < noptions; i++) {
+
+        printf("  ");
+
+        if (venus_options[i].long_option.flag) {
+            printf("--%s \n\t%s\n", 
+                   venus_options[i].long_option.name, 
+                   venus_options[i].description);
+            continue;
+        }
+
+        if (venus_options[i].long_option.val && venus_options[i].long_option.val < 256) {
+            printf("-%c", venus_options[i].long_option.val);
+
+            if (venus_options[i].value_name) {
+                printf(" <%s>", venus_options[i].value_name);
+            }
+
+            if (venus_options[i].long_option.name) {
+                printf(", ");
+            }
+        }
+
+        if (venus_options[i].long_option.name) {
+            printf("--%s", venus_options[i].long_option.name);
+
+            if (venus_options[i].value_name) {
+                printf(" <%s>", venus_options[i].value_name);
+            }
+        }
+
+        printf("\n\t%s\n", venus_options[i].description);
+    }
+
+    printf("\nFor more information see http://www.coda.cs.cmu.edu/\n"
+           "Report bugs to <bugs@coda.cs.cmu.edu>.\n");
 }
 
 static void ParseCmdline(int argc, char **argv)
 {
     int i, done = 0;
+    int option_index = 0;
+    int c = 0;
+    int noptions = sizeof(venus_options) / sizeof(struct venus_option);
+    char short_options[noptions*2 + 1] = "";
+    char single_short_opt[3] = "";
 
-    for(i = 1; i < argc; i++) {
-  	if (argv[i][0] == '-') {
-	    if (STREQ(argv[i], "-h") || STREQ(argv[i], "--help") ||
-		STREQ(argv[i], "-?"))
-		done = 1, Usage(argv[0]);
-	    else if (STREQ(argv[i], "--version"))
-		done = 1, printf("Venus " PACKAGE_VERSION "\n");
 
-	    else if (STREQ(argv[i], "-relay")) {   /* default is 127.0.0.1 */
- 		i++;
-		inet_aton(argv[i], &venus_relay_addr);
- 	    } else if (STREQ(argv[i], "-k"))         /* default is /dev/cfs0 */
-  		i++, kernDevice = argv[i];
-	    else if (STREQ(argv[i], "-mles")) /* total number of CML entries */
-		i++, MLEs = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-cf"))   /* number of cache files */
-		i++, CacheFiles = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-c"))    /* cache block size */
-		i++, CacheBlocks = ParseSizeWithUnits(argv[i]);
-	    else if (STREQ(argv[i], "-hdbes")) /* hoard DB entries */
-		i++, HDBEs = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-d"))     /* debugging */
-		i++, LogLevel = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-rpcdebug")) {    /* debugging */
-		i++;
-		RPC2_DebugLevel = atoi(argv[i]);
-		RPC2_Trace = 1;
-	    } else if (STREQ(argv[i], "-lwpdebug")) {    /* debugging */
-		i++;
-		lwp_debug =atoi(argv[i]);
-	    } else if (STREQ(argv[i], "-rdstrace"))     /* RDS heap tracing */
-		MallocTrace = 1;
-	    else if (STREQ(argv[i], "-f"))     /* location of cache files */
-		i++, CacheDir = argv[i];
-	    else if (STREQ(argv[i], "-m"))
-		i++, COPModes = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-maxworkers"))  /* number of worker threads */
-		i++, MaxWorkers = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-maxcbservers")) 
-		i++, MaxCBServers = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-maxprefetchers")) /* max number of threads */
-		i++, MaxPrefetchers = atoi(argv[i]);    /* doing prefetch ioctl */
-	    else if (STREQ(argv[i], "-console"))      /* location of console file */
-		i++, consoleFile = argv[i];
-	    else if (STREQ(argv[i], "-retries"))      /* number of rpc2 retries */
-		i++, rpc2_retries = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-timeout"))      /* rpc timeout */
-		i++, rpc2_timeout = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-ws"))           /* sftp window size */
-		i++, sftp_windowsize = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-sa"))           /* sftp send ahead */
-		i++, sftp_sendahead = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-ap"))           /* sftp ack point */
-		i++, sftp_ackpoint = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-ps"))           /* sftp packet size */
-		i++, sftp_packetsize = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-init"))        /* brain wipe rvm */
-		InitMetaData = 1;
-	    else if (STREQ(argv[i], "-newinstance")) /* fake a 'reinit' */
-		InitNewInstance = 1;
-	    else if (STREQ(argv[i], "-rvmt"))
-		i++, RvmType = (rvm_type_t)(atoi(argv[i]));
-	    else if (STREQ(argv[i], "-vld"))          /* location of log device */
-		i++, VenusLogDevice = argv[i];        /* normally /usr/coda/LOG */
-	    else if (STREQ(argv[i], "-vlds"))         /* log device size */
-		i++, VenusLogDeviceSize = atoi(argv[i]);  
-	    else if (STREQ(argv[i], "-vdd"))          /* location of data device */
-                i++, VenusDataDevice = argv[i];       /* normally /usr/coda/DATA */
-	    else if (STREQ(argv[i], "-vdds"))         /* meta-data device size */
-		i++, VenusDataDeviceSize = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-rdscs"))        
-		i++, RdsChunkSize = atoi(argv[i]);    
-	    else if (STREQ(argv[i], "-rdsnl"))
-		i++, RdsNlists = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-logopts"))
-		i++, LogOpts = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-swt"))         /* short term pri weight */
-		i++, FSO_SWT = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-mwt"))         /* med term priority weight */
-		i++, FSO_MWT = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-ssf"))         /* short term scale factor */
-		i++, FSO_SSF = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-primaryuser")) /* primary user of this machine */
-		i++, PrimaryUser = atoi(argv[i]);
-	    else if (STREQ(argv[i], "-von"))
-		rpc2_timeflag = 1;
-	    else if (STREQ(argv[i], "-voff"))
-		rpc2_timeflag = 0;
-	    else if (STREQ(argv[i], "-vmon"))
-		mrpc2_timeflag = 1;
-	    else if (STREQ(argv[i], "-vmoff"))
-		mrpc2_timeflag = 0;
-	    else if (STREQ(argv[i], "-SearchForNOreFind"))
-	        SearchForNOreFind = 1;
-	    else if (STREQ(argv[i], "-noasr"))
-	        ASRallowed = 0;
-	    else if (STREQ(argv[i], "-novcb"))
-	        VCBEnabled = 0;
-	    else if (STREQ(argv[i], "-nowalk")) {
-	        extern char PeriodicWalksAllowed;
-	        PeriodicWalksAllowed = 0;
-	    }
-	    else if (STREQ(argv[i], "-spooldir")) {
-	        i++, SpoolDir = argv[i];
-	    }
-            /* let venus listen to tcp port `venus', as mariner port, normally
-             * it only listens to a unix domain socket */
-	    else if (STREQ(argv[i], "-MarinerTcp"))
-		mariner_tcp_enable = 1;
-	    else if (STREQ(argv[i], "-noMarinerTcp"))
-		mariner_tcp_enable = 0;
-	    else if (STREQ(argv[i], "-allow-reattach"))
-		allow_reattach = 1;
-  	    else if (STREQ(argv[i], "-masquerade")) /* always on */;
-  	    else if (STREQ(argv[i], "-nomasquerade")) /* always on */;
-	    /* Private mapping ... */
-	    else if (STREQ(argv[i], "-mapprivate"))
-		MapPrivate = true;
-	    else if (STREQ(argv[i], "-codatunnel")) {
-                codatunnel_enabled = 1;
-                eprint("codatunnel enabled");
-	    }
-	    else if (STREQ(argv[i], "-no-codatunnel")) {
-                codatunnel_enabled = -1;
-                eprint("codatunnel disabled");
-	    }
-	    else if (STREQ(argv[i], "-onlytcp")) {
-                codatunnel_onlytcp = 1;
-                eprint("codatunnel_onlytcp set");
-            }
-	    else if (STREQ(argv[i], "-codafs")) {
-                codafs_enabled = true;
-	    }
-	    else if (STREQ(argv[i], "-no-codafs")) {
-                codafs_enabled = -1;
-	    }
-	    else if (STREQ(argv[i], "-9pfs")) {
-                plan9server_enabled = true;
-                eprint("9pfs enabled");
-	    }
-	    else if (STREQ(argv[i], "-no-9pfs")) {
-                plan9server_enabled = -1;
-                eprint("9pfs disabled");
-	    }
-	    else if (STREQ(argv[i], "-nofork")) {
-                nofork = true;
-	    }
-        else if (STREQ(argv[i], "-wfmax")) {
-            i++, WholeFileMaxSize = ParseSizeWithUnits(argv[i]);
-        }	
-        else if (STREQ(argv[i], "-ccbs")) {
-            i++, ParseCacheChunkBlockSize(argv[i]);
+    struct option * long_options = (struct option *)malloc(sizeof(struct option) * (noptions + 1));
+
+    /* Create short and long options arrays */
+    for (int i = 0; i < noptions; i++) {
+        /* Add long option */
+        long_options[i] = venus_options[i].long_option;
+
+        /* Flags are handled by getopts_long */
+        if (long_options[i].flag) continue;
+
+        /* Concat short options */
+        if (long_options[i].val < 256 && long_options[i].val != 0) {
+            sprintf(single_short_opt, "%c%c", 
+                    long_options[i].val, 
+                    long_options[i].has_arg == no_argument ? '\0' : ':');
+            strcat(short_options, single_short_opt);
         }
-	    else {
-		eprint("bad command line option %-4s", argv[i]);
-		done = -1;
-	    }
-	}
     }
-    if (done) exit(done < 0 ? EXIT_INVALID_ARG : EXIT_SUCCESS);
+
+    long_options[noptions] = {0,0,0,0};
+
+    /* Iterate over the parameters */
+    while (true) {
+ 
+        c = getopt_long(argc, argv, short_options,
+                        long_options, &option_index);
+
+        if (c == -1) break;
+
+        switch (c) {
+            case 0:
+                if (long_options[option_index].flag != 0)
+                    break;
+            case 'h':
+                Usage(argv[0]);
+                break;
+            case 'V':
+                printf("Venus " PACKAGE_VERSION "\n");
+                exit(0);
+                break;
+            case 'i':
+                InitMetaData = 1;
+                break;
+            case NO_SHORT(primaryuser):
+                PrimaryUser = atoi(optarg);
+                break;
+            case 'd':
+                LogLevel = atoi(optarg);
+                break;
+            case NO_SHORT(rpc2_debug_level):
+                RPC2_DebugLevel = atoi(optarg);
+                RPC2_Trace = 1;
+                break;
+            case NO_SHORT(lwp_debug_level):
+                lwp_debug =atoi(optarg);
+                break;
+            case NO_SHORT(cache_files):
+                CacheFiles = atoi(optarg);
+                break;
+            case NO_SHORT(cache_size):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(cache_chunk_size):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(mles):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(hdbes):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(rdstrace):
+                //UNIMPLEMENTED
+                break;
+            case 'k':
+                //UNIMPLEMENTED
+                break;
+            case 'f':
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(console):
+                //UNIMPLEMENTED
+                break;
+            case 'm':
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(maxworkers):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(maxcbservers):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(maxprefetchers):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(retries):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(timeout):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(ws):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(sa):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(ap):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(ps):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(rvmt):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(vld):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(vdd):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(vdds):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(rdscs):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(rdsnl):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(logopts):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(swt):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(mwt):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(ssf):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(alpha):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(beta):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(gamma):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(novcb):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(nowalk):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(spooldir):
+                //UNIMPLEMENTED
+                break;
+            case NO_SHORT(whole_file_max):
+                //UNIMPLEMENTED
+                break;
+            default:
+                exit(EXIT_INVALID_ARG);
+        }
+    }
 }
 
 /*
