@@ -44,7 +44,7 @@ heap_header_t *RecoverableHeapStartAddress;
  * avoid casts in comparisons.
  */
 free_block_t *RecoverableHeapHighAddress;
-rvm_region_def_t *RegionDefs;
+rvm_region_def_t *RegionDefs = NULL;
 unsigned long NRegionDefs;
 rvm_bool_t rds_testsw = rvm_false; /* switch to allow special test modes */
 /*
@@ -90,6 +90,18 @@ int rds_load_heap(char *DevName, rvm_offset_t DevLength,
     (*static_addr) = (char *)RegionDefs[1].vmaddr;
 
     rds_start_heap(RegionDefs[0].vmaddr, err);
+
+    return 0;
+}
+
+int rds_unload_heap(int *err)
+{
+    rvm_flush();
+    rvm_truncate();
+
+    rvm_release_segment(NRegionDefs, &RegionDefs);
+
+    rds_stop_heap(err);
 
     return 0;
 }

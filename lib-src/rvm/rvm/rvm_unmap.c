@@ -83,8 +83,10 @@ rvm_return_t rvm_unmap(rvm_region_t *rvm_region /* region to unmap */)
                      make_uname(&region->unmap_ts); /* timestamp unmap */
                      (void)move_list_entry(NULL, &seg->unmap_list,
                                            (list_entry_t *)region);
-                 } else
+                 } else {
+                     free_mem_region(region->mem_region);
                      free_region(region);
+                 }
              }); /* end seg_lock critical section */
 
     return RVM_SUCCESS;

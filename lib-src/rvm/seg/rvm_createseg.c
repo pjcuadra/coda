@@ -50,8 +50,9 @@ rvm_return_t rvm_create_segment(char *DevName, rvm_offset_t DevLength,
     /* Erase the old contents of the segment, including entries in the log */
 
     /* Map in the first RVM_SEGMENT_HDR_SIZE bytes of the segment */
+    region->data_dev = DevName;
 
-    region->data_dev   = DevName;
+    region->data_dev   = strdup(DevName);
     region->dev_length = DevLength;
     RVM_ZERO_OFFSET(region->offset);
     region->length = RVM_SEGMENT_HDR_SIZE;
