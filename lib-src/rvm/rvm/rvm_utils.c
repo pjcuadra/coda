@@ -1,9 +1,9 @@
 /* BLURB lgpl
 
                            Coda File System
-                              Release 5
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -249,7 +249,6 @@ static void free_list_entry(list_entry_t *cell)
              }); /* end free_list_lock crit sec */
 }
 
-#ifdef UNUSED
 /* clear free lists */
 void clear_free_list(struct_id_t id /* type of free list */)
 {
@@ -271,7 +270,6 @@ void clear_free_lists(void)
     for (i = 0; i < ID_INDEX(struct_last_cache_id); i++)
         clear_free_list(INDEX_ID(i));
 }
-#endif
 
 /* unique name generator */
 /* Cannot be statically allocated in pthreads */
@@ -559,9 +557,12 @@ void free_log(log_t *log)
     log->dev.iov         = NULL;
     free_log_buf(log); /* kill recovery buffers */
 
+    if (log->seg_dict_vec) {
+        free_seg_dict_vec(log);
+    }
+
     free_list_entry(&log->links); /* free descriptor */
 }
-
 /* log descriptor allocation */
 log_t *make_log(char *log_dev_name /* device name */,
                 rvm_return_t *retval /* return code */)
@@ -856,8 +857,14 @@ rvm_region_t *rvm_malloc_region(void)
 void rvm_free_region(rvm_region_t *rvm_region)
 {
     if ((!bad_region(rvm_region)) && (free_lists_inited) &&
-        (rvm_region->from_heap))
+        (rvm_region->from_heap)) {
+        if (rvm_region->data_dev != NULL) {
+            free(rvm_region->data_dev);
+            rvm_region->data_dev = NULL;
+        }
+
         free_export((list_entry_t *)rvm_region, region_rvm_id);
+    }
 }
 
 void rvm_init_region(rvm_region_t *rvm_region)
@@ -1881,6 +1888,14 @@ rvm_bool_t tree_delete(tree_root_t *tree /* ptr to root of tree */,
          (tree->root->bf == 0)) ||
         ((old_root != tree->root) && (tree->root->bf == 0)))
         tree->max_depth--;
+
+    if (tree->n_nodes == 0) {
+        if (tree->traverse != NULL) {
+            free((char *)tree->traverse);
+            tree->traverse     = NULL;
+            tree->traverse_len = 0;
+        }
+    }
 
     return rvm_true;
 }
