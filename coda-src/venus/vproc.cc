@@ -90,6 +90,10 @@ void VprocInit()
     VprocSetRetry();
 }
 
+void VprocDestroy() {
+    delete Main;
+}
+
 void Rtry_Wait()
 {
     LOG(0, ("WAITING(RTRYQ):\n"));

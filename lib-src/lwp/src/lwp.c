@@ -128,14 +128,14 @@ static int Stack_Used(stack_t *stack);
 FILE *lwp_logfile      = NULL;
 int lwp_debug          = 0;
 int LWP_TraceProcesses = 0;
-PROCESS lwp_cpptr;
-int lwp_nextindex; /* Next lwp index to assign */
+PROCESS lwp_cpptr = NULL;
+int lwp_nextindex = 0; /* Next lwp index to assign */
 static struct lwp_ctl *lwp_init = NULL;
 int Cont_Sws;
 struct timeval
     last_context_switch; /* used to find out how long a lwp was running */
 struct timeval cont_sw_threshold; /* how long a lwp is allowed to run */
-PROCESS cont_sw_id; /* id of thread setting the last_context_switch time */
+PROCESS cont_sw_id = NULL; /* id of thread setting the last_context_switch time */
 
 struct timeval run_wait_threshold;
 

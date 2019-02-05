@@ -469,6 +469,8 @@ int main(int argc, char **argv)
 
     MarinerLog("shutdown in progress\n");
 
+    codaconf_free();
+
     LWP_TerminateProcessSupport();
 
 #if defined(__CYGWIN32__)

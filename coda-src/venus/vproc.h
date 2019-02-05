@@ -311,7 +311,8 @@ public:
 
 /* *****  Exported routines  ***** */
 void VPROC_printvattr(struct coda_vattr *vap);
-extern void VprocInit();
+void VprocInit();
+void VprocDestroy();
 extern void Rtry_Wait();
 extern void Rtry_Signal();
 extern vproc *FindVproc(int);
