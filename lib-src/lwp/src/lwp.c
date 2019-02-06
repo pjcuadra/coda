@@ -1036,10 +1036,13 @@ void PRE_EndCritical(void) {}
 
 void ProfileInit(bool state)
 {
+    if (state = LWP_ThisProcess()->ctx.profile_init)
+        return;
+
     LWP_ThisProcess()->ctx.profile_init = state;
 
     if (state)
-        CALLGRIND_START_INSTRUMENTATION;
+        CALLGRIND_DUMP_STATS;
 }
 
 void ProfileEnableSet(bool state)

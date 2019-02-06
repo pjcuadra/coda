@@ -833,8 +833,6 @@ void WorkerInit()
     worker::nprefetchers = 0;
     worker::lastresign   = Vtime();
 
-    ProfileInit(true);
-
     /* Allows the MessageMux to distribute incoming messages to us. */
     MUX_add_callback(worker::muxfd, WorkerMux, NULL);
 }
@@ -1617,6 +1615,8 @@ void worker::main(void)
     int opcode    = 0;
     int size      = 0;
     int openfd    = -1;
+
+    ProfileInit(true);
 
     for (;;) {
         openfd = -1;
