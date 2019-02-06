@@ -47,6 +47,9 @@ extern "C" {
 #include <time.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdbool.h>
+
+#include <valgrind/callgrind.h>
 
 /*
     LWP_VERSION is first argument to LWP_Init().
@@ -154,6 +157,8 @@ extern int FT_GetTimeOfDay(struct timeval *tv, struct timezone *tz);
 extern int TM_GetTimeOfDay(struct timeval *tv, struct timezone *tz);
 extern int FT_AGetTimeOfDay(struct timeval *tv, struct timezone *tz);
 extern unsigned int FT_ApproxTime();
+
+void ProfileEnableSet(bool state, char * caller);
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,6 @@ Pittsburgh, PA.
 #include <lwp/timer.h>
 #include "lwp.private.h"
 
-typedef unsigned char bool;
 
 #define expiration TotalTime
 

@@ -63,6 +63,7 @@ Pittsburgh, PA.
 #include "lwp.private.h"
 #include "lwp_ucontext.h"
 #include "lwp_stacktrace.h"
+#include <valgrind/callgrind.h>
 
 #include "valgrind.h"
 
@@ -95,6 +96,8 @@ struct QUEUE {
     PROCESS head;
     int count;
 } runnable[MAX_PRIORITIES], blocked;
+
+static bool curr_state = true;
 
 static struct lwp_ucontext reaper; /* reaper context, see lwp_Reaper() */
 static struct lwp_ucontext tracer; /* context for the stack tracing thread */
@@ -1027,3 +1030,12 @@ static void Overflow_Complain()
 void PRE_Concurrent(int on) {}
 void PRE_BeginCritical(void) {}
 void PRE_EndCritical(void) {}
+
+void ProfileEnableSet(bool state, char * caller) {
+
+    if (state != curr_state) {
+        printf("ProfileEnableSet: Toggling Collect to %d called by %s\n", state, caller);
+        CALLGRIND_TOGGLE_COLLECT;
+        curr_state = state;
+    }
+}
