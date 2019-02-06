@@ -1,9 +1,9 @@
 /* BLURB lgpl
 
 			Coda File System
-			    Release 6
+			    Release 7 
 
-	Copyright (c) 1987-2018 Carnegie Mellon University
+	Copyright (c) 1987-2019 Carnegie Mellon University
 		Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -915,7 +915,8 @@ static void Initialize_PCB(PROCESS temp, int priority, char *stack,
 					automatically reap it and schedule
 					another runnable thread */
 
-        temp->valgrind_stackid = VALGRIND_STACK_REGISTER(stack, stacksize);
+        temp->valgrind_stackid =
+            VALGRIND_STACK_REGISTER(stack, stack + stacksize);
 
         lwp_makecontext(&temp->ctx, func, arg);
     } else

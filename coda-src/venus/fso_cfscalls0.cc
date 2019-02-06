@@ -263,11 +263,6 @@ TillEndFetching:
     return 0;
 }
 
-int fsobj::Fetch(uid_t uid)
-{
-    return Fetch(uid, 0, -1);
-}
-
 int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 {
     int fd   = -1;

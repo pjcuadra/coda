@@ -598,8 +598,7 @@ class fsobj {
 
 public:
     /* The public CFS interface (Vice portion). */
-    int Fetch(uid_t);
-    int Fetch(uid_t uid, uint64_t pos, int64_t count);
+    int Fetch(uid_t uid, uint64_t pos = 0, int64_t count = -1);
     int GetAttr(uid_t, RPC2_BoundedBS * = 0);
     int GetACL(RPC2_BoundedBS *, uid_t);
     int Store(unsigned long, Date_t, uid_t);
