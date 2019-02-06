@@ -1036,7 +1036,7 @@ void PRE_EndCritical(void) {}
 
 void ProfileInit(bool state)
 {
-    if (state = LWP_ThisProcess()->ctx.profile_init)
+    if (state == LWP_ThisProcess()->ctx.profile_init)
         return;
 
     LWP_ThisProcess()->ctx.profile_init = state;
