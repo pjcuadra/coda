@@ -906,6 +906,9 @@ static void Initialize_PCB(PROCESS temp, int priority, char *stack,
     temp->ep   = func;
     temp->parm = arg;
 
+    temp->ctx.profile_init           = false;
+    temp->ctx.profile_collect_enable = false;
+
     if (stack) {
         /* seems to be broken on x86_64 */
         /* *(int *)stack = temp->stackcheck = 0xBAD57ACC; */
@@ -1031,11 +1034,21 @@ void PRE_Concurrent(int on) {}
 void PRE_BeginCritical(void) {}
 void PRE_EndCritical(void) {}
 
-void ProfileEnableSet(bool state, char * caller) {
+void ProfileInit(bool state)
+{
+    LWP_ThisProcess()->ctx.profile_init = state;
 
-    if (state != curr_state) {
-        printf("ProfileEnableSet: Toggling Collect to %d called by %s\n", state, caller);
+    if (state)
+        CALLGRIND_START_INSTRUMENTATION;
+}
+
+void ProfileEnableSet(bool state)
+{
+    if (!LWP_ThisProcess()->ctx.profile_init)
+        return;
+    if (state != LWP_ThisProcess()->ctx.profile_collect_enable) {
+        printf("ProfileEnableSet: Toggling Collect to %d\n", state);
         CALLGRIND_TOGGLE_COLLECT;
-        curr_state = state;
+        LWP_ThisProcess()->ctx.profile_collect_enable = state;
     }
 }

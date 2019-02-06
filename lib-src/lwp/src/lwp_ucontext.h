@@ -23,6 +23,7 @@ Coda are listed in the file CREDITS.
 
 #include <setjmp.h>
 #include <signal.h>
+#include <stdbool.h>
 #include "lwp_stacktrace.h"
 
 #ifdef SAVE_SIGMASK
@@ -39,6 +40,8 @@ struct lwp_ucontext {
     struct lwp_ucontext *uc_link;
     stack_t uc_stack;
     JMP_BUF uc_mcontext;
+    bool profile_init;
+    bool profile_collect_enable;
 };
 
 /* SETJMP _has_ to be in a macro, because we can not call LONGJMP when we

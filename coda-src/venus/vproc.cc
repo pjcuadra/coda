@@ -174,6 +174,7 @@ vproc *VprocSelf()
 
 void VprocWait(const void *addr)
 {
+    ProfileEnableSet(false);
 #ifdef VENUSDEBUG
     {
         /* Sanity-check: vproc must not context-switch in mid-transaction! */
@@ -186,6 +187,8 @@ void VprocWait(const void *addr)
     int lwprc = LWP_WaitProcess(addr);
     if (lwprc != LWP_SUCCESS)
         CHOKE("VprocWait(%x): LWP_WaitProcess failed (%d)", addr, lwprc);
+
+    ProfileEnableSet(true);
 }
 
 void VprocMwait(int wcount, const void **addrs)
@@ -207,6 +210,7 @@ void VprocMwait(int wcount, const void **addrs)
 
 void VprocSignal(const void *addr, int yield)
 {
+    ProfileEnableSet(false);
 #ifdef VENUSDEBUG
     if (yield) {
         /* Sanity-check: vproc must not context-switch in mid-transaction! */
@@ -225,10 +229,12 @@ void VprocSignal(const void *addr, int yield)
 	LOG(100, ("VprocSignal: ENOWAIT returned for addr %x\n",
 		addr, (yield ? "LWP_SignalProcess" : "LWP_NoYieldSignal")));
 */
+    ProfileEnableSet(true);
 }
 
 void VprocSleep(struct timeval *delay)
 {
+    ProfileEnableSet(false);
 #ifdef VENUSDEBUG
     {
         /* Sanity-check: vproc must not context-switch in mid-transaction! */
@@ -239,10 +245,13 @@ void VprocSleep(struct timeval *delay)
 #endif
 
     IOMGR_Select(0, NULL, NULL, NULL, delay);
+
+    ProfileEnableSet(true);
 }
 
 void VprocYield()
 {
+    ProfileEnableSet(false);
 #ifdef VENUSDEBUG
     {
         /* Sanity-check: vproc must not context-switch in mid-transaction! */
@@ -260,11 +269,14 @@ void VprocYield()
     if (lwprc != LWP_SUCCESS)
         CHOKE("VprocYield: LWP_DispatchProcess failed (%d)", lwprc);
     LOG(1000, ("VprocYield: post-yield\n"));
+
+    ProfileEnableSet(true);
 }
 
 int VprocSelect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
                 struct timeval *timeout)
 {
+    ProfileEnableSet(false);
 #ifdef VENUSDEBUG
     {
         /* Sanity-check: vproc must not context-switch in mid-transaction! */
@@ -274,7 +286,11 @@ int VprocSelect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
     }
 #endif
 
-    return (IOMGR_Select(nfds, readfds, writefds, exceptfds, timeout));
+    int ret = (IOMGR_Select(nfds, readfds, writefds, exceptfds, timeout));
+
+    ProfileEnableSet(false);
+
+    return ret;
 }
 
 const int DFLT_VprocRetryCount             = 5;
@@ -592,6 +608,7 @@ static int VolModeMap[NVFSOPS] = {
 /* local-repair modification */
 void vproc::Begin_VFS(Volid *volid, int vfsop, int volmode)
 {
+    ProfileEnableSet(false);
     LOG(1, ("vproc::Begin_VFS(%s): vid = %x.%x, u.u_vol = %x, mode = %d\n",
             VenusOpStr(vfsop), volid->Realm, volid->Volume, u.u_vol, volmode));
 
@@ -599,6 +616,7 @@ void vproc::Begin_VFS(Volid *volid, int vfsop, int volmode)
     if (u.u_vol == 0) {
         if (VDB->Get(&u.u_vol, volid)) {
             u.u_error = EVOLUME; /* ??? -JJK */
+            ProfileEnableSet(true);
             return;
         }
     }
@@ -665,6 +683,7 @@ void vproc::Begin_VFS(Volid *volid, int vfsop, int volmode)
 
     if (u.u_error)
         VDB->Put(&u.u_vol);
+    ProfileEnableSet(true);
 }
 
 /* local-repair modification */
@@ -673,6 +692,7 @@ void vproc::End_VFS(int *retryp)
 {
     LOG(1,
         ("vproc::End_VFS(%s): code = %d\n", VenusOpStr(u.u_vfsop), u.u_error));
+    ProfileEnableSet(false);
 
     if (retryp)
         *retryp = 0;
@@ -821,6 +841,8 @@ Exit:
     }
 
     VDB->Put(&u.u_vol);
+
+    ProfileEnableSet(true);
 }
 
 void vproc::print()

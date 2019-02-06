@@ -47,6 +47,7 @@ extern "C" {
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <lwp/lwp.h>
 
 #ifdef __FreeBSD__
 #include <sys/param.h>
@@ -831,6 +832,8 @@ void WorkerInit()
     worker::nworkers     = 0;
     worker::nprefetchers = 0;
     worker::lastresign   = Vtime();
+
+    ProfileInit(true);
 
     /* Allows the MessageMux to distribute incoming messages to us. */
     MUX_add_callback(worker::muxfd, WorkerMux, NULL);
@@ -1648,6 +1651,8 @@ void worker::main(void)
 
         opcode = in->ih.opcode;
 
+        ProfileEnableSet(true);
+
         /* This switch corresponds to the kernel trap handler. */
         switch (opcode) {
         case CODA_ACCESS:
@@ -1725,6 +1730,8 @@ void worker::main(void)
             u.u_error = EOPNOTSUPP;
             break;
         }
+
+        ProfileEnableSet(false);
 
         out->oh.result = u.u_error;
         Resign(msg, size);

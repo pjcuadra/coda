@@ -158,7 +158,9 @@ extern int TM_GetTimeOfDay(struct timeval *tv, struct timezone *tz);
 extern int FT_AGetTimeOfDay(struct timeval *tv, struct timezone *tz);
 extern unsigned int FT_ApproxTime();
 
-void ProfileEnableSet(bool state, char * caller);
+void ProfileInit(bool state);
+
+void ProfileEnableSet(bool state);
 
 #ifdef __cplusplus
 }
