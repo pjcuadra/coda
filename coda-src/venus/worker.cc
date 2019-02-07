@@ -1616,8 +1616,6 @@ void worker::main(void)
     int size      = 0;
     int openfd    = -1;
 
-    ProfileInit(true);
-
     for (;;) {
         openfd = -1;
 
@@ -1650,6 +1648,7 @@ void worker::main(void)
         u.u_pgid = (in)->ih.pgid;
 
         opcode = in->ih.opcode;
+        ProfileInit(true);
         ProfileEnableSet(true);
 
         /* This switch corresponds to the kernel trap handler. */
