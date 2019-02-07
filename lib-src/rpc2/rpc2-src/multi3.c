@@ -300,6 +300,7 @@ long RPC2_AddToMgrp(IN RPC2_Handle MgroupHandle, IN RPC2_Handle ConnHandle)
     struct SL_Entry *sl;
     long rc, secode;
     RPC2_PacketBuffer *savedpkt; /* in case SE reallocates */
+    ProfileEnableSet(false);
 
     rpc2_Enter();
     say(1, RPC2_DebugLevel, "In RPC2_AddToMgrp()\n");
@@ -450,6 +451,7 @@ long RPC2_AddToMgrp(IN RPC2_Handle MgroupHandle, IN RPC2_Handle ConnHandle)
     LWP_NoYieldSignal((char *)ce);
     SetState(me, C_THINK);
     LWP_NoYieldSignal((char *)me);
+    ProfileEnableSet(true);
     rpc2_Quit(RPC2_SUCCESS);
 }
 
