@@ -715,6 +715,7 @@ long RPC2_NewBinding(IN RPC2_HostIdent *Host, IN RPC2_PortIdent *Port,
                      IN RPC2_SubsysIdent *Subsys, IN RPC2_BindParms *Bparms,
                      IN RPC2_Handle *ConnHandle)
 {
+    ProfileEnableSet(false);
     struct CEntry *ce; /* equal to *ConnHandle after allocation */
     RPC2_PacketBuffer *pb;
     long i;
@@ -1141,6 +1142,7 @@ BindOver:
     LWP_NoYieldSignal(ce);
 
     say(9, RPC2_DebugLevel, "Bind complete for %#x\n", *ConnHandle);
+    ProfileEnableSet(true);
     rpc2_Quit(RPC2_SUCCESS);
     /* quit */
 }
