@@ -555,6 +555,8 @@ long RPC2_MakeRPC(RPC2_Handle ConnHandle, RPC2_PacketBuffer *Request,
     RPC2_PacketBuffer *preq;
     long rc, secode = RPC2_SUCCESS, finalrc, opcode;
 
+    ProfileEnableSet(false);
+
     rpc2_Enter();
     say(1, RPC2_DebugLevel, "RPC2_MakeRPC()\n");
 
@@ -703,6 +705,8 @@ QuitMRPC: /* finalrc has been correctly set by now */
 
     /* wake up any enqueue'd threads */
     LWP_NoYieldSignal((char *)ce);
+
+    ProfileEnableSet(true);
 
     rpc2_Quit(finalrc);
 }

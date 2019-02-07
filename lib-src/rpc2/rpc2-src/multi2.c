@@ -336,8 +336,12 @@ long MRPC_MakeMulti(int ServerOp, ARG ArgTypes[], RPC2_Integer HowMany,
 
     _reqbuffer->Header.Opcode = ServerOp;
 
+    ProfileEnableSet(false);
+
     _rpc2val = RPC2_MultiRPC(HowMany, CIDList, RCList, NULL, _reqbuffer,
                              SDescList, MRPC_UnpackMulti, &arg_info, Timeout);
+                    
+    ProfileEnableSet(true);
 
     for (a_types = ArgTypes;; a_types++)
         if (a_types->mode == C_END) {

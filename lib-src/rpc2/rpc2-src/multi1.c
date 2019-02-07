@@ -152,10 +152,13 @@ long RPC2_MultiRPC(
         }
     }
 
+    ProfileEnableSet(false);
     /* send packets and await replies */
     say(9, RPC2_DebugLevel, "Sending requests\n");
     rc = mrpc_SendPacketsReliably(HowMany, mcon, ConnHandleList, ArgInfo,
                                   SDescList, UnpackMulti, BreathOfLife);
+
+    ProfileEnableSet(true);
 
     switch ((int)rc) {
     case RPC2_SUCCESS:
@@ -415,6 +418,7 @@ static long mrpc_SendPacketsReliably(
     long (*UnpackMulti)(), /* pointer to unpacking routine */
     struct timeval *TimeOut) /* client specified timeout */
 {
+    ProfileEnableSet(false);
     struct SL_Entry *slp;
     RPC2_PacketBuffer *req, *preply; /* RPC2 Response buffers */
     struct CEntry *ce;
@@ -636,6 +640,7 @@ static long mrpc_SendPacketsReliably(
     } while (hopeleft);
 
     EXIT_MRPC_SPR(finalrc)
+    ProfileEnableSet(true);
 #undef EXIT_MRPC_SPR
 }
 
