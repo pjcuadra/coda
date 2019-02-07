@@ -461,6 +461,7 @@ void Srvr_Wait()
     LOG(0, ("WAITING(SRVRQ):\n"));
     START_TIMING();
     VprocWait((char *)&srvent::srvtab_sync);
+    ProfileEnableSet(false);
     END_TIMING();
     LOG(0, ("WAIT OVER, elapsed = %3.1f\n", elapsed));
 }
@@ -469,6 +470,7 @@ void Srvr_Signal()
 {
     LOG(10, ("SIGNALLING(SRVRQ):\n"));
     VprocSignal((char *)&srvent::srvtab_sync);
+    ProfileEnableSet(false);
 }
 
 srvent *FindServer(struct in_addr *host)
@@ -946,6 +948,7 @@ int srvent::Connect(RPC2_Handle *cidp, int *authp, uid_t uid, int Force)
               Force));
 
     int code = 0;
+    ProfileEnableSet(false);
 
     /* See whether this server is down or already binding. */
     for (;;) {
@@ -969,6 +972,7 @@ int srvent::Connect(RPC2_Handle *cidp, int *authp, uid_t uid, int Force)
         Realm *realm = REALMDB->GetRealm(realmid);
         userent *u   = realm->GetUser(uid);
         code         = u->Connect(cidp, authp, &host);
+        ProfileEnableSet(false);
         PutUser(&u);
         realm->PutRef();
     }
@@ -1003,6 +1007,8 @@ int srvent::Connect(RPC2_Handle *cidp, int *authp, uid_t uid, int Force)
 
     if (code == ETIMEDOUT && VprocInterrupted())
         return (EINTR);
+
+    ProfileEnableSet(true);
     return (code);
 }
 

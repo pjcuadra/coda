@@ -454,6 +454,7 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
     UNI_START_MESSAGE(ViceFetchPartial_OP);
     code = ViceFetchPartial(*cid, MakeViceFid(&fid), &vv, inconok, &status, 0,
                             offset, len, &PiggyBS, sed);
+    ProfileEnableSet(false);
     UNI_END_MESSAGE(ViceFetchPartial_OP);
     MarinerLog(
         "userent::CheckFetchPartialSupport: ViceFetchPartial test returned %d\n",
@@ -584,6 +585,7 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
 
         LOG(1, ("userent::Connect: RPC2_NewBinding(%s)\n", inet_ntoa(*host)));
         code = (int)RPC2_NewBinding(&hid, &pid, &ssid, &bparms, cid);
+        ProfileEnableSet(false);
         LOG(1,
             ("userent::Connect: RPC2_NewBinding -> %s\n", RPC2_ErrorMsg(code)));
 
