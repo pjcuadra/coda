@@ -497,7 +497,7 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
 {
     LOG(100, ("userent::Connect: addr = %s, uid = %d, tokensvalid = %d\n",
               inet_ntoa(*host), uid, tokensvalid));
-    ProfileEnableSet(false);
+
     *cid                  = 0;
     int code              = 0;
     int support_test_code = 0;
@@ -643,8 +643,6 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
             return (code);
         }
     }
-
-    ProfileEnableSet(true);
     return (code);
 }
 
