@@ -1041,8 +1041,11 @@ void ProfileInit(bool state)
 
     LWP_ThisProcess()->ctx.profile_init = state;
 
-    if (state)
+    if (state) {
         CALLGRIND_DUMP_STATS;
+        LWP_ThisProcess()->ctx.profile_collect_enable = true;
+    }
+
 }
 
 void ProfileEnableSet(bool state)
