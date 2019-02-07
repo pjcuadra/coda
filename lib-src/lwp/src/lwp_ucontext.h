@@ -41,7 +41,7 @@ struct lwp_ucontext {
     stack_t uc_stack;
     JMP_BUF uc_mcontext;
     bool profile_init;
-    bool profile_collect_enable;
+    int ref_count;
 };
 
 /* SETJMP _has_ to be in a macro, because we can not call LONGJMP when we

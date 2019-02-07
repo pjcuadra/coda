@@ -907,7 +907,7 @@ static void Initialize_PCB(PROCESS temp, int priority, char *stack,
     temp->parm = arg;
 
     temp->ctx.profile_init           = false;
-    temp->ctx.profile_collect_enable = false;
+    temp->ctx.ref_count = 0;
 
     if (stack) {
         /* seems to be broken on x86_64 */
@@ -1043,7 +1043,7 @@ void ProfileInit(bool state)
 
     if (state) {
         CALLGRIND_DUMP_STATS;
-        LWP_ThisProcess()->ctx.profile_collect_enable = true;
+        LWP_ThisProcess()->ctx.ref_count = 0;
     }
 
 }
@@ -1052,9 +1052,12 @@ void ProfileEnableSet(bool state)
 {
     if (!LWP_ThisProcess()->ctx.profile_init)
         return;
-    if (state != LWP_ThisProcess()->ctx.profile_collect_enable) {
-        printf("ProfileEnableSet: Toggling Collect to %d\n", state);
-        CALLGRIND_TOGGLE_COLLECT;
-        LWP_ThisProcess()->ctx.profile_collect_enable = state;
-    }
+    
+    if (state)
+        LWP_ThisProcess()->ctx.ref_count++;
+    else
+        LWP_ThisProcess()->ctx.ref_count--;
+
+    if (LWP_ThisProcess()->ctx.ref_count == 0)
+         CALLGRIND_TOGGLE_COLLECT;
 }

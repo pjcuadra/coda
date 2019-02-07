@@ -288,7 +288,7 @@ int VprocSelect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 
     int ret = (IOMGR_Select(nfds, readfds, writefds, exceptfds, timeout));
 
-    ProfileEnableSet(false);
+    ProfileEnableSet(true);
 
     return ret;
 }
