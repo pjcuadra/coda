@@ -1,0 +1,138 @@
+#! /bin/sh
+# BLURB gpl
+# 
+#                            Coda File System
+#                               Release 7
+# 
+#           Copyright (c) 1987-2019 Carnegie Mellon University
+#                   Additional copyrights listed below
+# 
+# This  code  is  distributed "AS IS" without warranty of any kind under
+# the terms of the GNU General Public Licence Version 2, as shown in the
+# file  LICENSE.  The  technical and financial  contributors to Coda are
+# listed in the file CREDITS.
+# 
+#                         Additional copyrights
+#                            none currently
+# 
+#*/
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+PATH=$PATH:$prefix/sbin
+export PATH
+
+# load the server configuration file
+vicedir=/vice
+. "$(@sbindir@/codaconfedit server.conf)"
+
+if [ ! -f "$vicedir/hostname" ] || [ ! -f "$vicedir/db/scm" ] ; then
+   echo "Coda server configuration error.  Could not find needed files."
+   exit 1
+fi
+
+# Ensure that this is the SCM
+scm=$(cat "$vicedir/db/scm")
+if [ "$(cat "$vicedir/hostname")" != "$scm" ]; then
+	echo "This must be run from the scm ($scm)"
+	exit 1
+fi
+
+# Parse arguments
+if  [ $# -lt 2 ]; then
+	echo "bad args:  createvol <volname> <server>[/<partition>]"
+	exit 1
+fi
+
+# Initialize local variables
+MAXSERVERS=8
+
+# deal with Parameters 
+VOLNAME="$1"
+
+# The maximum volume name length is really 32 characters, but we have to allow
+# for the trailing \0.
+MAXVOLNAMELEN=31
+VOLNAMELENGTH=${#VOLNAME}
+
+if [ "$VOLNAMELENGTH" -gt "$MAXVOLNAMELEN" ]; then
+    echo "Volume name \"$VOLNAME\" too long."
+    echo "  it should be at most $MAXVOLNAMELEN characters"
+    exit 1
+fi
+
+# Hmm, we sometimes need to use the volumename in regular expressions
+# As a result we can't use a lot of special characters, but having at
+# least '/' would be nice.
+_VOLNAME=$(echo "$VOLNAME" | sed 's&/&\\\/&g')
+
+#
+# Create these files if they don't already exist.
+touch "$vicedir/vol/BigVolumeList"
+
+if [ "$VOLNAME" = "$(awk "\$1 ~ /^${_VOLNAME}\$/ { print \$1 }" "$vicedir/vol/BigVolumeList")" ]; then
+	echo "Volume $VOLNAME already exists in $vicedir/db/VRList"
+	exit 1
+fi
+
+SERVER=$(echo "$2" | sed 's/\([^\/]*\).*/\1/')
+PART=$(echo "$2" | sed 's/[^\/]*\(.*\)/\1/')
+
+# Validate the server
+grep "$SERVER" "$vicedir/db/servers" > /dev/null 
+if [ $? -ne 0 ];  then
+    echo "Server $SERVER not in servers file"
+    exit 1
+fi
+
+volutil -h "$SERVER" getvolumelist "/tmp/vollist.$$" 2>/dev/null
+
+# Validate the <volname> parameter
+egrep '^[WRB]'"${_VOLNAME}"' ' "/tmp/vollist.$$" >/dev/null
+if [ $? -eq 0 ] ; then
+    echo "$VOLNAME already exists as a non replicated volume on $SERVER"
+    exit 1
+fi
+
+# Keep this as a paranoia check
+egrep '^[WRB]'"${_VOLNAME}"'\.[0-7] ' "/tmp/vollist.$$" >/dev/null
+if [ $? -eq 0 ] ; then
+    echo "$VOLNAME already exists as a replica on $SERVER"
+    exit 1
+fi
+
+grep "^P" "/tmp/vollist.$$" | sed 's/^P\(.*\) H.*/\1/' > "/tmp/part.$$"
+np=$(cat "/tmp/part.$$" | wc -w)
+if [ "$np" -eq 0 ]; then
+    echo "Found no partitions for server $SERVER."
+    exit 1
+fi 
+    if [ -z "$PART" ]; then
+    if [ "$np" -gt 1 ]; then
+    echo "Found 2 or more partitions for server $SERVER."
+            echo "You must specify a partition."
+    exit 1
+    fi
+    PART=$(cat "/tmp/part.$$")
+fi
+grep "^$PART\$" "/tmp/part.$$" >/dev/null
+if [ $? -ne 0 ] ; then
+    echo "Partition $PART not found on server $SERVER."
+    exit 1
+fi
+rm -f "/tmp/vollist.$$" "/tmp/part.$$"
+
+echo "creating volume $VOLNAME on $SERVER (partition $PART)" 
+volutil -h "$SERVER" create "$PART" "$VOLNAME" > "/tmp/out.$$"
+if [ $? -ne 0 ]; then 
+    echo "Failure to make volume on $SERVER!. Abort.".
+    exit 1
+fi
+
+# grab the volume number.
+volnum=$(cut -d' ' -f2 "/tmp/out.$$")
+rm -f "/tmp/out.$$"
+
+# Rebuild the VLDB
+bldvldb.sh $SERVER

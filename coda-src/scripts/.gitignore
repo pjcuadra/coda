@@ -2,6 +2,8 @@ bldvldb.sh
 coda-client-setup
 createvol_rep
 purgevol_rep
+createvol
+purgevol
 rc.vice
 startserver
 venus.init

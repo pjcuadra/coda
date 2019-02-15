@@ -1,0 +1,82 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH "purgevol" 8
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de DS
+..
+.de DE
+..
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP
+.\}
+..
+.SH NAME
+purgevol \- delete a non-replicated volume
+
+.SH SYNOPSIS
+
+.Pp
+\fBpurgevol\fP <volumename>
+.Pp
+.Pp
+.Pp
+.SH DESCRIPTION
+
+.Pp
+\fBpurgevol\fP is a front-end to the \fIvolutil
+purgevol\fP command and is used to delete a non-replicated volume
+from the Coda system.  After deleting the volume, it builds
+a new \fIVLDB\fP using the \fIbldvldb\fP(8) script. Like the other
+volume utilities, \fBpurgevol\fP must be run on the SCM by
+root.
+.Pp
+.Pp
+.Pp
+.SH FILES
+
+.Pp
+.Pp
+.nr ll +1
+.nr t\n(ll 2
+.if \n(ll>1 .RS
+.IP "\fI/vice/vol/BigAllVolumes\fP"
+.nr bi 1
+.Pp
+updated by removing the entries for
+the purged volume.
+.Pp
+.if \n(ll>1 .RE
+.nr ll -1
+.Pp
+.Pp
+.Pp
+.SH SEE ALSO
+
+.Pp
+bldvldb.sh(8), purgevol(8), volutil(8)
+.Pp
+.Pp
+.SH AUTHOR
+
+.Pp
+Pedro Cuadra, 2019, Created
+.Pp
+.Pp
