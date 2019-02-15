@@ -276,7 +276,7 @@ if [ "$isscm" = Y ]; then
     echo "db" > "$vicedir/db/files.export"
     while read -r n ; do
       echo "db/$n" >>  "$vicedir/db/files.export"
-    done < "$vicedir/db/files" 
+    done < "$vicedir/db/files"
     if ! ( "@sbindir@/vice-setup-scm" && "@sbindir@/vice-setup-user" && \
 	   "@sbindir@/vice-setup-rvm" && "@sbindir@/vice-setup-srvdir" ) ; then
 	echo "Your coda server is not completely setup.  You will need"
@@ -317,8 +317,8 @@ if [ "$isscm" = Y ]; then
 	echo "Now I'll try to create an initial root volume"
     fi
 
-    echo " createvol_rep / $hn$DP   - create initial root volume"
-    [ "$start" ] && "@sbindir@/createvol_rep" / "$hn$DP"
+    echo " @createvol@ / $hn$DP   - create initial root volume"
+    [ "$start" ] && "@sbindir@/@createvol@" / "$hn$DP"
 
     if [ "$start" ] ; then
 	echo
