@@ -182,6 +182,11 @@ if test "$buildclient" = no -a "$buildserver" = no -a "$buildvenus" = no ; then
   buildclient=yes
   buildserver=yes
 fi
+if test "$enablevolrep" = yes ; then
+  AC_SUBST(createvol, "createvol_rep")
+else
+  AC_SUBST(createvol, "createvol")
+fi
 
 if test "$enableservervolreplication" = yes ; then
   AC_SUBST(createvol, "createvol_rep")
