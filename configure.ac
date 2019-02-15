@@ -61,6 +61,9 @@ AC_ARG_ENABLE(vcodacon, [  --enable-vcodacon	  build graphical Coda console],
     buildvcodacon="$enableval", buildvcodacon="no")
 AC_ARG_ENABLE(unit_test, [  --enable-unit-test	run unit tests],
     run_unit="$enableval", run_unit="yes")
+AC_ARG_ENABLE(server_vol_replication, [  --enable-server-vol-replication
+    build Coda server with replicated volumes support],
+    enableservervolreplication="$enableval", enableservervolreplication="yes")
 
 dnl Make sure we configure any sub-projects before checking with pkg-config
 test -f "${srcdir}/lib-src/lwp/configure.ac" && AC_CONFIG_SUBDIRS([lib-src/lwp])
@@ -172,9 +175,17 @@ if test "$buildclient" = no -a "$buildserver" = no -a "$buildvenus" = no ; then
   buildclient=yes
   buildserver=yes
 fi
+
+if test "$enableservervolreplication" = yes ; then
+  AC_SUBST(createvol, "createvol_rep")
+else
+  AC_SUBST(createvol, "createvol")
+fi
+
 AM_CONDITIONAL(BUILD_CLIENT, [test "$buildclient" != no])
 AM_CONDITIONAL(BUILD_SERVER, [test "$buildserver" != no])
 AM_CONDITIONAL(BUILD_VENUS, [test "$buildclient" != no -o "$buildvenus" != no])
+AM_CONDITIONAL(BUILD_SERVER_VOL_REPLICATION, [test "$enableservervolreplication" = yes])
 
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AM_CONDITIONAL([WANT_FTS], [test "$ac_cv_header_fts_h" = no])
@@ -203,6 +214,10 @@ AC_CONFIG_FILES([coda-src/scripts/createvol_rep],
        [chmod +x coda-src/scripts/createvol_rep])
 AC_CONFIG_FILES([coda-src/scripts/purgevol_rep],
        [chmod +x coda-src/scripts/purgevol_rep])
+AC_CONFIG_FILES([coda-src/scripts/createvol],
+       [chmod +x coda-src/scripts/createvol])
+AC_CONFIG_FILES([coda-src/scripts/purgevol],
+       [chmod +x coda-src/scripts/purgevol])
 AC_CONFIG_FILES([coda-src/scripts/startserver],
        [chmod +x coda-src/scripts/startserver])
 AC_CONFIG_FILES([coda-src/scripts/coda-client-setup],

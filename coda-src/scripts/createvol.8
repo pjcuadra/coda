@@ -1,0 +1,106 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH "createvol" 8 
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de DS
+..
+.de DE
+..
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME  
+createvol \- create read-write replicated volume
+
+.SH SYNOPSIS
+
+.Pp
+\fBcreatevol\fP <volume-name> <server>[/<partition>]
+.Pp
+.Pp
+.Pp
+.SH DESCRIPTION
+
+.Pp
+\fBcreatevol\fP is a front end to \fIvolutil create\fP and is used to
+create a Coda non-replicated volume. The invoker must specify the
+volume name (\fI<volume-name>)\fP, and the server on which the
+volume should be created. (\fI<server>[/<partition>])\fP, the partition name
+is required when the server manages more than one data partition.
+.Pp
+\fBcreatevol\fP first checks in  \fI/vice/vol/BigVolumeList\fP to see if 
+the volume name already exists.  If not, it uses the \fIvolutil create\fP 
+command to create the volume.  It then rebuilds the Volume Location Data 
+Base (VLDB).
+.Pp
+.Pp
+.SH EXAMPLES
+
+.Pp
+To create a volume \&"coda.vol\&" on server foo use:
+.Pp
+.nr ll +1
+.nr t\n(ll 2
+.if \n(ll>1 .RS
+.IP "\fBcreatevol coda.rep foo\fP"
+.nr bi 1
+.Pp
+.if \n(ll>1 .RE
+.nr ll -1
+.Pp
+.SH DIAGNOSTICS
+
+.Pp
+This command must be issued at the System Control Machine (SCM).  Also, it 
+must be invoked with effective user id of root.  This command does not check 
+for return codes from the \fIvolutil create\fP command.
+.Pp
+.Pp
+.Pp
+.SH FILES
+
+.Pp
+.nr ll +1
+.nr t\n(ll 2
+.if \n(ll>1 .RS
+.IP "\fI/vice/vol/BigVolumeList\fP"
+.nr bi 1
+.Pp
+name of volume created is appended to it 
+.Pp
+.if \n(ll>1 .RE
+.nr ll -1
+
+.Pp
+.Pp
+.SH SEE ALSO
+
+.Pp
+bldvldb.sh (8), volutil (8)
+.Pp
+.Pp
+.Pp
+.SH AUTHOR
+
+.Pp
+Pedro Cuadra, 2019, Created
+.Pp
