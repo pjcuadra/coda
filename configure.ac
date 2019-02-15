@@ -184,7 +184,7 @@ fi
 AM_CONDITIONAL(BUILD_CLIENT, [test "$buildclient" != no])
 AM_CONDITIONAL(BUILD_SERVER, [test "$buildserver" != no])
 AM_CONDITIONAL(BUILD_VENUS, [test "$buildclient" != no -o "$buildvenus" != no])
-AM_CONDITIONAL(ENABLE_VOLUME_REPLICATION, [test "$enablevolrep" = yes])
+AM_CONDITIONAL(BUILD_VOLUME_REPLICATION, [test "$enablevolrep" = yes])
 
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AM_CONDITIONAL([WANT_FTS], [test "$ac_cv_header_fts_h" = no])
