@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -192,7 +192,6 @@ typedef struct Vnode {
 
 #define VAclSize(vnp) (SIZEOF_LARGEVNODE - SIZEOF_SMALLVNODE)
 #define VAclDiskSize(v) (SIZEOF_LARGEDISKVNODE - SIZEOF_SMALLDISKVNODE)
-#define VnLog(vnp) ((vnp)->disk.log)
 #define VnSHA(vnp) ((vnp)->SHA)
 
 PDirHandle SetDirHandle(struct Vnode *);
