@@ -5,7 +5,6 @@ AC_PREREQ(2.50)
 AC_INIT(Coda, 7.0.4, [bugs@coda.cs.cmu.edu])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([coda-src/librepair/resolve.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 
@@ -61,9 +60,12 @@ AC_ARG_ENABLE(vcodacon, [  --enable-vcodacon	  build graphical Coda console],
     buildvcodacon="$enableval", buildvcodacon="no")
 AC_ARG_ENABLE(unit_test, [  --enable-unit-test	run unit tests],
     run_unit="$enableval", run_unit="yes")
-AC_ARG_ENABLE(volume_replication, [  --enable-volume-replication
-    build Coda server with replicated volumes support],
-    enablevolrep="$enableval", enablevolrep="yes")
+AC_ARG_ENABLE(server_vol_replication, [  --enable-server-vol-replication
+    build Coda server with volume replication],
+    enableservervolreplication="$enableval", enableservervolreplication="yes")
+AC_ARG_ENABLE(apps_vol_replication, [  --enable-apps-vol-replication
+    build management applications with volume replication support],
+    enableappsvolreplication="$enableval", enableappsvolreplication="yes")
 
 dnl Make sure we configure any sub-projects before checking with pkg-config
 test -f "${srcdir}/lib-src/lwp/configure.ac" && AC_CONFIG_SUBDIRS([lib-src/lwp])
@@ -175,7 +177,7 @@ if test "$buildclient" = no -a "$buildserver" = no -a "$buildvenus" = no ; then
   buildclient=yes
   buildserver=yes
 fi
-if test "$enablevolrep" = yes ; then
+if test "$enableservervolreplication" = yes ; then
   AC_SUBST(createvol, "createvol_rep")
 else
   AC_SUBST(createvol, "createvol")
@@ -184,7 +186,8 @@ fi
 AM_CONDITIONAL(BUILD_CLIENT, [test "$buildclient" != no])
 AM_CONDITIONAL(BUILD_SERVER, [test "$buildserver" != no])
 AM_CONDITIONAL(BUILD_VENUS, [test "$buildclient" != no -o "$buildvenus" != no])
-AM_CONDITIONAL(BUILD_VOLUME_REPLICATION, [test "$enablevolrep" = yes])
+AM_CONDITIONAL(BUILD_SERVER_VOL_REPLICATION, [test "$enableservervolreplication" = yes])
+AM_CONDITIONAL(BUILD_APPS_VOL_REPLICATION, [test "$" = yes])
 
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AM_CONDITIONAL([WANT_FTS], [test "$ac_cv_header_fts_h" = no])
@@ -253,7 +256,6 @@ coda-src/auth2/Makefile
 coda-src/vv/Makefile
 coda-src/lka/Makefile
 coda-src/vol/Makefile
-coda-src/librepair/Makefile
 coda-src/venus/Makefile
 coda-src/repair/Makefile
 coda-src/resolution/Makefile

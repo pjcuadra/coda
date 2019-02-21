@@ -356,8 +356,7 @@ static void tcp_connect_cb(uv_connect_t *req, int status)
         /* disable Nagle */
         uv_tcp_nodelay(d->tcphandle, 1);
 
-        int rc =
-            uv_read_start((uv_stream_t *)d->tcphandle, alloc_cb, recv_tcp_cb);
+        uv_read_start((uv_stream_t *)d->tcphandle, alloc_cb, recv_tcp_cb);
         DEBUG("uv_read_start() --> %d\n", rc);
     } else { /* connection attempt failed */
         d->state = ALLOCATED;
@@ -379,7 +378,7 @@ static void try_creating_tcp_connection(dest_t *d)
     assert(req != NULL);
 
     req->data = d; /* so we can identify dest in upcall */
-    int rc = uv_tcp_connect(req, d->tcphandle, (struct sockaddr *)&d->destaddr,
+    uv_tcp_connect(req, d->tcphandle, (struct sockaddr *)&d->destaddr,
                             tcp_connect_cb);
     DEBUG("uv_tcp_connect --> %d\n", rc);
 }

@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -446,7 +446,6 @@ static Vnode *VAllocVnodeCommon(Error *ec, Volume *vp, VnodeType type,
     vnp->disk.type       = type;
     vnp->disk.uniquifier = unique;
     vnp->disk.vol_index  = vp->vol_index;
-    vnp->disk.log        = NULL;
     ObtainWriteLock(&vnp->lock);
     LWP_CurrentProcess(&vnp->writer);
 
@@ -743,8 +742,8 @@ void VPutVnode(Error *ec, Vnode *vnp)
         ReleaseReadLock(&vnp->lock);
 }
 /*
- * put back a vnode but dont write it to RVM - 
- * simulate an abort with release lock 
+ * put back a vnode but dont write it to RVM -
+ * simulate an abort with release lock
  */
 void VFlushVnode(Error *ec, Vnode *vnp)
 {

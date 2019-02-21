@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2018 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -82,7 +82,6 @@ extern "C" {
 #include "cvnode.h"
 #include "volume.h"
 #include "lockqueue.h"
-#include <recov_vollog.h>
 #include "vldb.h"
 #include "vutil.h"
 #include "fssync.h"
@@ -321,11 +320,13 @@ void VInitVolumePackage(int nLargeVnodes, int nSmallVnodes, int DoSalvage)
                 VLog(0, "Forcing Volume %x Offline", header.id);
                 VForceOffline(vp);
             } else {
-                if (V_type(vp) == readwriteVolume && V_VolLog(vp)) {
-                    /* initialize the RVM log vm structures */
-                    V_VolLog(vp)->ResetTransients(V_id(vp));
-                    extern olist ResStatsList;
-                    ResStatsList.insert((olink *)V_VolLog(vp)->vmrstats);
+
+                /* Let's crash whenever a server is being started
+                   with replicated volumes in its RVM */
+                if (V_type(vp) == readwriteVolume && vp->header->diskstuff.log) {
+                    VLog(0, "Volume %x has resolution log, crashing server",
+                         header.id);
+                    CODA_ASSERT(0);
                 }
             }
             VPutVolume(vp);

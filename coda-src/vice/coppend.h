@@ -45,7 +45,6 @@ extern "C" {
 /* cop pending entry */
 class cpent : public olink {
     friend void AddPairToCopPendingTable(ViceStoreId *, ViceFid *);
-    friend long InternalCOP2(RPC2_Handle, ViceStoreId *, ViceVersionVector *);
     friend class cpman;
 
     ViceStoreId StoreId;

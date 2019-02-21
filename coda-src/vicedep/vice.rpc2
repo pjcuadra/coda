@@ -68,7 +68,7 @@ typedef RPC2_Enum
 
 typedef RPC2_Byte	DiskName[V_MAXPARTNAMELEN];
 
-typedef RPC2_Struct 
+typedef RPC2_Struct
 {
 	RPC2_Integer	BlocksAvailable;
 	RPC2_Integer	TotalBlocks;
@@ -293,7 +293,7 @@ ViceNewConnection (IN RPC2_Integer SideEffectType,
 			 IN RPC2_Unsigned Unused,
 			 IN ViceStoreId StoreId,
 			 IN RPC2_CountedBS PiggyCOP2);
-	
+
 19: ViceDisconnectFS ();
 
 20: ViceGetTime	(OUT RPC2_Unsigned Seconds,
@@ -310,14 +310,14 @@ ViceNewConnection (IN RPC2_Integer SideEffectType,
 
 26: ViceGetVolumeLocation (IN VolumeId Vid, OUT RPC2_BoundedBS HostPort);
 
-29: ViceCOP2 (IN RPC2_CountedBS COP2BS);
+/* 29: ViceCOP2 (IN RPC2_CountedBS COP2BS); */
 
-30: ViceResolve	(IN ViceFid Fid);
+/* 30: ViceResolve	(IN ViceFid Fid); */
 
-33: ViceRepair (IN ViceFid Fid,
-		IN OUT ViceStatus status, 
+/* 33: ViceRepair (IN ViceFid Fid,
+		IN OUT ViceStatus status,
 		IN ViceStoreId StoreId,
-		IN OUT SE_Descriptor BD);
+		IN OUT SE_Descriptor BD); */
 
 34: ViceSetVV (IN ViceFid Fid,
 	       IN ViceVersionVector VV,
@@ -402,7 +402,7 @@ ViceNewConnection (IN RPC2_Integer SideEffectType,
    Note: SHAval should really just be a simple 20-byte OUT array;
    it is a BoundedBS of IN OUT mode only because rp2gen packing/unpacking
    is flaky for arrays and I don't have the time to fix it.
-   
+
 (Satya 12/02) */
 
 63: ViceGetAttrPlusSHA (IN ViceFid Fid,
@@ -416,15 +416,15 @@ ViceNewConnection (IN RPC2_Integer SideEffectType,
 /* Same comments as for ViceGetAttrPlusSHA() above */
 
 64: ViceValidateAttrsPlusSHA (IN RPC2_Unsigned Unused,
-		              IN ViceFid PrimaryFid,
+                              IN ViceFid PrimaryFid,
                               IN OUT ViceStatus PrimaryStatus,
                               OUT RPC2_BoundedBS SHAval,
-                              IN ViceFidAndVV Piggies[], 
+                              IN ViceFidAndVV Piggies[],
                               IN OUT RPC2_BoundedBS VFlagBS,
                               IN RPC2_CountedBS PiggyCOP2);
 
 65: ViceFetchPartial (IN ViceFid Fid,
-		      IN ViceVersionVector VV,
+                      IN ViceVersionVector VV,
                       IN RPC2_Unsigned InconOK,
                       OUT ViceStatus Status,
                       IN RPC2_Unsigned PrimaryHost,

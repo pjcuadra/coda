@@ -102,9 +102,9 @@ typedef RPC2_Struct {
 
 24: VolRVMSize(IN VolumeId VolID, OUT RVMSize_data data);
 
-25: VolSetLogParms(IN VolumeId Vid, IN RPC2_Integer OnFlag, IN RPC2_Integer maxentries);
+/* 25: VolSetLogParms(IN VolumeId Vid, IN RPC2_Integer OnFlag, IN RPC2_Integer maxentries); */
 
-26: VolTiming(IN RPC2_Integer on, IN OUT SE_Descriptor sed);
+/* 26: VolTiming(IN RPC2_Integer on, IN OUT SE_Descriptor sed); */
 
 /* 27: unused */
 

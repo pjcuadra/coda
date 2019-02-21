@@ -17,7 +17,7 @@ dist_sbin_SCRIPTS += codastart coda-server-logrotate \
 dist_man_MANS += bldvldb.sh.8 maxgroupid.5 startserver.8 vice-setup.8 \
 		     volumelist.5 createvol.8 purgevol.8
 
-if BUILD_VOLUME_REPLICATION
+if BUILD_APPS_VOL_REPLICATION
 sbin_SCRIPTS += createvol_rep purgevol_rep
 dist_man_MANS += createvol_rep.8 purgevol_rep.8
 endif

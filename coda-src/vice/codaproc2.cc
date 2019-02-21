@@ -62,7 +62,6 @@ extern "C" {
 #include <lockqueue.h>
 #include <vldb.h>
 #include <vrdb.h>
-#include <repio.h>
 #include <vlist.h>
 #include <codaproc.h>
 #include <codadir.h>
@@ -164,9 +163,9 @@ struct rle {
  *
  *    ToDo:
  *      1. Perform routines need OUT parameter for changed-disk-usage (?)
- *      2. Retried reintegrations fail because vnodes allocated during 
+ *      2. Retried reintegrations fail because vnodes allocated during
            reintegration aren't cleaned up properly
- *         (this should be fixed with the new fid allocation mechanism, 
+ *         (this should be fixed with the new fid allocation mechanism,
             separating fid and vnode allocation) (?)
  *
  */
@@ -220,13 +219,6 @@ long FS_ViceReintegrate(RPC2_Handle RPCid, VolumeId Vid, RPC2_Integer LogSize,
 
     if (NumDirs)
         *NumDirs = 0; /* check for compatibility */
-
-    /* Phase 0. */
-    if ((PiggyBS->SeqLen > 0) && (errorCode = FS_ViceCOP2(RPCid, PiggyBS))) {
-        if (Index)
-            *Index = -1;
-        goto FreeLocks;
-    }
 
     SLog(1, "Starting ValidateReintegrateParms for %x", Vid);
 
@@ -308,8 +300,8 @@ FreeLocks:
 }
 
 /*
-  ViceQueryReintHandle: Get the status of a partially 
-  transferred file for an upcoming reintegration.  Now returns a byte offset, 
+  ViceQueryReintHandle: Get the status of a partially
+  transferred file for an upcoming reintegration.  Now returns a byte offset,
   but could be expanded to handle negotiation.
 */
 long FS_ViceQueryReintHandle(RPC2_Handle RPCid, VolumeId Vid,
@@ -358,7 +350,7 @@ Exit:
 }
 
 /*
-  ViceSendReintFragment:  append file data corresponding to the 
+  ViceSendReintFragment:  append file data corresponding to the
   handle for  an upcoming reintegration.
 */
 long FS_ViceSendReintFragment(RPC2_Handle RPCid, VolumeId Vid,
@@ -462,7 +454,7 @@ Exit:
 }
 
 /*
-  ViceCloseReintHandle: Reintegrate data corresponding 
+  ViceCloseReintHandle: Reintegrate data corresponding
   to the reintegration handle.  This corresponds to the reintegration of
   a single store record.
 */
@@ -484,9 +476,6 @@ long FS_ViceCloseReintHandle(RPC2_Handle RPCid, VolumeId Vid,
     SLog(0 /*1*/, "ViceCloseReintHandle for volume 0x%x", Vid);
 
     /* Phase 0. */
-    if ((PiggyBS->SeqLen > 0) && (errorCode = FS_ViceCOP2(RPCid, PiggyBS)))
-        goto FreeLocks;
-
     if ((errorCode = ValidateRHandle(Vid, RHandle)))
         goto FreeLocks;
 
@@ -522,7 +511,7 @@ FreeLocks:
  *      2. Looking up the client entry
  *      3. Fetching over the client's representation of the reintegrate log
  *      4. Parsing the client log into a server version (the RL)
- *      5. Translating the volume ids in all the RL entries from 
+ *      5. Translating the volume ids in all the RL entries from
  *         logical to physical
  *      6. Acquiring the volume in exclusive mode
  *
@@ -807,10 +796,10 @@ static int ValidateReintegrateParms(RPC2_Handle RPCid, VolumeId *Vid,
         }
     }
 
-    /* 
+    /*
      * Check that the first record has not been reintegrated before.
      * If it has, return VLOGSTALE and the identifier of the last
-     * successfully reintegrated record.  The identifier is the 
+     * successfully reintegrated record.  The identifier is the
      * uniquifier field from the storeid of the record.  Return it
      * in the index variable; saves a parameter for this special case.
      */
@@ -867,9 +856,9 @@ Exit:
  *
  *    Phase II consists of the following steps:
  *      1. Allocating vnodes for "new" objects
- *      2. Parsing the RL entries to create an ordered data 
+ *      2. Parsing the RL entries to create an ordered data
  *         structure of "participant" Fids
- *      3. Acquiring all corresponding vnodes in Fid-order, 
+ *      3. Acquiring all corresponding vnodes in Fid-order,
  *         and under write-locks
  *
  */
@@ -925,7 +914,7 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
             PollAndYield();
     }
 
-    /* 
+    /*
      Parse the RL entries, creating an ordered data structure of
      Fids.  N.B.  The targets of {unlink,rmdir,rename} are specified
      by <pfid,name> rather than fid, so a lookup in the parent must be
@@ -943,7 +932,7 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
      (and entries) do not yet exist.  Lookup must *not* be attempted
      until later in this case (which does not create deadlock problems
      because the new object is not yet visible to any other call).
-     
+
      3. If a name is inserted, deleted, and re-inserted in the course
      of reintegration, the binding of name to object will have
      changed.  Thus, we must ALWAYS look up again in
@@ -1080,7 +1069,7 @@ Exit:
 
 /*
  *    Phase III consists of the following steps:
- *      1. Check the semantics of each operation, then perform it 
+ *      1. Check the semantics of each operation, then perform it
  *         (delay bulk transfers)
  *      2. Do the bulk transfers
  *
@@ -1210,7 +1199,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     }
 #if 0
 		    int truncp = 0;
-		    int deltablocks = nBlocks(r->u.u_truncate.Length) - 
+		    int deltablocks = nBlocks(r->u.u_truncate.Length) -
 		      nBlocks(v->vptr->disk.length);
 
 		    /* XXX */
@@ -1317,7 +1306,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 			     child_v->vptr->disk.length == 0 ) {
 				/* don't do anything, go to next log entry */
 				errorCode = 0;
-				break; 
+				break;
 			}
 #endif
                 /* all other errors */
@@ -2062,8 +2051,8 @@ int AddChild(Volume **volptr, dlist *vlist, ViceFid *Did, char *Name,
     }
 
     /* Parent must NOT have just been alloc'ed, else this will deadlock! */
-    /* Notice that the vlist->d_inodemod field must be 1 or we lose 
-       refcounts on this directory 
+    /* Notice that the vlist->d_inodemod field must be 1 or we lose
+       refcounts on this directory
     */
     if ((errorCode = GetFsObj(Did, volptr, &vptr, READ_LOCK, VOL_NO_LOCK,
                               IgnoreInc, 0, 1)))
@@ -2224,7 +2213,7 @@ static void ReintFinalCOP(vle *v, Volume *volptr, RPC2_Integer *VS, int voltype)
     }
 }
 
-/* 
+/*
  * Extract and validate the reintegration handle.  Handle errors are
  * propagated back to the client as EBADF.
  */

@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -74,15 +74,14 @@ extern "C" {
 #include <vice.h>
 #include "cvnode.h"
 #include "volume.h"
-#include <recov_vollog.h>
 #include "signal.h"
 #include "vutil.h"
 #include "recov.h"
 
 /* Note:  the volume creation functions herein leave the destroyMe flag in the
    volume header ON:  this means that the volumes will not be attached by the
-   file server and WILL BE DESTROYED the next time a system salvage 
-   is performed 
+   file server and WILL BE DESTROYED the next time a system salvage
+   is performed
 */
 
 /* This must be called from within a transaction! */
@@ -106,7 +105,7 @@ Volume *VCreateVolume(Error *ec, char *partition, VolumeId volumeId,
         return NULL;
     }
 
-    /* let's see if the partition is there before locking it; 
+    /* let's see if the partition is there before locking it;
        if lock fails, we die */
     dp = DP_Get(partition);
     if (dp == NULL) {
@@ -126,14 +125,9 @@ Volume *VCreateVolume(Error *ec, char *partition, VolumeId volumeId,
     sprintf(vol.partition, partition, strlen(partition) + 1);
     vol.destroyMe = DESTROY_ME;
     vol.copyDate  = time(0); /* The only date which really means when this
-				   @i(instance) of this volume was created. 
+				   @i(instance) of this volume was created.
 				   Creation date does not mean this */
-    if (AllowResolution && rvmlogsize) {
-        LogMsg(1, SrvDebugLevel, stdout, "Creating log for volume\n");
-        vol.log = new recov_vol_log(volumeId, rvmlogsize);
-        CODA_ASSERT(vol.log);
-        vol.ResOn = RVMRES;
-    }
+    vol.ResOn = 0;
 
     /* set up volume header info */
     memset((char *)&tempHeader, 0, sizeof(tempHeader));
@@ -203,8 +197,8 @@ void CopyVolumeHeader(VolumeDiskData *from, VolumeDiskData *to)
     to->destroyMe     = DESTROY_ME; /* Caller must always clear this!!! */
     to->stamp.magic   = VOLUMEINFOMAGIC;
     to->stamp.version = VOLUMEINFOVERSION;
-    to->log           = NULL;
-    to->ResOn         = 0;
+    to->log = NULL;
+    to->ResOn = 0;
 }
 
 void ClearVolumeStats(VolumeDiskData *vol)

@@ -51,6 +51,8 @@ extern "C" {
 }
 #endif __cplusplus
 
+#ifdef ENABLE_APPS_VOL_REPLICATION
+
 #include "mondgen.h"
 #include "mond.h"
 #include "util.h"
@@ -1312,3 +1314,5 @@ static void PrintRwsStats(ReadWriteSharingStats *stats)
     PrintDecimal(stats->DiscDuration);
     printf("\n");
 }
+
+#endif

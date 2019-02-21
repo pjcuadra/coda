@@ -2,7 +2,8 @@
 
 if BUILD_SERVER
 noinst_LTLIBRARIES = libviceerror.la
-sbin_PROGRAMS = codasrv printvrdb
+sbin_PROGRAMS = codasrv
+sbin_PROGRAMS += printvrdb
 dist_man_MANS = codasrv.8 servers.5
 dist_sysconf_DATA = server.conf.ex
 endif
@@ -50,6 +51,8 @@ codasrv_LDADD = libviceerror.la \
 		$(top_builddir)/lib-src/base/libbase.la \
 		$(RVM_RPC2_LIBS) $(LIBKVM)
 
+if BUILD_APPS_VOL_REPLICATION
 printvrdb_LDADD = $(top_builddir)/coda-src/util/libutil.la \
 		  $(top_builddir)/lib-src/base/libbase.la
+endif
 

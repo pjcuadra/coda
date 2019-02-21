@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2018 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -804,7 +804,7 @@ static void SetRPCStats(ViceStatistics *stats)
     stats->TotalRPCPacketsReceived = rpc2_Recvd.Total + rpc2_MRecvd.Total +
                                      sftp_Recvd.Total + sftp_MRecvd.Total;
 
-    /* 
+    /*
      * Retries and busies appear only in rpc2_Send and rpc2_Recvd, because
      * they aren't multicasted.
      * Sftp is harder -- retries occur because of packet loss _and_ timeouts.
