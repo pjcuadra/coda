@@ -62,7 +62,7 @@ extern "C" {
 
 #include <vmindex.h>
 #include <srv.h>
-#include <recov_vollog.h>
+#include <volume.h>
 #include "coppend.h"
 #include <lockqueue.h>
 #include <vldb.h>
@@ -74,10 +74,6 @@ extern "C" {
 #include <nettohost.h>
 #include <operations.h>
 #include <res.h>
-#include <resutil.h>
-#include <rescomm.h>
-#include <ops.h>
-#include <timing.h>
 
 #define EMPTYDIRBLOCKS 2
 
@@ -105,7 +101,6 @@ int GetSubTree(ViceFid *, Volume *, dlist *);
 int PerformTreeRemoval(struct DirEntry *, void *);
 
 /* ***** Private routines  ***** */
-static int FidSort(ViceFid *);
 void UpdateVVs(ViceVersionVector *, ViceVersionVector *, ViceVersionVector *);
 
 static int PerformDirRepair(ClientEntry *, vle *, Volume *, VolumeId,
@@ -144,8 +139,6 @@ static int CheckTreeRemoveSemantics(ClientEntry *, Volume *, ViceFid *,
 static int getFids(struct DirEntry *dirent, void *data);
 
 static int GetRepairObjects(Volume *, vle *, dlist *, struct repair *, int);
-static int GetResFlag(VolumeId);
-
 static void COP2Update(Volume *, Vnode *, ViceVersionVector *,
                        vmindex * = NULL);
 const int MaxFidAlloc = 32;
@@ -755,36 +748,6 @@ int PerformTreeRemoval(PDirEntry de, void *data)
             nblocks = (int)-nBlocks(cv->vptr->disk.length);
             CODA_ASSERT(AdjustDiskUsage(pkdparm->volptr, nblocks) == 0);
             *(pkdparm->blocks) += nblocks;
-
-            //spool log record for resolution
-            if (pkdparm->IsResolve) {
-                // find log record for original remove operation
-                // - extract storeid
-                ViceStoreId stid;
-                ViceStoreId *rmtstid = GetRemoteRemoveStoreId(
-                    pkdparm->hvlog, pkdparm->srvrid, &pFid, &cFid, name);
-                if (!rmtstid) {
-                    SLog(
-                        0,
-                        "PerformTreeRemoval: No rm record found for %s 0x%x.%x.%x\n",
-                        name, V_id(pkdparm->volptr), vnode, unique);
-                    AllocStoreId(&stid);
-                } else
-                    stid = *rmtstid;
-
-                SLog(9, "TreeRemove: Spooling Log Record for removing dir %s",
-                     name);
-                int errorCode = 0;
-                if ((errorCode = SpoolVMLogRecord(
-                         pkdparm->vlist, pv, pkdparm->volptr, &stid,
-                         ResolveViceRemoveDir_OP, name, vnode, unique,
-                         VnLog(cv->vptr), &(Vnode_vv(cv->vptr).StoreId),
-                         &(Vnode_vv(cv->vptr).StoreId))))
-                    SLog(
-                        0,
-                        "PerformTreeRemoval: error %d in SpoolVMLogRecord for (0x%x.%x)\n",
-                        errorCode, vnode, unique);
-            }
         } else {
             PerformRemove(pkdparm->client, pkdparm->VSGVnum, pkdparm->volptr,
                           pv->vptr, cv->vptr, name,
@@ -800,33 +763,6 @@ int PerformTreeRemoval(PDirEntry de, void *data)
                 cv->vptr->disk.node.inodeNumber = 0;
             }
 
-            //spool log record for resolution
-            if (pkdparm->IsResolve) {
-                // find log record for original remove operation - extract storeid
-                ViceStoreId stid;
-                ViceStoreId *rmtstid = GetRemoteRemoveStoreId(
-                    pkdparm->hvlog, pkdparm->srvrid, &pFid, &cFid, name);
-                if (!rmtstid) {
-                    SLog(
-                        0,
-                        "PerformTreeRemoval: No rm record found for %s 0x%x.%x.%x\n",
-                        name, V_id(pkdparm->volptr), vnode, unique);
-                    AllocStoreId(&stid);
-                } else
-                    stid = *rmtstid;
-
-                SLog(9, "TreeRemove: Spooling Log Record for removing %s",
-                     name);
-                int errorCode = 0;
-                if ((errorCode = SpoolVMLogRecord(
-                         pkdparm->vlist, pv, pkdparm->volptr, &stid,
-                         ResolveViceRemove_OP, name, vnode, unique,
-                         &(Vnode_vv(cv->vptr)))))
-                    SLog(
-                        0,
-                        "PerformTreeRemoval: error %d in SpoolVMLogRecord for (0x%x.%x)\n",
-                        errorCode, vnode, unique);
-            }
         }
     }
     return 0;
@@ -920,72 +856,6 @@ long InternalCOP2(RPC2_Handle cid, ViceStoreId *StoreId,
     END_TIMING(COP2_Total);
 
     return (errorCode);
-}
-
-/* get resolution flags for a given volume */
-static int GetResFlag(VolumeId Vid)
-{
-    int error      = 0;
-    Volume *volptr = 0;
-
-    if (!XlateVid(&Vid)) {
-        SLog(0, "GetResFlag: Couldn't xlate vid %x", Vid);
-        return 0;
-    }
-
-    if (!AllowResolution)
-        return (0);
-    if ((error = GetVolObj(Vid, &volptr, VOL_NO_LOCK, 0, 0))) {
-        SLog(0, "GetResFlag:: GetVolObj failed (%d) for %x", error, Vid);
-        return (0);
-    }
-    int reson = V_RVMResOn(volptr);
-    PutVolObj(&volptr, VOL_NO_LOCK, 0);
-    return (reson);
-}
-
-static int FidSort(ViceFid *fids)
-{
-    int nfids = 0;
-    int i, j;
-
-    if (SrvDebugLevel >= 9) {
-        SLog(9, "FidSort: nfids = %d", nfids);
-        for (int k = 0; k < MAXFIDS; k++)
-            SLog(9, ", Fid[%d] = %s", k, FID_(&fids[k]));
-        SLog(9, "");
-    }
-
-    /* First remove any duplicates.  Also determine the number of unique, non-null fids. */
-    for (i = 0; i < MAXFIDS; i++)
-        if (!(FID_EQ(&fids[i], &NullFid))) {
-            nfids++;
-            for (j = 0; j < i; j++)
-                if (FID_EQ(&fids[i], &fids[j])) {
-                    fids[j] = NullFid;
-                    nfids--;
-                    break;
-                }
-        }
-
-    /* Now sort the fids in increasing order (null fids are HIGHEST). */
-    for (i = 0; i < MAXFIDS - 1; i++)
-        for (j = i + 1; j < MAXFIDS; j++)
-            if (!(FID_EQ(&fids[j], &NullFid)) &&
-                (FID_EQ(&fids[i], &NullFid) || !(FID_LTE(fids[i], fids[j])))) {
-                ViceFid tmpfid = fids[i];
-                fids[i]        = fids[j];
-                fids[j]        = tmpfid;
-            }
-
-    if (SrvDebugLevel >= 9) {
-        SLog(9, "FidSort: nfids = %d", nfids);
-        for (int k = 0; k < MAXFIDS; k++)
-            SLog(9, ", Fid[%d] = %s", k, FID_(&fids[k]));
-        SLog(9, "");
-    }
-
-    return (nfids);
 }
 
 /*

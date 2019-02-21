@@ -48,7 +48,6 @@ extern "C" {
 #endif
 
 #include <olist.h>
-#include <resstats.h>
 #include <voldump.h>
 
 /* *****  Private constants  ***** */
@@ -69,84 +68,6 @@ static RPC2_Handle SmonHandle = 0;
 /* ***** Private types ***** */
 
 static SmonViceId MyViceId;
-
-struct rvmrese : public olink {
-    SmonViceId Vice;
-    RPC2_Unsigned Time;
-    RPC2_Unsigned VolID;
-    FileResStats FileRes;
-    DirResStats DirRes;
-    HistoElem LogSizeHisto[SHIPHISTOSIZE];
-    HistoElem LogMaxHisto[NENTRIESHISTOSIZE];
-    ResConflictStats Conflicts;
-    /*X*/ HistoElem SuccHierHist[1];
-    /*X*/ HistoElem FailHierHist[1];
-    ResLogStats ResLog;
-    HistoElem VarLogHisto[MAXSIZES];
-    HistoElem LogSize[SIZEBUCKETS];
-
-    void Init(RPC2_Unsigned time, resstats *sp)
-    {
-        int i;
-
-        Vice  = MyViceId;
-        Time  = time;
-        VolID = sp->vid;
-
-        /* fileresstats */
-        FileRes.Resolves        = sp->file.file_nresolves;
-        FileRes.NumSucc         = sp->file.file_nsucc;
-        FileRes.NumConf         = sp->file.file_conf;
-        FileRes.RuntForce       = sp->file.file_runtforce;
-        FileRes.WeakEq          = sp->file.file_we;
-        FileRes.NumReg          = sp->file.file_reg;
-        FileRes.UsrResolver     = sp->file.file_userresolver;
-        FileRes.SuccUsrResolver = sp->file.file_succuserresolve;
-        FileRes.PartialVSG      = sp->file.file_incvsg;
-
-        /* dirresstats */
-        DirRes.Resolves   = sp->dir.dir_nresolves;
-        DirRes.NumSucc    = sp->dir.dir_succ;
-        DirRes.NumConf    = sp->dir.dir_conf;
-        DirRes.NumNoWork  = sp->dir.dir_nowork;
-        DirRes.Problems   = sp->dir.dir_problems;
-        DirRes.PartialVSG = sp->dir.dir_incvsg;
-        for (i = 0; i < SHIPHISTOSIZE; i++)
-            LogSizeHisto[i].bucket = sp->dir.logshipstats.totalsize[i];
-        for (i = 0; i < NENTRIESHISTOSIZE; i++)
-            LogMaxHisto[i].bucket = sp->dir.logshipstats.maxentries[i];
-
-        /* conflictstats */
-        Conflicts.NameName     = sp->conf.nn;
-        Conflicts.RemoveUpdate = sp->conf.ru;
-        Conflicts.UpdateUpdate = sp->conf.uu;
-        Conflicts.Rename       = sp->conf.mv;
-        Conflicts.LogWrap      = sp->conf.wrap;
-        Conflicts.Other        = sp->conf.other;
-
-        /* logstats */
-        ResLog.NumWraps    = sp->lstats.nwraps;
-        ResLog.NumAdmGrows = sp->lstats.nadmgrows;
-        ResLog.NumVAllocs  = sp->lstats.vdist.vallocs;
-        ResLog.NumVFrees   = sp->lstats.vdist.vfrees;
-        ResLog.Highest     = sp->lstats.lsize.highest;
-        for (i = 0; i < MAXSIZES; i++)
-            VarLogHisto[i].bucket = sp->lstats.vdist.bucket[i];
-        for (i = 0; i < SIZEBUCKETS; i++)
-            LogSize[i].bucket = sp->lstats.lsize.bucket[i];
-
-        /* finis! */
-    }
-    long Report()
-    {
-        return SmonReportRVMResStats(SmonHandle, &Vice, Time, VolID, &FileRes,
-                                     &DirRes, SHIPHISTOSIZE, LogSizeHisto,
-                                     NENTRIESHISTOSIZE, LogMaxHisto, &Conflicts,
-                                     /*X*/ 1, SuccHierHist, 1, FailHierHist,
-                                     &ResLog, MAXSIZES, VarLogHisto,
-                                     SIZEBUCKETS, LogSize);
-    }
-};
 
 /* OverflowEvent Entry */
 struct smoe {
@@ -179,7 +100,6 @@ static SmonStatistics stats;
 /* ***** Private routines  ***** */
 
 static void CheckCallStat(); /* Daemon Report Entries */
-static void CheckRVMResStat();
 static int ValidateSmonHandle();
 static long CheckSmonResult(long);
 static int GetRawStatistics(SmonStatistics *);
@@ -222,51 +142,6 @@ static void CheckCallStat()
             mond_CallCount, volDumpOPARRAYSIZE, volDump_CallCount,
             resolutionOPARRAYSIZE, resolution_MultiCall, &stats);
         code = CheckSmonResult(code);
-    }
-}
-
-static void CheckRVMResStat()
-{
-    static unsigned long last_time = 0;
-
-    LogMsg(0, SrvDebugLevel, stdout, "Entered CheckRVMResStat");
-    /* if we can't send anything, no sense queueing things */
-    if (!SmonEnabled || !SmonInited || !ValidateSmonHandle())
-        return;
-
-    /* if there are any old ones to send, try to send them first */
-    if (RVMResList->count() > 0) {
-        LogMsg(0, SrvDebugLevel, stdout, "Sending some RVMResEvents");
-        struct rvmrese *re = 0;
-        while ((re = (struct rvmrese *)RVMResList->first())) {
-            LogMsg(10, SrvDebugLevel, stdout,
-                   "Sending an RVMRes event, volume = 0x%lx time = %d",
-                   re->Time, re->VolID);
-            if (CheckSmonResult(re->Report()))
-                break;
-            if (RVMResList->remove(re) != re)
-                CODA_ASSERT(0);
-            free(re);
-        }
-        /* we don't enqueue anything if there was already something on the list */
-    } else {
-        unsigned long curr_time = ::time(0);
-        if ((long)(curr_time - last_time) > rvmresReportInterval) {
-            last_time = curr_time;
-            LogMsg(0, SrvDebugLevel, stdout, "Enqueueing some RVMResEvents");
-            olist_iterator next(ResStatsList);
-            resstats *s;
-            /* We don't need to check the size -- we know that only
-	       one set of stats will exist in the queue at any one time */
-            while ((s = (struct resstats *)next())) {
-                struct rvmrese *e =
-                    (struct rvmrese *)malloc(sizeof(struct rvmrese));
-                s->precollect();
-                e->Init(curr_time, s);
-                s->postcollect();
-                RVMResList->append(e);
-            }
-        }
     }
 }
 
@@ -457,7 +332,6 @@ void SmonDaemon(void *)
         if (IOMGR_Select(0, 0, 0, 0, &time) == 0) {
             LogMsg(0, SrvDebugLevel, stdout, "SmonDaemon timer expired");
             CheckCallStat();
-            CheckRVMResStat();
             CheckSOE();
 
             if (time.tv_sec != SmonDaemonInterval)

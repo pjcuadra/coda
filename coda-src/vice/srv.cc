@@ -77,7 +77,6 @@ extern "C" {
 #include <partition.h>
 #include <util.h>
 #include <rvmlib.h>
-#include <resolution.h>
 
 extern int nice(int);
 extern int Fcon_Init();
@@ -115,7 +114,6 @@ extern void rpc2_simplifyHost(RPC2_HostIdent *, RPC2_PortIdent *);
 #include <camprivate.h>
 #include <coda_globals.h>
 #include <vrdb.h>
-#include <rescomm.h>
 #include <lockqueue.h>
 #include <coda_getservbyname.h>
 #include "coppend.h"
@@ -239,7 +237,6 @@ static ClientEntry *CurrentClient[MAXLWP];
 
 static void AuthLWP(void *);
 static void ServerLWP(void *);
-static void ResLWP(void *);
 static void CallBackCheckLWP(void *);
 
 static void ClearCounters();
@@ -357,7 +354,7 @@ int main(int argc, char *argv[])
     char sname[15];
     int i;
     struct stat buff;
-    PROCESS serverPid, resPid, smonPid;
+    PROCESS serverPid, smonPid;
     RPC2_PortIdent port1;
     RPC2_SubsysIdent server;
     SFTP_Initializer sei;
@@ -578,7 +575,6 @@ int main(int argc, char *argv[])
 
     /* Initialize the lock queue and the resolution comm package */
     InitLockQueue();
-    ResCommInit();
     server.Tag            = RPC2_SUBSYSBYID;
     server.Value.SubsysId = RESOLUTIONSUBSYSID;
     CODA_ASSERT(RPC2_Export(&server) == RPC2_SUCCESS);
@@ -606,24 +602,6 @@ int main(int argc, char *argv[])
                                (void *)&i, sname, &serverPid);
         CODA_ASSERT(rc == LWP_SUCCESS);
     }
-
-    /* set up resolution threads */
-    for (i = 0; i < 2; i++) {
-        n = snprintf(sname, sizeof(sname), "ResLWP-%d", i);
-        CODA_ASSERT(n >= 0 && n < (int)sizeof(sname));
-        rc = LWP_CreateProcess(ResLWP, stack * 1024, LWP_NORMAL_PRIORITY,
-                               (void *)&i, sname, &resPid);
-        CODA_ASSERT(rc == LWP_SUCCESS);
-    }
-
-    rc = LWP_CreateProcess(ResCheckServerLWP, stack * 1024, LWP_NORMAL_PRIORITY,
-                           NULL, "ResCheckSrvrLWP", &resPid);
-    CODA_ASSERT(rc == LWP_SUCCESS);
-
-    rc = LWP_CreateProcess(ResCheckServerLWP_worker, stack * 1024,
-                           LWP_NORMAL_PRIORITY, NULL, "ResCheckSrvrLWP_worker",
-                           &resworkerPid);
-    CODA_ASSERT(rc == LWP_SUCCESS);
 
     /* Set up volume utility subsystem (spawns 2 lwps) */
     SLog(29, "fileserver: calling InitvolUtil");
@@ -860,45 +838,6 @@ static void ServerLWP(void *arg)
     }
 }
 
-static void ResLWP(void *arg)
-{
-    int *Ident = (int *)arg;
-    RPC2_RequestFilter myfilter;
-    RPC2_Handle mycid;
-    RPC2_PacketBuffer *myrequest;
-    ProgramType pt;
-    long rc;
-    rvm_perthread_t rvmptt;
-
-    /* using rvm - so set the per thread data structure for executing
-       transactions */
-    rvmlib_init_threaddata(&rvmptt);
-    SLog(0, "ResLWP-%d just did a rvmlib_set_thread_data()\n", *Ident);
-
-    pt = fileServer;
-    CODA_ASSERT(LWP_NewRock(FSTAG, (char *)&pt) == LWP_SUCCESS);
-
-    myfilter.FromWhom              = ONESUBSYS;
-    myfilter.OldOrNew              = OLDORNEW;
-    myfilter.ConnOrSubsys.SubsysId = RESOLUTIONSUBSYSID;
-    SLog(1, "Starting ResLWP worker %d", *Ident);
-
-    while (1) {
-        mycid = 0;
-        rc =
-            RPC2_GetRequest(&myfilter, &mycid, &myrequest, NULL, NULL, 0, NULL);
-        if (rc == RPC2_SUCCESS) {
-            SLog(9, "ResLWP %d Received request %d", *Ident,
-                 myrequest->Header.Opcode);
-            rc = resolution_ExecuteRequest(mycid, myrequest, NULL);
-            if (rc)
-                SLog(0, "ResLWP %d: request %d failed with %s", *Ident,
-                     ViceErrorMsg((int)rc));
-        } else
-            SLog(0, "RPC2_GetRequest failed with %s", ViceErrorMsg((int)rc));
-    }
-}
-
 static void CallBackCheckLWP(void *arg)
 {
     struct timeval time;
@@ -1030,7 +969,6 @@ void PrintCounters(FILE *fp)
     SLog(0, "GetVolumeInfo %d", Counters[ViceGetVolumeInfo_OP]);
     SLog(0, "AllocFids %d", Counters[ALLOCFIDS]);
     SLog(0, "COP2 %d", Counters[ViceCOP2_OP]);
-    SLog(0, "Resolve %d", Counters[RESOLVE]);
     SLog(0, "Repair %d", Counters[REPAIR]);
     SLog(0, "SetVV %d", Counters[SETVV]);
     SLog(0, "Reintegrate %d", Counters[REINTEGRATE]);
@@ -1435,7 +1373,6 @@ static int ReadConfigFile(void)
 
     /* srv.cc defined values ... */
     CODACONF_INT(Authenticate, "authenticate", 1);
-    CODACONF_INT(AllowResolution, "resolution", 1);
     CODACONF_INT(AllowSHA, "allow_sha", 0);
     CODACONF_INT(comparedirreps, "comparedirreps", 1);
     CODACONF_INT(pollandyield, "pollandyield", 1);

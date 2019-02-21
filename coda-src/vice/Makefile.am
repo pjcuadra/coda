@@ -37,7 +37,6 @@ codasrv_LDADD = libviceerror.la \
 		$(top_builddir)/coda-src/volutil/libvolserv.la \
 		$(top_builddir)/coda-src/vicedep/voldump.client.lo \
 		$(top_builddir)/coda-src/vicedep/volutil.server.lo \
-		$(top_builddir)/coda-src/resolution/libres.la \
 		$(top_builddir)/coda-src/librepair/librepio.la \
 		$(top_builddir)/coda-src/vol/libvol.la \
 		$(top_builddir)/coda-src/lka/liblka.la \

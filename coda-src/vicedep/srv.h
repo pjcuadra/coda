@@ -158,7 +158,6 @@ typedef struct ClientEntry {
 #define GETTIME ViceGetTime_OP
 #define GETSTATISTICS ViceGetStatistics_OP
 #define GETVOLUMEINFO ViceGetVolumeInfo_OP
-#define RESOLVE ViceResolve_OP
 #define REPAIR ViceRepair_OP
 #define SETVV ViceSetVV_OP
 #define REINTEGRATE ViceReintegrate_OP

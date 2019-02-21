@@ -97,9 +97,6 @@ extern "C" {
 #include <codadir.h>
 #include <operations.h>
 #include <lockqueue.h>
-#include <resutil.h>
-#include <ops.h>
-#include <rsle.h>
 #include <nettohost.h>
 #include <cvnode.h>
 #include <operations.h>
@@ -652,13 +649,6 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
 
         SetStatus(v->vptr, Status, rights, anyrights);
         SetVSStatus(client, volptr, NewVS, VCBStatus, voltype);
-    }
-
-    if ((voltype & REPVOL) && !errorCode) {
-        if ((errorCode = SpoolVMLogRecord(vlist, v, volptr, StoreId,
-                                          RES_NewStore_OP, ACLSTORE, newACL)))
-            SLog(0, "ViceSetACL: error %d during SpoolVMLogRecord\n",
-                 errorCode);
     }
 
 FreeLocks:
@@ -3275,40 +3265,6 @@ void PutObjects(int errorCode, Volume *volptr, int LockLevel, dlist *vlist,
                         }
                     }
 
-                    if (AllowResolution && volptr && V_RVMResOn(volptr) &&
-                        v->vptr->disk.type == vDirectory) {
-                        // log mutation into recoverable volume log
-                        olist_iterator next(v->rsl);
-                        rsle *vmle;
-                        while ((vmle = (rsle *)next())) {
-                            if (!errorCode) {
-                                SLog(
-                                    9,
-                                    "PutObjects: Appending recoverable log record");
-                                if (SrvDebugLevel > 39)
-                                    vmle->print();
-                                vmle->CommitInRVM(volptr, v->vptr);
-                            } else
-                                /* free up slot in vm bitmap */
-                                vmle->Abort(volptr);
-                        }
-
-                        // truncate/purge log if necessary and no errors have occured
-                        if (!errorCode) {
-                            if (v->d_needslogpurge) {
-                                CODA_ASSERT(v->vptr->delete_me);
-                                if (VnLog(v->vptr)) {
-                                    PurgeLog(VnLog(v->vptr), volptr,
-                                             &freed_indices);
-                                    VnLog(v->vptr) = NULL;
-                                }
-                            } else if (v->d_needslogtrunc) {
-                                CODA_ASSERT(!v->vptr->delete_me);
-                                TruncateLog(volptr, v->vptr, &freed_indices);
-                            }
-                        }
-                    }
-
                     /* Vnode. */
                     {
                         Error fileCode = 0;
@@ -3333,12 +3289,6 @@ void PutObjects(int errorCode, Volume *volptr, int LockLevel, dlist *vlist,
                     v->vptr = 0;
                 }
         }
-
-        // for logs that have been truncated/purged deallocated entries in vm
-        // bitmap should be done after transaction commits but here we are
-        // asserting if Transaction end status is not success
-        if (errorCode == 0)
-            FreeVMIndices(volptr, &freed_indices);
 
         /* Volume Header. */
         if (!errorCode && UpdateVolume)
@@ -3423,12 +3373,6 @@ void PutObjects(int errorCode, Volume *volptr, int LockLevel, dlist *vlist,
                             idec((int)device, (int)v->f_finode, parentId) == 0);
                     }
                 }
-            }
-            if (AllowResolution) {
-                /* clean up spooled log record list */
-                rsle *rs;
-                while ((rs = (rsle *)v->rsl.get()))
-                    delete rs;
             }
             delete v;
         }

@@ -112,7 +112,4 @@ extern void PerformSetQuota(ClientEntry *, VolumeId, Volume *, Vnode *,
 
 extern void PutObjects(int, Volume *, int, dlist *, int, int, int = 0);
 
-extern void SpoolRenameLogRecord(int, vle *, vle *, vle *, vle *, Volume *,
-                                 char *, char *, ViceStoreId *);
-
 #endif /* _OPERATIONS_H_ */

@@ -88,7 +88,6 @@ extern "C" {
 #include <vlist.h>
 #include <vice.private.h>
 #include <operations.h>
-#include <ops.h>
 #include <lockqueue.h>
 #include <vice_file.h>
 #include "coppend.h"
@@ -429,7 +428,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     int aCLSize;
     int rights;
     int anyrights;
-    int oldquota = -1; /* Old quota if it was changed */
     int ReplicatedOp;
     vle *v       = 0;
     dlist *vlist = new dlist((CFN)VLECmp);
@@ -510,7 +508,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
         V_minquota(volptr) = (int)status->MinQuota;
 
     if (status->MaxQuota > -1) {
-        oldquota = V_maxquota(volptr);
         PerformSetQuota(client, VSGVolnum, volptr, v->vptr, &vfid,
                         (int)status->MaxQuota, ReplicatedOp, StoreId);
     }
@@ -523,21 +520,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
 
     if (motd->SeqLen > 1)
         strcpy(V_motd(volptr), (char *)motd->SeqBody);
-
-    // Only spool a log entry if the quota was set.
-    if (oldquota > -1)
-        if (ReplicatedOp && !errorCode) {
-            SLog(
-                1,
-                "ViceSetVolumeStatus: About to spool log record, oldquota = %d, new quota = %d\n",
-                oldquota, status->MaxQuota);
-            if ((errorCode = SpoolVMLogRecord(vlist, v, volptr, StoreId,
-                                              ViceSetVolumeStatus_OP, oldquota,
-                                              status->MaxQuota)))
-                SLog(0,
-                     "ViceSetVolumeStatus: Error %d during SpoolVMLogRecord\n",
-                     errorCode);
-        }
 
 Final:
 
