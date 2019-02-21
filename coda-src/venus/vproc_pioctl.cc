@@ -557,85 +557,6 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
 		    <a name="dorepair"><strong> dorepair handler </strong></a>
 		    END_HTML
 		 */
-            case _VIOC_REPAIR: {
-                if (f->IsLocalObj()) {
-                    int rc;
-                    fsobj *fakedir = f;
-
-                    /* find the expanded object */
-                    f  = NULL;
-                    rc = fakedir->Lookup(&f, NULL, LOCALCACHE, u.u_uid,
-                                         CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT,
-                                         1);
-                    if (rc)
-                        rc = fakedir->Lookup(
-                            &f, NULL, LOCALCACHE_HIDDEN, u.u_uid,
-                            CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT, 1);
-                    if (rc) {
-                        LOG(0,
-                            ("VIOC_REPAIR: Lookup() failed for LOCALCACHE:%d\n",
-                             rc));
-                        break;
-                    } else
-                        CODA_ASSERT(f);
-
-                    LOG(0,
-                        ("VIOC_REPAIR: called on expanded directory (%s)! redirecting to localcache (%s)\n",
-                         FID_(&fakedir->fid), FID_(&f->fid)));
-
-                    FSDB->Put(&fakedir);
-                }
-
-#ifdef TIMING
-                gettimeofday(&u.u_tv1, 0);
-                u.u_tv2.tv_sec = 0;
-#endif
-                /* whether we need this depends on the granularity of repair calls */
-                volent *v = 0;
-                if ((u.u_error = VDB->Get(&v, MakeVolid(&f->fid))))
-                    break;
-
-                int entered = 0;
-                if ((u.u_error = v->Enter(volmode, u.u_uid)) != 0)
-                    CODA_ASSERT("V_FreeLocks!\n"); //goto V_FreeLocks;
-                entered = 1;
-
-                /* Try to repair target object. */
-#define RepairFile ((char *)data->in)
-#define startp (data->out)
-#define RWVols ((VolumeId *)(startp))
-#define ReturnCodes ((int *)(RWVols + VSG_MEMBERS))
-#define endp ((char *)(ReturnCodes + VSG_MEMBERS))
-                data->out_size = (endp - startp);
-
-                u.u_error = EOPNOTSUPP;
-
-                if (v->IsReplicated()) {
-                    VenusFid fid = f->fid;
-                    LOG(0, ("VIOC_REPAIR calling repvol::Repair (%s)\n",
-                            FID_(&f->fid)));
-                    FSDB->Put(&f);
-                    u.u_error = ((repvol *)v)
-                                    ->Repair(&fid, RepairFile, u.u_uid, RWVols,
-                                             ReturnCodes);
-                } else
-                    LOG(0, ("VIOC_REPAIR: non-replicated volume!\n"));
-
-                LOG(0, ("VIOC_REPAIR: repvol::Repair returns %d\n", u.u_error));
-#undef RepairFile
-#undef startp
-#undef RWVols
-#undef ReturnCodes
-#undef endp
-                if (entered)
-                    v->Exit(volmode, u.u_uid);
-#ifdef TIMING
-                gettimeofday(&u.u_tv2, 0);
-#endif
-
-                VDB->Put(&v);
-                break;
-            }
 
             case _VIOC_FLUSHASR:
                 /* This function used to be built around FSDB->Find, which
@@ -1031,8 +952,8 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
             break;
         }
         case _VIOC_WD: {
-            /* 
-		     * Begin logging mutations to this volume. 
+            /*
+		     * Begin logging mutations to this volume.
 		     * This is "pseudo-disconnected" mode, in which
 		     * fetches may be performed but mutations are logged.
 		     */

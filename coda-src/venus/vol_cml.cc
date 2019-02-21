@@ -2056,17 +2056,6 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
         MarinerLog("store::Reintegrate %s, (%d, %d)\n", vol->name, count(),
                    bufsize);
 
-        /* We do not piggy the COP2 entries in PiggyBS when talking to only a
-	 * single server _as a result of weak connectivity_. We could do an
-	 * explicit COP2 call here to ship the PiggyBS array. Or simply ignore
-	 * them, so they will eventually be sent automatically or piggied on
-	 * the next multirpc. --JH */
-
-        if (PiggyBS.SeqLen && vol->IsReplicated()) {
-            code           = vol->COP2(m, &PiggyBS);
-            PiggyBS.SeqLen = 0;
-        }
-
         UNI_START_MESSAGE(ViceReintegrate_OP);
         code = (int)ViceReintegrate(c->connid, vol->vid, bufsize, &Index,
                                     outoforder, MaxStaleDirs, &NumStaleDirs,
@@ -2199,10 +2188,6 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
         /* Collate volume callback information */
         if (cbtemp == cbbreaks)
             vol->CollateVCB(m, VSvar_bufs, VCBStatusvar_bufs);
-
-        /* Finalize COP2 Piggybacking. */
-        if (PIGGYCOP2 && vol->IsReplicated())
-            vol->ClearCOP2(&PiggyBS);
 
         /* Manually compute the OUT parameters from the mgrpent::Reintegrate() call! -JJK */
         int dh_ix;
@@ -2421,9 +2406,6 @@ void ClientModifyLog::IncCommit(ViceVersionVector *UpdateSet, int Tid)
     }
     Recov_EndTrans(DMFP);
 
-    /* flush COP2 for this volume */
-    if (vol->IsReplicated())
-        ((repvol *)vol)->FlushCOP2();
     vol->flags.resolve_me = 0;
     LOG(0, ("ClientModifyLog::IncCommit: (%s)\n", vol->name));
 }
@@ -2793,12 +2775,6 @@ void cmlent::commit(ViceVersionVector *UpdateSet)
             f->stat.VV.StoreId = sid;
             AddVVs(&f->stat.VV, UpdateSet);
         }
-    }
-
-    if (vol->IsReplicated() /* FinalMutationForAnyObject */) {
-        ((repvol *)vol)->AddCOP2(&sid, UpdateSet);
-        LOG(10, ("cmlent::commit: Add COP2 with sid = 0x%x.%x\n", sid.HostId,
-                 sid.Uniquifier));
     }
 
     delete this;

@@ -22,7 +22,7 @@ venus_SOURCES = binding.cc binding.h comm.cc comm.h comm_daemon.cc daemon.cc \
     venus.private.h venus.cc venuscb.cc venuscb.h venusfid.h venusrecov.cc \
     venusrecov.h venusstats.h venusutil.cc venusvol.cc venusvol.h \
     vol_daemon.cc vol_cml.cc vol_reintegrate.cc vol_repair.cc vol_resolve.cc \
-    vol_vcb.cc vol_COP2.cc vproc.cc vproc.h vproc_pathname.cc vproc_pioctl.cc \
+    vol_vcb.cc vproc.cc vproc.h vproc_pathname.cc vproc_pioctl.cc \
     vproc_vfscalls.cc vsg.cc vsg.h worker.cc worker.h sighand.cc sighand.h \
     spool.cc tallyent.cc tallyent.h user.cc user.h nt_util.cc nt_util.h \
     realmdb.cc realmdb.h realm.cc realm.h rec_dllist.h refcounted.h archive.c \
@@ -44,8 +44,7 @@ AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) -DVENUS -DTIMING -DVENUSDEBUG \
 	      -I$(top_srcdir)/coda-src/vol \
 	      -I$(top_srcdir)/coda-src/librepair
 
-venus_LDADD = $(top_builddir)/coda-src/librepair/librepio.la \
-	      $(top_builddir)/coda-src/lka/liblka.la \
+venus_LDADD = $(top_builddir)/coda-src/lka/liblka.la \
 	      $(top_builddir)/coda-src/vv/libvv.la \
 	      $(top_builddir)/coda-src/dir/libcodadir.la \
 	      $(top_builddir)/coda-src/vicedep/libvenusdep.la \

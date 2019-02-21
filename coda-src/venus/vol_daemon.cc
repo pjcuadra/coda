@@ -101,13 +101,6 @@ void VolDaemon(void)
                 VDB->GetDown();
             }
 
-            /* Send off expired COP2 entries. */
-            if (curr_time - LastCOP2Check >= COP2CheckInterval) {
-                LastCOP2Check = curr_time;
-
-                VDB->FlushCOP2();
-            }
-
             /* Checkpoint modify logs if necessary. */
             if (curr_time - LastCheckPoint >= VolCheckPointInterval) {
                 VDB->CheckPoint(curr_time); /* loss of symmetry. sigh. */
@@ -156,32 +149,6 @@ void vdb::GetDown()
 }
 
 /* local-repair modification */
-void vdb::FlushCOP2()
-{
-    LOG(100, ("vdb::FlushCOP2: \n"));
-
-    /* For each volume. */
-    repvol_iterator vnext;
-    repvol *v;
-    while ((v = vnext())) {
-        for (;;) {
-            int code = 0;
-
-            if (!v->IsReplicated())
-                continue;
-
-            if (v->Enter((VM_OBSERVING | VM_NDELAY), V_UID) == 0) {
-                code = v->FlushCOP2(COP2Window);
-                v->Exit(VM_OBSERVING, V_UID);
-            }
-
-            if (code != ERETRY)
-                break;
-        }
-    }
-}
-
-/* local-repair modification */
 /* XXX Use this routine to "touch" all volumes periodically so that volume state changes get taken! */
 void vdb::TakeTransition()
 {
@@ -201,8 +168,8 @@ void vdb::TakeTransition()
 }
 
 /* local-repair modification */
-/* 
- * periodically checkpoint any volumes with non-empty CMLs 
+/*
+ * periodically checkpoint any volumes with non-empty CMLs
  * if the CML has changed since the last checkpoint interval.
  */
 void vdb::CheckPoint(unsigned long curr_time)

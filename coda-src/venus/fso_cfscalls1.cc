@@ -22,7 +22,7 @@ listed in the file CREDITS.
  *
  *    ToDo:
  *       1. All mutating Vice calls should have the following IN arguments:
- *            NewSid, NewMutator (implicit from connection), NewMtime, 
+ *            NewSid, NewMutator (implicit from connection), NewMtime,
  *            OldVV and DataVersion (for each object), NewStatus (for each object)
  */
 
@@ -719,10 +719,6 @@ int fsobj::SetVV(ViceVersionVector *newvv, uid_t uid)
             MULTI_RECORD_STATS(ViceSetVV_OP);
             if (code != 0)
                 goto RepExit;
-
-            /* Finalize COP2 Piggybacking. */
-            if (PIGGYCOP2)
-                vp->ClearCOP2(&PiggyBS);
         }
 
         /* Do op locally. */

@@ -415,17 +415,6 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
         if (code != 0)
             goto RepExit;
 
-        /* We do not piggy the COP2 entries in PiggyBS when we intentionally
-         * talk to only a single server when performing weak reintegration or
-         * when fetching file data.
-         * We can do an explicit COP2 call here to ship the PiggyBS array.  Or
-         * simply ignore them and they will eventually be sent automatically or
-         * piggied on the next multirpc. --JH */
-        if (PiggyBS.SeqLen) {
-            code           = vp->COP2(m, &PiggyBS);
-            PiggyBS.SeqLen = 0;
-        }
-
         /* The COP:Fetch call. */
         {
             /* Make multiple copies of the IN/OUT and OUT parameters. */
@@ -970,9 +959,6 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
             /* Finalize COP2 Piggybacking. There's no COP2 for non-replicated volumes */
             if (vol->IsReplicated()) {
-                if (PIGGYCOP2)
-                    vp->ClearCOP2(&PiggyBS);
-
                 /* Collect the OUT VVs in an array so that they can be checked. */
                 ViceVersionVector *vv_ptrs[VSG_MEMBERS];
                 for (int j = 0; j < rpc_common.nservers; j++)
@@ -1623,10 +1609,6 @@ int fsobj::SetACL(RPC2_CountedBS *acl, uid_t uid)
                 if (cbtemp == cbbreaks)
                     vp->CollateVCB(m, VSvar_bufs, VCBStatusvar_bufs);
 
-                /* Finalize COP2 Piggybacking. */
-                if (PIGGYCOP2)
-                    vp->ClearCOP2(&PiggyBS);
-
                 /* Manually compute the OUT parameters from the mgrpent::SetAttr()
                  * call! -JJK */
                 int dh_ix;
@@ -1643,10 +1625,6 @@ int fsobj::SetACL(RPC2_CountedBS *acl, uid_t uid)
         Recov_BeginTrans();
         UpdateStatus(&status, &UpdateSet, uid);
         Recov_EndTrans(CMFP);
-        if (vol->IsReplicated()) {
-            /* Send the COP2 message or add an entry for piggybacking. */
-            vp->COP2(m, &sid, &UpdateSet);
-        }
 
     RepExit:
         if (m)

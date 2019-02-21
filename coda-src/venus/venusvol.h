@@ -521,7 +521,6 @@ class vdb {
 
     /* Daemon functions. */
     void GetDown();
-    void FlushCOP2();
     void CheckPoint(unsigned long);
     void CheckLocalSubtree();
 
@@ -986,17 +985,6 @@ public:
     int ResAwait(char *);
     int RecResolve(connent *, VenusFid *);
     int ResListCount() { return (res_list->count()); }
-
-    /* COP2 routines. */
-    int COP2(mgrpent *, RPC2_CountedBS *);
-    int COP2(mgrpent *, ViceStoreId *, ViceVersionVector *, int donotpiggy = 0);
-    int FlushCOP2(time_t = 0);
-    int FlushCOP2(mgrpent *, RPC2_CountedBS *);
-    void GetCOP2(RPC2_CountedBS *);
-    cop2ent *FindCOP2(ViceStoreId *);
-    void AddCOP2(ViceStoreId *, ViceVersionVector *);
-    void ClearCOP2(RPC2_CountedBS *);
-    void ClearCOP2(void);
 
     void CollateVCB(mgrpent *, RPC2_Integer *, CallBackStatus *);
 

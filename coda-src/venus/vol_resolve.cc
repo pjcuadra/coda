@@ -60,119 +60,6 @@ int resent::allocs   = 0;
 int resent::deallocs = 0;
 #endif
 
-void repvol::Resolve()
-{
-    LOG(0, ("repvol::Resolve: %s\n", name));
-    MarinerLog("resolve::%s\n", name);
-
-    fsobj *f;
-    int code = 0;
-    vproc *v = VprocSelf();
-
-    Volid volid;
-    volid.Realm  = realm->Id();
-    volid.Volume = vid;
-
-    /* Grab control of the volume. */
-    v->Begin_VFS(&volid, CODA_RESOLVE);
-    VOL_ASSERT(this, v->u.u_error == 0);
-
-    /* check if someone else already resolved the volume while we were
-     * waiting to enter the volume */
-    if (state != Resolving) {
-        code = EALREADY;
-        goto Exit;
-    }
-
-    /* Flush all COP2 entries. */
-    /* This would NOT be necessary if ViceResolve took a "PiggyCOP2" parameter! -JJK */
-    code = FlushCOP2();
-    if (code != 0)
-        goto Exit;
-
-    resent *r;
-    while ((r = (resent *)res_list->get())) {
-        mgrpent *m = 0;
-        connent *c = 0;
-
-        {
-            LOG(0, ("repvol::Resolve: Resolving (%s)\n", FID_(&r->fid)));
-
-            /* Get an Mgroup. */
-            code = GetMgrp(&m, V_UID);
-            if (code != 0)
-                goto HandleResult;
-
-            /* Pick a coordinator and get a connection to it. */
-            struct in_addr *phost = m->GetPrimaryHost();
-            CODA_ASSERT(phost->s_addr != 0);
-            srvent *s = GetServer(phost, GetRealmId());
-            code      = s->GetConn(&c, ANYUSER_UID);
-            PutServer(&s);
-            if (code != 0)
-                goto HandleResult;
-
-            /* Make the RPC call. */
-            MarinerLog("store::Resolve (%s)\n", FID_(&r->fid));
-            UNI_START_MESSAGE(ViceResolve_OP);
-            code = ViceResolve(c->connid, MakeViceFid(&r->fid));
-            UNI_END_MESSAGE(ViceResolve_OP);
-            MarinerLog("store::resolve done\n");
-
-            /* Examine the return code to decide what to do next. */
-            code = Collate(c, code);
-            UNI_RECORD_STATS(ViceResolve_OP);
-
-            LOG(0, ("repvol::Resolve: Resolving (non-hinted) (%s) returned "
-                    "code %d\n",
-                    FID_(&r->fid), code));
-        }
-
-        /* Demote the object (if cached) */
-        f = FSDB->Find(&r->fid);
-        if (f)
-            f->Demote();
-
-        if (code) {
-            if (code == VNOVNODE && f) {
-                /* Retrying resolve on parent is also a "hint" of sorts. */
-                LOG(0, ("Resolve: Submitting parent (%s) for resolution, "
-                        "failed on its child (%s)\n",
-                        FID_(&f->pfid), FID_(&r->fid)));
-                ResSubmit(NULL, &f->pfid, &r);
-            } else {
-                /* General failure case (can't win them all). */
-                LOG(0, ("Resolve: Failed on (%s)\n", FID_(&r->fid)));
-            }
-        }
-
-    HandleResult:
-        PutConn(&c);
-        if (m)
-            m->Put();
-        if (r)
-            r->HandleResult(code);
-    }
-
-Exit : {
-    /* Release pending resents.  Waiters can retry if they wish. */
-    resent *r;
-    while ((r = (resent *)res_list->get()))
-        r->HandleResult(ERETRY);
-}
-
-    /* Surrender control of the volume. */
-    VOL_ASSERT(this, v->u.u_error == 0);
-    flags.transition_pending = 1;
-    /* if code was non-zero, return EINVAL to End_VFS to force this
-       resolve to inc fail count rather than success count */
-    if (code)
-        v->u.u_error = EINVAL;
-    v->End_VFS();
-    /* reset it, 'cause we can't leave errors just laying around */
-    v->u.u_error = 0;
-}
-
 /* Asynchronous resolve is indicated by NULL waitblk. */
 void repvol::ResSubmit(char **waitblkp, VenusFid *fid, resent **requeue)
 {
@@ -256,7 +143,7 @@ resent::resent(VenusFid *Fid)
 #endif
 }
 
-/* 
+/*
  * we don't support assignments to objects of this type.
  * bomb in an obvious way if it inadvertently happens.
  */
@@ -390,28 +277,5 @@ resolver::~resolver()
 
 void resolver::main()
 {
-    for (;;) {
-        /* Wait for new request. */
-        idle = 1;
-        VprocWait((char *)this);
-        if (idle)
-            CHOKE("resolver::main: signalled but not dispatched!");
-        if (!u.u_vol)
-            CHOKE("resolver::main: no volume!");
 
-        /* Do the resolve. */
-        CODA_ASSERT(u.u_vol->IsReplicated());
-        ((repvol *)u.u_vol)->Resolve();
-
-        seq++;
-
-        /* Commit suicide if we already have enough free resolvers. */
-        if (freelist.count() == MaxFreeResolvers) {
-            idle = 1;
-            delete VprocSelf();
-        }
-
-        /* Else put ourselves on free list. */
-        freelist.append(&handle);
-    }
 }

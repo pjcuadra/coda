@@ -21,7 +21,7 @@ listed in the file CREDITS.
  *         mechanism for changing this binding over time, due to:
  *
  *          - commencement of a new "epoch" for a ReplicatedVolume
- *            (i.e., adding/deleting a replica)  
+ *            (i.e., adding/deleting a replica)
  *          - movement of a volume from one host to another
  *
  *
@@ -922,9 +922,9 @@ void volent::ResetVolTransients()
 
     list_head_init(&fso_list);
 
-    /* 
-     * sync doesn't need to be initialized. 
-     * It's used only for LWP_Wait and LWP_Signal. 
+    /*
+     * sync doesn't need to be initialized.
+     * It's used only for LWP_Wait and LWP_Signal.
      */
     refcnt = 1;
 }
@@ -1058,7 +1058,7 @@ void reintvol::ReportVolState(void)
  *        volume at a time; this is to avoid nasty interdependencies
  *        that might otherwise arise during reintegration; note that
  *        a user is still the owner as long as he has active mutating
- *        threads or records in the ModifyLog.  
+ *        threads or records in the ModifyLog.
 */
 
 #define VOLBUSY(vol) \
@@ -1075,7 +1075,7 @@ int volent::Enter(int mode, uid_t uid)
     /*  Step 1 is to demote objects in volume if AVSG enlargement or
      * shrinking has made this necessary.  The two cases that require
      * this are:
-     *    1. |AVSG| for read-write replicated volume increasing. 
+     *    1. |AVSG| for read-write replicated volume increasing.
      *    2. |AVSG| for non-replicated volume falling to 0.  */
     if (flags.demotion_pending) {
         LOG(1, ("volent::Enter: demoting %s\n", name));
@@ -1104,7 +1104,7 @@ int volent::Enter(int mode, uid_t uid)
     /* Step 3 is to try to get a volume callback. */
     /* We allow only the hoard thread to fetch new version stamps if we do not
      * already have one. If we do have stamps, we let other threads validate
-     * them with one condition.  
+     * them with one condition.
      * The wierd condition below is to prevent the vol daemon from validating
      * volumes one at a time.  That is, if the volume has just taken a
      * transition or was just demoted, there is a good chance some other
@@ -1286,11 +1286,11 @@ void volent::Exit(int mode, uid_t uid)
          vid, PRINT_VOLSTATE(state), flags.transition_pending,
          flags.demotion_pending, PRINT_VOLMODE(mode)));
 
-    /* 
+    /*
      * Step 1 is to demote objects in volume if AVSG enlargement or shrinking
-     * has made this necessary.  The two cases that require this are: 
-     *    1. |AVSG| for read-write replicated volume increasing. 
-     *    2. |AVSG| for non-replicated volume falling to 0. 
+     * has made this necessary.  The two cases that require this are:
+     *    1. |AVSG| for read-write replicated volume increasing.
+     *    2. |AVSG| for non-replicated volume falling to 0.
      */
     if (flags.demotion_pending) {
         LOG(1, ("volent::Exit: demoting %s\n", name));
@@ -1850,13 +1850,6 @@ repvol::~repvol()
         CHOKE("repvol::~repvol: res_list not empty");
     delete res_list;
 
-    /* We're about to destroy this repvol. If failed to flush the COP2 entries
-     * to the server, we delete any remaining entries. */
-    ClearCOP2();
-    if (cop2_list->count() != 0)
-        CHOKE("repvol::~repvol: cop2_list not empty");
-    delete cop2_list;
-
     vsg->Put();
 }
 
@@ -1978,9 +1971,6 @@ int repvol::GetMgrp(mgrpent **m, uid_t uid, RPC2_CountedBS *PiggyBS)
      * staging server */
     code = vsg->GetMgrp(m, uid, ro_replica == NULL);
 
-    /* Get PiggyCOP2 buffer if requested. */
-    if (*m && PiggyBS)
-        code = FlushCOP2(*m, PiggyBS);
 
     if (flags.transition_pending) {
         if (*m)
@@ -2173,7 +2163,7 @@ int repvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid,
 
     int code = 0;
 
-    /* 
+    /*
      * While the volume is reachable we usually want to generate a local fid.
      * This defers the latency of contacting the servers for fids until
      * reintegrate time.  However, reintegrators MUST contact the servers
@@ -2181,18 +2171,13 @@ int repvol::AllocFid(ViceDataType Type, VenusFid *target_fid, uid_t uid,
      * reintegrated. The "force" parameter defaults to 0, in which case the
      * decision is based on state.  Reintegrators call this routine with
      * "force" set.  Note that we do not simply check IsReintegrating because
-     * a mutator executing during reintegration need not (and should not) 
+     * a mutator executing during reintegration need not (and should not)
      * be required to contact the servers.
      */
     if (IsUnreachable() || (IsReachable() && !force)) {
         *target_fid = GenerateLocalFid(Type);
     } else {
         VOL_ASSERT(this, (IsReachable() && force));
-
-        /* We only want to alloc from a single replica, so we can't rely on
-         * piggybacking the COP2, but as allocation of fids is not affected
-         * by (lack of) a COP2 update we don't really mind if it fails. */
-        (void)FlushCOP2();
 
         mgrpent *m = 0;
         connent *c = 0;
@@ -2737,10 +2722,6 @@ int volent::SetVolStat(VolumeStatus *volstat, RPC2_BoundedBS *Name,
                 if (code != 0)
                     goto RepExit;
 
-                /* Finalize COP2 Piggybacking. */
-                if (PIGGYCOP2)
-                    vp->ClearCOP2(&PiggyBS);
-
                 /* Copy out OUT parameters. */
                 int dh_ix;
                 dh_ix = -1;
@@ -2752,9 +2733,6 @@ int volent::SetVolStat(VolumeStatus *volstat, RPC2_BoundedBS *Name,
                 ARG_UNMARSHALL_BS(msgvar, *msg, dh_ix);
                 ARG_UNMARSHALL_BS(motdvar, *motd, dh_ix);
             }
-
-            /* Send the COP2 message or add an entry for piggybacking. */
-            vp->COP2(m, &sid, &UpdateSet);
 
         RepExit:
             if (m)

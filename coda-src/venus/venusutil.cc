@@ -806,8 +806,6 @@ void MallocPrint(int fd)
             (NameCtxt_allocs - NameCtxt_deallocs) * sizeof(namectxt));
     fdprint(fd, "resent: %d, %d, %d\n", resent::allocs, resent::deallocs,
             (resent::allocs - resent::deallocs) * sizeof(resent));
-    fdprint(fd, "cop2ent: %d, %d, %d\n", cop2ent::allocs, cop2ent::deallocs,
-            (cop2ent::allocs - cop2ent::deallocs) * sizeof(cop2ent));
     fdprint(fd, "msgent: %d, %d, %d\n", msgent::allocs, msgent::deallocs,
             (msgent::allocs - msgent::deallocs) * sizeof(msgent));
 #endif /* VENUSDEBUG */
@@ -886,8 +884,8 @@ time_t Vtime()
     return (::time(0));
 }
 
-/* 
- * compares fids embedded in a VenusFidAndVersionVector. 
+/*
+ * compares fids embedded in a VenusFidAndVersionVector.
  * assumes that the fids are in the same volume.
  */
 int FAV_Compare(ViceFidAndVV *fav1, ViceFidAndVV *fav2)
