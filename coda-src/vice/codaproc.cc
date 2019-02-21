@@ -915,64 +915,6 @@ void NewCOP1Update(Volume *volptr, Vnode *vptr, ViceStoreId *StoreId,
         SetCOP2Pending(Vnode_vv(vptr));
 }
 
-/*
-  COP2Update: Increment the version vector of an object.
-  Only increment slots for servers that succeeded in COP1. 
-*/
-
-static void COP2Update(Volume *volptr, Vnode *vptr,
-                       ViceVersionVector *UpdateSet, vmindex *freed_indices)
-{
-    /* Look up the VRDB entry. */
-    vrent *vre = VRDB.find(V_groupId(volptr));
-    if (!vre)
-        Die("COP2Update: VSG not found!");
-
-    /* Look up the index of this host. */
-    int ix = vre->index();
-    if (ix < 0)
-        Die("COP2Update: this host not found!");
-
-    SLog(2, "COP2Update: Fid = (%x),(%x.%x.%x)", V_groupId(volptr),
-         V_id(volptr), vptr->vnodeNumber, vptr->disk.uniquifier);
-
-    /* if the result was success everywhere, truncate the log */
-    int i;
-    if (vptr->disk.type == vDirectory) {
-        ViceVersionVector checkvv;
-        vre->GetCheckVV(&checkvv);
-
-        for (i = 0; i < VSG_MEMBERS; i++)
-            if (((&(checkvv.Versions.Site0))[i]) ^
-                ((&(UpdateSet->Versions.Site0))[i])) {
-                SLog(0, "Incomplete host set in COP2.\n");
-                break;
-            }
-
-        if (i == VSG_MEMBERS && freed_indices)
-            TruncateLog(volptr, vptr, freed_indices);
-    }
-
-    /* do a cop2 only if the cop2 pending flag is set */
-
-    if ((&(UpdateSet->Versions.Site0))[ix] != 0 &&
-        COP2Pending(Vnode_vv(vptr))) {
-        SLog(1, "Cop2 is pending for fid 0x%x.%x.%x", V_id(volptr),
-             vptr->vnodeNumber, vptr->disk.uniquifier);
-        /* Extract ThisHost from the UpdateSet. */
-        int tmp = (int)(&(UpdateSet->Versions.Site0))[ix];
-        (&(UpdateSet->Versions.Site0))[ix] = 0;
-
-        /* Update the Volume and Vnode VVs. */
-        UpdateVVs(&V_versionvector(volptr), &Vnode_vv(vptr), UpdateSet);
-        (&(UpdateSet->Versions.Site0))[ix] = tmp;
-
-        /* clear the pending flag */
-        ClearCOP2Pending(Vnode_vv(vptr));
-    } else {
-        SLog(1, "Cop2 is not pending for 0x%x.%x.%x", V_id(volptr),
-             vptr->vnodeNumber, vptr->disk.uniquifier);
-    }
 }
 
 void UpdateVVs(ViceVersionVector *VVV, ViceVersionVector *VV,
