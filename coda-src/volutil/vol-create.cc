@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -81,7 +81,6 @@ extern "C" {
 #include <codadir.h>
 #include <camprivate.h>
 #include <coda_globals.h>
-#include <recov_vollog.h>
 #include "volutil.private.h"
 
 Error error;
@@ -109,6 +108,9 @@ long S_VolCreate(RPC2_Handle rpcid, RPC2_String formal_partition,
     int resflag         = repvol ? RVMRES : 0;
     int rvmlogsize      = 4096; /* when resolution is enabled, default to 4k
                                   log entries */
+
+    if (repvol)
+        return RPC2_INVALIDOPCODE;
 
     /* To keep C++ 2.0 happy */
     char *partition = (char *)formal_partition;
@@ -151,13 +153,6 @@ long S_VolCreate(RPC2_Handle rpcid, RPC2_String formal_partition,
 
     /* we are creating a readwrite (or replicated) volume */
     parentId = volumeId;
-
-    if (repvol && grpId == 0) {
-        VLog(0, "S_VolCreate: can't create replicated volume without group id");
-        rvmlib_abort(VFAIL);
-        status = VFAIL;
-        goto exit;
-    }
 
     /* If we are creating a replicated volume, pass along group id */
     vp = VCreateVolume(&error, partition, volumeId, parentId,
@@ -290,13 +285,8 @@ static int ViceCreateRoot(Volume *vp)
     CODA_ASSERT(vnode->node.dirNode);
     CODA_ASSERT(vnode->uniquifier == 1);
 
-    /* create the resolution log for this vnode if rvm resolution is
-       turned on */
-    if (AllowResolution && V_RVMResOn(vp)) {
-        VLog(0, "Creating new log for root vnode\n");
-        CreateRootLog(vp, vn);
-        vnode->log = VnLog(vn);
-    }
+    vnode->log = NULL;
+
     /* write out the new vnode */
     if (VolDebugLevel >= 9) {
         PrintVnode(stdout, vnode, bitNumberToVnodeNumber(0, vLarge));
