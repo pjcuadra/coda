@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -75,7 +75,6 @@ extern "C" {
 #include <viceinode.h>
 #include <vutil.h>
 #include <index.h>
-#include <resstats.h>
 #include <dllist.h>
 #include <vollocate.h>
 
@@ -89,7 +88,7 @@ static void printvns(Volume *, VnodeClass);
 static void date(time_t, char *);
 
 /*
-  S_VolInfo: Dump out information (in ascii) about a volume 
+  S_VolInfo: Dump out information (in ascii) about a volume
 */
 long int S_VolInfo(RPC2_Handle rpcid, RPC2_String formal_volkey,
                    RPC2_Integer dumpall, SE_Descriptor *formal_sed)
@@ -125,12 +124,6 @@ long int S_VolInfo(RPC2_Handle rpcid, RPC2_String formal_volkey,
 
     infofile = fopen(INFOFILE, "w");
     PrintHeader(vp);
-    if (AllowResolution && V_RVMResOn(vp)) {
-        V_VolLog(vp)->print(infofile);
-        V_VolLog(vp)->vmrstats->precollect();
-        V_VolLog(vp)->vmrstats->print(infofile);
-        V_VolLog(vp)->vmrstats->postcollect();
-    }
     if (dumpall) {
         fprintf(infofile, "\nLarge vnodes (directories)\n");
         printvns(vp, vLarge);

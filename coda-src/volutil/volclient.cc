@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -83,11 +83,8 @@ static long rc;
 static void backup(void);
 static void salvage(void);
 static void create(void);
-static void create_rep(void);
 static void clone(void);
 static void makevldb(void);
-static void makevrdb(void);
-static void dumpvrdb(void);
 static void info(void);
 static void showvnode(void);
 static void setvv(void);
@@ -105,9 +102,7 @@ static void dumpestimate(void);
 static void restorefromback(void);
 static void dumpmem(void);
 static void rvmsize(void);
-static void setlogparms(void);
 static void markasancient(void);
-static void timing(void);
 static void tracerpc(void);
 static void printstats(void);
 static void getvolumelist(void);
@@ -195,8 +190,6 @@ int main(int argc, char **argv)
         backup();
     else if (strcmp(argv[1], "create") == 0)
         create();
-    else if (strcmp(argv[1], "create_rep") == 0)
-        create_rep();
     else if (strcmp(argv[1], "salvage") == 0)
         salvage();
     else if (strcmp(argv[1], "lock") == 0)
@@ -205,10 +198,6 @@ int main(int argc, char **argv)
         unlock();
     else if (strcmp(argv[1], "makevldb") == 0)
         makevldb();
-    else if (strcmp(argv[1], "makevrdb") == 0)
-        makevrdb();
-    else if (strcmp(argv[1], "dumpvrdb") == 0)
-        dumpvrdb();
     else if (strcmp(argv[1], "info") == 0)
         info();
     else if (strcmp(argv[1], "showvnode") == 0)
@@ -241,10 +230,6 @@ int main(int argc, char **argv)
         dumpmem();
     else if (strcmp(argv[1], "rvmsize") == 0)
         rvmsize();
-    else if (strcmp(argv[1], "setlogparms") == 0)
-        setlogparms();
-    else if (strcmp(argv[1], "timing") == 0)
-        timing();
     else if (strcmp(argv[1], "tracerpc") == 0)
         tracerpc();
     else if (strcmp(argv[1], "printstats") == 0)
@@ -281,12 +266,12 @@ bad_options:
         stderr,
         "Usage: volutil [-h host] [-r realm] [-t timeout] [-d debuglevel] <option>,\n"
         "    where <option> is one of the following:\n"
-        "\tancient, backup, create, create_rep, clone, dump, dumpestimate,\n"
+        "\tancient, backup, create, clone, dump, dumpestimate,\n"
         "\trestore, info, lock, lookup, makevldb, makevrdb, purge, salvage,\n"
         "\tsetvv, showvnode, shutdown, swaplog, setdebug, updatedb, unlock,\n"
-        "\tdumpmem, rvmsize, timing, printstats,\n"
-        "\tshowcallbacks, truncatervmlog,togglemalloc, getmaxvol, setmaxvol,\n"
-        "\tpeek, poke, peeks, pokes, peekx, pokex, setlogparms, tracerpc\n"
+        "\tdumpmem, rvmsize, printstats,\n"
+        "\tshowcallbacks, truncatervmlog, togglemalloc, getmaxvol, setmaxvol,\n"
+        "\tpeek, poke, peeks, pokes, peekx, pokex, tracerpc\n"
         "\tgetvolumelist, dumpvrdb\n");
     exit(EXIT_FAILURE);
 }
@@ -320,66 +305,6 @@ static void markasancient(void)
         exit(EXIT_FAILURE);
     }
     exit(EXIT_SUCCESS); /* Funny, need to exit or the program never exits... */
-}
-
-/**
- * setlogparms - set volume recovery log parameters
- * @volid:	Volume replica id
- * @reson_flag:	Set resolution flag (should normally be set to 4)
- * @logsize_nentries:	Set size of the volume resolution log.
- *
- * Turn on resolution or change the log size for a volume. The volume ID can be
- * either the replicated ID or the non-replicated ID. Resolution is turned on
- * by specifying 4 after reson and can be turned off by specifying 0. The size
- * of the log can also be changed for the volume. The size parameter refers to
- * the number of maximum entries in the log. This should be a multiple of 32.
- * Typically this is set to 8192.
- */
-static void setlogparms(void)
-{
-    long volid;
-    long flag;
-    long nentries;
-    int i;
-
-    nentries = 0;
-    flag     = -1;
-
-    if (these_args < 5) {
-        fprintf(
-            stderr,
-            "Usage: volutil setlogparms <volid> reson <flag> logsize <nentries>\n");
-        exit(EXIT_FAILURE);
-    }
-    if (sscanf(this_argp[2], "%lX", &volid) != 1) {
-        fprintf(stderr, "setlogparms: Bad VolumeId %s\n", this_argp[2]);
-        exit(EXIT_FAILURE);
-    }
-    for (i = 3; i < these_args; i++) {
-        if (strcmp(this_argp[i], "reson") == 0) {
-            i = i + 1;
-            if (sscanf(this_argp[i], "%ld", &flag) != 1) {
-                fprintf(stderr, "Bad flag value %s\n", this_argp[i]);
-                exit(EXIT_FAILURE);
-            }
-        }
-        if (strcmp(this_argp[i], "logsize") == 0) {
-            i = i + 1;
-            if (sscanf(this_argp[i], "%ld", &nentries) != 1) {
-                fprintf(stderr, "Bad logsize value %s\n", this_argp[i]);
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
-
-    rc = VolSetLogParms(rpcid, volid, flag, nentries);
-    if (rc != RPC2_SUCCESS) {
-        fprintf(stderr, "VolSetLogParms failed with %s\n",
-                RPC2_ErrorMsg((int)rc));
-        exit(EXIT_FAILURE);
-    }
-    fprintf(stderr, "Set Log parameters\n");
-    exit(EXIT_SUCCESS);
 }
 
 /**
@@ -974,55 +899,6 @@ static void backup(void)
     exit(EXIT_SUCCESS);
 }
 
-/**
- * create_rep - create a replicated volume
- * @partitionpath:	server partition to create new volume on
- * @volumename:	name of the new volume
- * @groupid:	replicated group id of the volume
- * @rwvolid:	replica id of the new volume
- *
- * Create a replicated read-write volume named <volume-name> on partition named
- * <partition-path>. The <group-ID> parameter is used to specify the ID of the
- * replicated volume to which this replica will belong. The createvol_rep(8)
- * script provides a simple interface to create all necessary replicas on the
- * replica servers and updates the volume location and replication databases.
- */
-static void create_rep(void)
-{
-    char *partition, *volumeName;
-    VolumeId volumeid = 0;
-    long groupid;
-
-    if (these_args != 5 && these_args != 6) {
-        fprintf(
-            stderr,
-            "Usage: volutil create_rep partition volumename replicated-volid [replica-volid]\n");
-        exit(EXIT_FAILURE);
-    }
-    partition = this_argp[2];
-    stripslash(partition);
-    volumeName = this_argp[3];
-
-    if (sscanf(this_argp[4], "%lX", &groupid) != 1) {
-        fprintf(stderr, "CreateRep: Bad Group Id %s\n", this_argp[4]);
-        exit(EXIT_FAILURE);
-    }
-    if (these_args == 6) {
-        if (sscanf(this_argp[5], "%x", &volumeid) != 1) {
-            fprintf(stderr, "CreateRep: Bad Volume Id %s\n", this_argp[5]);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    rc = VolCreate(rpcid, (RPC2_String)partition, (RPC2_String)volumeName,
-                   &volumeid, 1, groupid);
-    if (rc != RPC2_SUCCESS) {
-        fprintf(stderr, "VolCreate failed with %s\n", RPC2_ErrorMsg((int)rc));
-        exit(EXIT_FAILURE);
-    }
-    printf("Volume %08x (%s) created \n", volumeid, volumeName);
-    exit(EXIT_SUCCESS);
-}
 
 /**
  * makevldb - build a new volume location database
@@ -1110,7 +986,7 @@ static void dumpvrdb(void)
  * Print in ascii the contents of a volume to stdout (or the file as specified
  * by -o). The volume can be specified by its name, or by the volume-ID,
  * specified in Hex. If -all is specified, contents of both large and small
- * vnodes in that volume are also printed. 
+ * vnodes in that volume are also printed.
  */
 static void info(void)
 {
@@ -1213,7 +1089,7 @@ static void showvnode(void)
 }
 /*
   BEGIN_HTML
-  <a name="setvv"><strong>Client end of the <tt>setvv</tt> request</strong></a> 
+  <a name="setvv"><strong>Client end of the <tt>setvv</tt> request</strong></a>
   END_HTML
 */
 static void setvv(void)
@@ -1267,7 +1143,7 @@ static void setvv(void)
 
 /*
   BEGIN_HTML
-  <a name="purge"><strong>Client end of the <tt>purge</tt> request</strong></a> 
+  <a name="purge"><strong>Client end of the <tt>purge</tt> request</strong></a>
   END_HTML
 */
 static void purge(void)
@@ -1411,7 +1287,7 @@ static void updatedb(void)
 
 /*
   BEGIN_HTML
-  <a name="shutdown"><strong>Client end of the <tt>shutdown</tt> request</strong></a> 
+  <a name="shutdown"><strong>Client end of the <tt>shutdown</tt> request</strong></a>
   END_HTML
 */
 static void shutdown(void)
@@ -1432,7 +1308,7 @@ static void shutdown(void)
 
 /*
   BEGIN_HTML
-  <a name="swaplog"><strong>Client end of the <tt>swaplog</tt> request</strong></a> 
+  <a name="swaplog"><strong>Client end of the <tt>swaplog</tt> request</strong></a>
   END_HTML
 */
 static void swaplog(void)
@@ -1453,7 +1329,7 @@ static void swaplog(void)
 
 /*
   BEGIN_HTML
-  <a name="swapmalloc"><strong>Client end of the <tt>togglemalloc</tt> request</strong></a> 
+  <a name="swapmalloc"><strong>Client end of the <tt>togglemalloc</tt> request</strong></a>
   END_HTML
 */
 static void swapmalloc(void)
@@ -1497,56 +1373,6 @@ static void setdebug(void)
         exit(EXIT_FAILURE);
     }
     fprintf(stderr, "VolumeDebugLevel set to %d.\n", debuglevel);
-    exit(EXIT_SUCCESS);
-}
-
-/*
-  BEGIN_HTML
-  <pre>
-  <a name="timing"><strong>Client end of the <tt>timing</tt> request</strong></a>
-  </pre>
-  END_HTML
-*/
-static void timing(void)
-{
-    int on = -1;
-    SE_Descriptor sed;
-    FILE *outf;
-
-    if (these_args < 3) {
-        fprintf(stderr, "Usage: volutil timing <on | off> [file]\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (strcmp(this_argp[2], "on") == 0)
-        on = 1;
-    else if (strcmp(this_argp[2], "off") == 0)
-        on = 0;
-
-    if (on == -1) {
-        fprintf(stderr, "Usage: volutil timing <on | off>\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (these_args < 4)
-        outf = stdout;
-    else
-        outf = fopen(this_argp[3], "w");
-
-    /* set up side effect descriptor */
-    memset(&sed, 0, sizeof(SE_Descriptor));
-    sed.Tag                                   = SMARTFTP;
-    sed.Value.SmartFTPD.Tag                   = FILEBYFD;
-    sed.Value.SmartFTPD.TransmissionDirection = SERVERTOCLIENT;
-    sed.Value.SmartFTPD.FileInfo.ByFD.fd      = fileno(outf);
-
-    rc = VolTiming(rpcid, on, &sed);
-
-    if (rc != RPC2_SUCCESS) {
-        fprintf(stderr, "VolTiming failed with return code %ld\n", rc);
-        exit(EXIT_FAILURE);
-    }
-    fprintf(stderr, "Timing finished successfully\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -1715,7 +1541,7 @@ static void showcallbacks(void)
 
 /*
   BEGIN_HTML
-  <a name="truncatervmlog"><strong>Client end of the <tt>truncatervmlog</tt> request</strong></a> 
+  <a name="truncatervmlog"><strong>Client end of the <tt>truncatervmlog</tt> request</strong></a>
   END_HTML
 */
 static void truncatervmlog(void)
@@ -1733,7 +1559,7 @@ static void truncatervmlog(void)
 
 /*
   BEGIN_HTML
-  <a name="getmaxvol"><strong>Client end of the getmaxvol request</strong></a> 
+  <a name="getmaxvol"><strong>Client end of the getmaxvol request</strong></a>
   END_HTML
 */
 static void getmaxvol(void)
@@ -1756,7 +1582,7 @@ static void getmaxvol(void)
 
 /*
   BEGIN_HTML
-  <a name="setmaxvol"><strong>Client end of the setmaxvol request</strong></a> 
+  <a name="setmaxvol"><strong>Client end of the setmaxvol request</strong></a>
   END_HTML
 */
 static void setmaxvol(void)
@@ -1827,7 +1653,7 @@ static int sscani(char *s, RPC2_Unsigned *px)
 
 /*
   BEGIN_HTML
-  <a name="peekint"><strong>Client end of the peek request</strong></a> 
+  <a name="peekint"><strong>Client end of the peek request</strong></a>
   END_HTML
 */
 static void peekint(void)
@@ -1846,7 +1672,7 @@ static void peekint(void)
 
 /*
   BEGIN_HTML
-  <a name="pokeint"><strong>Client end of the poke request</strong></a> 
+  <a name="pokeint"><strong>Client end of the poke request</strong></a>
   END_HTML
 */
 static void pokeint(void)
@@ -1865,7 +1691,7 @@ static void pokeint(void)
 
 /*
   BEGIN_HTML
-  <a name="peekmem"><strong>Client end of the <tt>peeks()</tt> request</strong></a> 
+  <a name="peekmem"><strong>Client end of the <tt>peeks()</tt> request</strong></a>
   END_HTML
 */
 static void peekmem(void)
@@ -1893,7 +1719,7 @@ static void peekmem(void)
 
 /*
   BEGIN_HTML
-  <a name="pokemem"><strong>Client end of the <tt>pokes()</tt> request</strong></a> 
+  <a name="pokemem"><strong>Client end of the <tt>pokes()</tt> request</strong></a>
   END_HTML
 */
 static void pokemem(void)
@@ -1916,7 +1742,7 @@ static void pokemem(void)
 
 /*
   BEGIN_HTML
-  <a name="peekxmem"><strong>Client end of the <tt>peekx()</tt> request</strong></a> 
+  <a name="peekxmem"><strong>Client end of the <tt>peekx()</tt> request</strong></a>
   END_HTML
 */
 static void peekxmem(void)
@@ -1946,7 +1772,7 @@ static void peekxmem(void)
 
 /*
   BEGIN_HTML
-  <a name="pokexmem"><strong>Client end of the <tt>pokex()</tt> request</strong></a> 
+  <a name="pokexmem"><strong>Client end of the <tt>pokex()</tt> request</strong></a>
   END_HTML
 */
 static void pokexmem(void)
