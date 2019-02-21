@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -65,7 +65,6 @@ extern "C" {
 
 #include "cvnode.h"
 #include "volume.h"
-#include <recov_vollog.h>
 #include "vutil.h"
 #include "recov.h"
 #include "index.h"
@@ -692,16 +691,6 @@ void VPutVnode(Error *ec, Vnode *vnp)
             } else {
                 SLog(9, "VPutVnode: about to write vnode %x, type %d",
                      vnp->vnodeNumber, vnp->disk.type);
-                if (VnLog(vnp) == NULL && vnp->disk.type == vDirectory) {
-                    /* large vnode - need to allocate the resolution log */
-                    if (AllowResolution && V_RVMResOn(vp)) {
-                        SLog(
-                            9,
-                            "VPutVnode: Creating resolution log for (%08x.%x.%x)\n",
-                            V_id(vp), vnp->vnodeNumber, vnp->disk.uniquifier);
-                        CreateResLog(vp, vnp);
-                    }
-                }
                 if (v_index.put(vnp->vnodeNumber, vnp->disk.uniquifier,
                                 &vnp->disk) != 0) {
                     LogMsg(0, VolDebugLevel, stdout,
@@ -743,8 +732,8 @@ void VPutVnode(Error *ec, Vnode *vnp)
         ReleaseReadLock(&vnp->lock);
 }
 /*
- * put back a vnode but dont write it to RVM - 
- * simulate an abort with release lock 
+ * put back a vnode but dont write it to RVM -
+ * simulate an abort with release lock
  */
 void VFlushVnode(Error *ec, Vnode *vnp)
 {

@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -40,11 +40,11 @@ Pittsburgh, PA.
 #ifndef VOLUME_INCLUDED
 #define VOLUME_INCLUDED 1
 
-#include <recov_vollog.h>
 #include <vice.h>
 #include <dllist.h>
 #include <partition.h>
 #include "voldefs.h"
+#include <cvnode.h>
 
 #define VolumeWriteable(vp) (V_type(vp) == readwriteVolume)
 #define VolumeWriteable2(vol) (vol.type == readwriteVolume)
@@ -100,6 +100,8 @@ struct VolumeHeader {
 struct IndexFileHeader {
     struct versionStamp stamp;
 };
+
+class recov_vol_log;
 
 /*
 VolumeDiskData:Volume administrative data stored in RVM.
@@ -338,8 +340,6 @@ struct volHeader {
 #define V_offlineMessage(vp) ((vp)->header->diskstuff.offlineMessage)
 #define V_motd(vp) ((vp)->header->diskstuff.motd)
 #define V_disk(vp) ((vp)->header->diskstuff)
-#define V_RVMResOn(vp) ((vp)->header->diskstuff.ResOn & RVMRES)
-#define V_VolLog(vp) ((vp)->header->diskstuff.log)
 
 extern char *ThisHost; /* This machine's hostname */
 extern uint8_t ThisServerId; /* this server id, as found in
