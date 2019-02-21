@@ -65,7 +65,6 @@ extern "C" {
 
 #include "cvnode.h"
 #include "volume.h"
-#include <recov_vollog.h>
 #include "vutil.h"
 #include "recov.h"
 #include "index.h"
@@ -691,16 +690,6 @@ void VPutVnode(Error *ec, Vnode *vnp)
             } else {
                 SLog(9, "VPutVnode: about to write vnode %x, type %d",
                      vnp->vnodeNumber, vnp->disk.type);
-                if (VnLog(vnp) == NULL && vnp->disk.type == vDirectory) {
-                    /* large vnode - need to allocate the resolution log */
-                    if (AllowResolution && V_RVMResOn(vp)) {
-                        SLog(
-                            9,
-                            "VPutVnode: Creating resolution log for (%08x.%x.%x)\n",
-                            V_id(vp), vnp->vnodeNumber, vnp->disk.uniquifier);
-                        CreateResLog(vp, vnp);
-                    }
-                }
                 if (v_index.put(vnp->vnodeNumber, vnp->disk.uniquifier,
                                 &vnp->disk) != 0) {
                     LogMsg(0, VolDebugLevel, stdout,
