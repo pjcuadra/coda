@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -21,7 +21,6 @@ listed in the file CREDITS.
 
 #include <rec_dlist.h>
 #include <bitmap.h>
-#include <recov_vollog.h>
 
 struct InodeSummary { /* Inode summary file: an entry for each volume in a partition */
     VolumeId volumeId; /* Volume id */
