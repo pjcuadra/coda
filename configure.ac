@@ -269,7 +269,6 @@ coda-src/vol/Makefile
 coda-src/librepair/Makefile
 coda-src/venus/Makefile
 coda-src/repair/Makefile
-coda-src/resolution/Makefile
 coda-src/volutil/Makefile
 coda-src/vtools/Makefile
 coda-src/vice/Makefile

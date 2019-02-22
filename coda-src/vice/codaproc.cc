@@ -72,7 +72,6 @@ extern "C" {
 #include <codadir.h>
 #include <nettohost.h>
 #include <operations.h>
-#include <timing.h>
 
 #define EMPTYDIRBLOCKS 2
 

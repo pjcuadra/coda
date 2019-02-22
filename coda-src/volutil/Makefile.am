@@ -37,8 +37,6 @@ AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 	      -I$(top_srcdir)/coda-src/vol \
 	      -I$(top_srcdir)/coda-src/resolution
 
-libvolutil_la_LIBADD = $(top_builddir)/coda-src/resolution/librestiming.la
-
 volutil_LDADD = $(top_builddir)/coda-src/auth2/libauser.la \
 		$(top_builddir)/coda-src/vicedep/libvolutildep.la \
 		$(top_builddir)/coda-src/util/libutil.la \
