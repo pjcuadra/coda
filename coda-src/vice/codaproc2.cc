@@ -61,7 +61,6 @@ extern "C" {
 #include <lockqueue.h>
 #include <vldb.h>
 #include <vrdb.h>
-#include <repio.h>
 #include <vlist.h>
 #include <codaproc.h>
 #include <codadir.h>

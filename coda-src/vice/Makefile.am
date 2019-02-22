@@ -27,7 +27,6 @@ AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) \
 	      -I$(top_srcdir)/coda-src/vv \
 	      -I$(top_srcdir)/coda-src/lka \
 	      -I$(top_srcdir)/coda-src/vol \
-	      -I$(top_srcdir)/coda-src/librepair \
 	      -I$(top_srcdir)/coda-src/resolution
 
 codasrv_LDADD = libviceerror.la \
@@ -36,7 +35,6 @@ codasrv_LDADD = libviceerror.la \
 		$(top_builddir)/coda-src/volutil/libvolserv.la \
 		$(top_builddir)/coda-src/vicedep/voldump.client.lo \
 		$(top_builddir)/coda-src/vicedep/volutil.server.lo \
-		$(top_builddir)/coda-src/librepair/librepio.la \
 		$(top_builddir)/coda-src/vol/libvol.la \
 		$(top_builddir)/coda-src/lka/liblka.la \
 		$(top_builddir)/coda-src/vv/libvv.la \
