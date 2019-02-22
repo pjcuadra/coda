@@ -4,6 +4,10 @@
 # noinst_LTLIBRARIES = libres.la
 # endif
 
+if BUILD_SERVER
+noinst_LTLIBRARIES = librestiming.la
+endif
+
 # libres_la_SOURCES = resclient.cc rescoord.cc rescoord.h resforce.cc resforce.h \
 #     reslock.cc resutil.cc resutil.h rescomm.cc rescomm.h rescomm.private.h \
 #     timing.cc timing.h rvmrestiming.h weres.cc ops.cc ops.h recle.cc recle.h \
@@ -11,6 +15,8 @@
 #     parselog.cc parselog.h ruconflict.cc ruconflict.h subresphase2.cc \
 #     subresphase3.cc subresphase34.cc rename.cc subpreres.cc resstats.cc \
 #     resstats.h resfile.cc resolution.h
+
+librestiming_la_SOURCES = timing.cc timing.h
 
 # AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) \
 # 	      -I$(top_srcdir)/lib-src/base \
@@ -27,3 +33,4 @@
 # 	      -I$(top_srcdir)/coda-src/lka \
 # 	      -I$(top_srcdir)/coda-src/vol
 
+AM_CPPFLAGS = -I$(top_srcdir)/lib-src/base
