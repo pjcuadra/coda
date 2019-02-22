@@ -58,7 +58,6 @@ extern "C" {
 #include <volume.h>
 #include <srv.h>
 #include <volume.h>
-#include <coppend.h>
 #include <lockqueue.h>
 #include <vldb.h>
 #include <vrdb.h>
@@ -217,15 +216,6 @@ long FS_ViceReintegrate(RPC2_Handle RPCid, VolumeId Vid, RPC2_Integer LogSize,
 
     if (NumDirs)
         *NumDirs = 0; /* check for compatibility */
-
-    /* Phase 0. */
-    if ((PiggyBS->SeqLen > 0) && (errorCode = FS_ViceCOP2(RPCid, PiggyBS))) {
-        if (Index)
-            *Index = -1;
-        goto FreeLocks;
-    }
-
-    SLog(1, "Starting ValidateReintegrateParms for %x", Vid);
 
     /* Phase I. */
     if ((errorCode = ValidateReintegrateParms(RPCid, &Vid, &volptr, &client,
@@ -479,13 +469,6 @@ long FS_ViceCloseReintHandle(RPC2_Handle RPCid, VolumeId Vid,
     int voltype  = 0;
 
     SLog(0 /*1*/, "ViceCloseReintHandle for volume 0x%x", Vid);
-
-    /* Phase 0. */
-    if ((PiggyBS->SeqLen > 0) && (errorCode = FS_ViceCOP2(RPCid, PiggyBS)))
-        goto FreeLocks;
-
-    if ((errorCode = ValidateRHandle(Vid, RHandle)))
-        goto FreeLocks;
 
     /* Phase I. */
     if ((errorCode = ValidateReintegrateParms(RPCid, &Vid, &volptr, &client,
@@ -2056,18 +2039,7 @@ static void ReintFinalCOP(vle *v, Volume *volptr, RPC2_Integer *VS, int voltype)
     ViceStoreId *FinalSid;
     FinalSid = &Vnode_vv(v->vptr).StoreId;
 
-    /* 1. Record COP1 (for final update). */
-    NewCOP1Update(volptr, v->vptr, FinalSid, VS, (voltype == REPVOL));
-
-    /* 2. Record COP2 pending (for final update). */
-    /* Note that for directories that "need-resolved",
-	   (1) there is no point in recording a COP2 pending
-	   (since it would be ignored), and
-	   (2) we must log a ResolveNULL_OP so that resolution
-	   works correctly.
-	*/
-
-    AddPairToCopPendingTable(FinalSid, &v->fid);
+    NewCOP1Update(volptr, v->vptr, FinalSid, VS, (voltype & REPVOL));
 }
 
 /*

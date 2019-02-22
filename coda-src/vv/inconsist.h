@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -57,9 +57,6 @@ typedef enum
 #define IsBarren(vv) ((vv).Flags & VV_BARREN)
 #define SetBarren(vv) ((vv).Flags |= VV_BARREN)
 #define ClearBarren(vv) ((vv).Flags &= ~VV_BARREN)
-#define COP2Pending(vv) ((vv).Flags & VV_COP2PENDING)
-#define SetCOP2Pending(vv) ((vv).Flags |= VV_COP2PENDING)
-#define ClearCOP2Pending(vv) ((vv).Flags &= ~VV_COP2PENDING)
 
 #define SID_EQ(a, b) \
     ((a).HostId == (b).HostId && (a).Uniquifier == (b).Uniquifier)

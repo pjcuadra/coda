@@ -90,7 +90,6 @@ extern "C" {
 #include <operations.h>
 #include <lockqueue.h>
 #include <vice_file.h>
-#include "coppend.h"
 
 /* *****  Exported variables  ***** */
 
@@ -102,8 +101,8 @@ unsigned int etherBytesRead    = 0;
 unsigned int etherBytesWritten = 0;
 
 /* *****  External routines ***** */
-extern int ValidateParms(RPC2_Handle, ClientEntry **, int *ReplicatedOp,
-                         VolumeId *, RPC2_CountedBS *, int *Nservers);
+int ValidateParms(RPC2_Handle, ClientEntry **, int *ReplicatedOp, VolumeId *,
+                  RPC2_CountedBS *, int *Nservers);
 /* *****  Private routines  ***** */
 
 static void SetVolumeStatus(VolumeStatus *, RPC2_BoundedBS *, RPC2_BoundedBS *,
@@ -395,17 +394,6 @@ void PerformSetQuota(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     CodaBreakCallBack((client ? client->VenusId : 0), fid, VSGVolnum);
 
     V_maxquota(volptr) = NewQuota;
-
-    if (ReplicatedOp)
-        NewCOP1Update(volptr, vptr, StoreId);
-
-    /* Await COP2 message. */
-    if (ReplicatedOp) {
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, (int)(MAXFIDS * sizeof(ViceFid)));
-        fids[0] = *fid;
-        CopPendingMan->add(new cpent(StoreId, fids));
-    }
 }
 
 /*

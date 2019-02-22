@@ -235,8 +235,6 @@ extern ViceVersionVector NullVV;
 extern long InternalCOP2(RPC2_Handle, ViceStoreId *, ViceVersionVector *);
 extern void NewCOP1Update(Volume *, Vnode *, ViceStoreId *,
                           RPC2_Integer * = NULL, bool isReplicated = true);
-extern void COP2Update(Volume *, Vnode *, ViceVersionVector *);
-extern long InternalCOP2(RPC2_Handle, ViceStoreId *, ViceVersionVector *);
 extern void PollAndYield();
 extern int GetSubTree(ViceFid *, Volume *, dlist *);
 extern void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *, int voltype);

@@ -63,7 +63,6 @@ extern "C" {
 #include <vmindex.h>
 #include <srv.h>
 #include <volume.h>
-#include "coppend.h"
 #include <lockqueue.h>
 #include <vldb.h>
 #include <vrdb.h>
@@ -140,9 +139,6 @@ static int CheckTreeRemoveSemantics(ClientEntry *, Volume *, ViceFid *,
 static int getFids(struct DirEntry *dirent, void *data);
 
 static int GetRepairObjects(Volume *, vle *, dlist *, struct repair *, int);
-
-static void COP2Update(Volume *, Vnode *, ViceVersionVector *,
-                       vmindex * = NULL);
 
 const int MaxFidAlloc = 32;
 
@@ -234,10 +230,6 @@ long FS_OldViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
     SLog(1, "OldViceAllocFids: Vid = %x, Type = %d, Count = %d, AllocHost = %x",
          Vid, Type, Range->Count, AllocHost);
 
-    /* Validate parameters. */
-    if ((PiggyBS->SeqLen > 0) && (errorCode = FS_ViceCOP2(cid, PiggyBS)))
-        goto FreeLocks;
-
     /* Only AllocHost actually allocates the fids. */
     if (ThisHostAddr == AllocHost) {
         errorCode = FS_ViceAllocFids(cid, Vid, Type, Range);
@@ -251,46 +243,17 @@ FreeLocks:
     return (errorCode);
 }
 
-static const int COP2EntrySize =
-    (int)(sizeof(ViceStoreId) + sizeof(ViceVersionVector));
 /*
   ViceCOP2: Update the VV that was modified during the first phase (COP1)
 */
 long FS_ViceCOP2(RPC2_Handle cid, RPC2_CountedBS *PiggyBS)
 {
-    int errorCode = 0;
-    char *cp      = (char *)PiggyBS->SeqBody;
-    int count, i;
-
-    if (PiggyBS->SeqLen % COP2EntrySize != 0) {
-        errorCode = EINVAL;
-        goto Exit;
-    }
-
-    count = PiggyBS->SeqLen / COP2EntrySize;
-
-    SLog(1, "FS_ViceCOP2: about to process %d entries", count);
-
-    for (i = 0; i < count; i++) {
-        ViceStoreId sid;
-        ntohsid((ViceStoreId *)cp, &sid);
-        ViceVersionVector vv;
-        ntohvv((ViceVersionVector *)(cp + sizeof(ViceStoreId)), &vv);
-
-        (void)InternalCOP2(cid, &sid, &vv);
-        cp += COP2EntrySize;
-    }
-
-    SLog(1, "FS_ViceCOP2: returning success.");
-
-Exit:
-    return (errorCode);
+    return RPC2_INVALIDOPCODE;
 }
 
 /*
   ViceResolve: Resolve the diverging replicas of an object
 */
-#define MAX_HINTS 5
 long FS_ViceResolve(RPC2_Handle cid, ViceFid *Fid)
 {
     return RPC2_INVALIDOPCODE;
@@ -322,13 +285,6 @@ long FS_ViceSetVV(RPC2_Handle cid, ViceFid *Fid, ViceVersionVector *VV,
 
     if (!client)
         return EINVAL;
-    if ((PiggyBS->SeqLen > 0) && (errorCode = FS_ViceCOP2(cid, PiggyBS)))
-        goto FreeLocks;
-    if ((errorCode =
-             GetFsObj(Fid, &volptr, &vptr, WRITE_LOCK, NO_LOCK, 1, 0, 0))) {
-        SLog(0, "ViceSetVV: Error %d in GetFsObj", errorCode);
-        goto FreeLocks;
-    }
 
     /* if volume is being repaired check if repairer is same as client */
     if (V_VolLock(volptr).IPAddress) {
@@ -501,13 +457,6 @@ long FS_ViceRepair(RPC2_Handle cid, ViceFid *Fid, ViceStatus *status,
                                                  myRepairCount, vlist, rights,
                                                  anyrights, &deltablocks)))
             goto FreeLocks;
-    }
-    /* add vnode to coppending table  */
-    {
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, MAXFIDS * (int)sizeof(ViceFid));
-        fids[0] = (ov->fid);
-        CopPendingMan->add(new cpent(StoreId, fids));
     }
 
 FreeLocks:
@@ -1886,137 +1835,6 @@ int PerformTreeRemoval(PDirEntry de, void *data)
     return 0;
 }
 
-static int FidSort(ViceFid *fids)
-{
-    int nfids = 0;
-    int i, j;
-
-    if (SrvDebugLevel >= 9) {
-        SLog(9, "FidSort: nfids = %d", nfids);
-        for (int k = 0; k < MAXFIDS; k++)
-            SLog(9, ", Fid[%d] = %s", k, FID_(&fids[k]));
-        SLog(9, "");
-    }
-
-    /* First remove any duplicates.  Also determine the number of unique, non-null fids. */
-    for (i = 0; i < MAXFIDS; i++)
-        if (!(FID_EQ(&fids[i], &NullFid))) {
-            nfids++;
-            for (j = 0; j < i; j++)
-                if (FID_EQ(&fids[i], &fids[j])) {
-                    fids[j] = NullFid;
-                    nfids--;
-                    break;
-                }
-        }
-
-    /* Now sort the fids in increasing order (null fids are HIGHEST). */
-    for (i = 0; i < MAXFIDS - 1; i++)
-        for (j = i + 1; j < MAXFIDS; j++)
-            if (!(FID_EQ(&fids[j], &NullFid)) &&
-                (FID_EQ(&fids[i], &NullFid) || !(FID_LTE(fids[i], fids[j])))) {
-                ViceFid tmpfid = fids[i];
-                fids[i]        = fids[j];
-                fids[j]        = tmpfid;
-            }
-
-    if (SrvDebugLevel >= 9) {
-        SLog(9, "FidSort: nfids = %d", nfids);
-        for (int k = 0; k < MAXFIDS; k++)
-            SLog(9, ", Fid[%d] = %s", k, FID_(&fids[k]));
-        SLog(9, "");
-    }
-
-    return (nfids);
-}
-
-long InternalCOP2(RPC2_Handle cid, ViceStoreId *StoreId,
-                  ViceVersionVector *UpdateSet)
-{
-    int errorCode = 0;
-    int i;
-    Volume *volptr = 0; /* the volume ptr */
-    Vnode *vptrs[MAXFIDS]; /* local array of vnode ptrs */
-    for (i = 0; i < MAXFIDS; i++)
-        vptrs[i] = 0;
-    cpent *cpe          = 0;
-    int nfids           = 0;
-    rvm_return_t status = RVM_SUCCESS;
-    vmindex freed_indices;
-    recov_vol_log *vollog = NULL;
-
-    START_TIMING(COP2_Total);
-
-    SLog(1, "InternalCOP2, StoreId = (%x.%x), UpdateSet = []", StoreId->HostId,
-         StoreId->Uniquifier);
-
-    /* Dequeue the cop pending entry and sort the fids. */
-    cpe = CopPendingMan->findanddeq(StoreId);
-    if (!cpe)
-        errorCode = ENOENT; /* ??? -JJK */
-
-    if (!errorCode) {
-        nfids = FidSort(cpe->fids);
-
-        /* Get the volume and vnodes.  */
-        /* Ignore inconsistency flag - this is necessary since  */
-        /* ViceRepair no longer clears the flag and COP2 might be */
-        /* called before the flag is cleared by the user */
-        /* No need to lock the volume, because this doesnt change the file structure */
-        for (i = 0; i < nfids; i++) {
-            errorCode = GetFsObj(&cpe->fids[i], &volptr, &vptrs[i], WRITE_LOCK,
-                                 NO_LOCK, 1, 1, 0);
-            /* Don't complain about vnodes that were deleted by COP1 */
-            if (errorCode == VNOVNODE)
-                errorCode = 0;
-
-            if (errorCode)
-                break;
-        }
-    }
-
-    START_TIMING(COP2_Transaction);
-    rvmlib_begin_transaction(restore);
-    if (!errorCode) {
-        /* Update the version vectors. */
-        for (i = 0; i < nfids; i++)
-            if (vptrs[i])
-                COP2Update(volptr, vptrs[i], UpdateSet, &freed_indices);
-    }
-    /* Put the vnodes. */
-    for (i = 0; i < nfids; i++)
-        if (vptrs[i]) {
-            Error fileCode;
-            VPutVnode(&fileCode, vptrs[i]);
-            CODA_ASSERT(fileCode == 0);
-        }
-
-    /* Put the volume. */
-    PutVolObj(&volptr, NO_LOCK);
-    rvmlib_end_transaction(flush, &(status));
-    END_TIMING(COP2_Transaction);
-
-    if (cpe) {
-        CopPendingMan->remove(cpe);
-        delete cpe;
-    }
-
-    if ((status == 0) && !errorCode && vollog) {
-        /* the transaction was successful -
-	   free up vm bitmap corresponding to
-	   log records that were truncated */
-        vmindex_iterator next(&freed_indices);
-        unsigned long ind;
-        while ((int)(ind = next()) != -1)
-            vollog->DeallocRecord((int)ind);
-    }
-
-    SLog(2, "InternalCOP2 returns %s", ViceErrorMsg(errorCode));
-    END_TIMING(COP2_Total);
-
-    return (errorCode);
-}
-
 /*
   NewCOP1Update: Increment the version number and update the
   storeid of an object.
@@ -2030,26 +1848,9 @@ void NewCOP1Update(Volume *volptr, Vnode *vptr, ViceStoreId *StoreId,
     int ix     = 0;
     vrent *vre = NULL;
 
-    if (isReplicated) {
-        /* Look up the VRDB entry. */
-        vre = VRDB.find(V_groupId(volptr));
-        if (!vre)
-            Die("COP1Update: VSG not found!");
-
-        /* Look up the index of this host. */
-        ix = vre->index();
-        if (ix < 0)
-            Die("COP1Update: this host not found!");
-
-        SLog(2, "COP1Update: Fid = (%x),(%x.%x.%x), StoreId = (%x.%x)",
-             V_groupId(volptr), V_id(volptr), vptr->vnodeNumber,
-             vptr->disk.uniquifier, StoreId->HostId, StoreId->Uniquifier);
-    } else {
-        ix = 0;
-        SLog(2, "COP1Update: Fid = (%x.%x.%x), StoreId = (%x.%x)", V_id(volptr),
-             vptr->vnodeNumber, vptr->disk.uniquifier, StoreId->HostId,
-             StoreId->Uniquifier);
-    }
+    SLog(2, "COP1Update: Fid = (%x.%x.%x), StoreId = (%x.%x)", V_id(volptr),
+         vptr->vnodeNumber, vptr->disk.uniquifier, StoreId->HostId,
+         StoreId->Uniquifier);
 
     /* If a volume version stamp was sent in, and if it matches, update it. */
     if (vsptr) {
@@ -2069,66 +1870,6 @@ void NewCOP1Update(Volume *volptr, Vnode *vptr, ViceStoreId *StoreId,
 
     /* Update the Volume and Vnode VVs. */
     UpdateVVs(&V_versionvector(volptr), &Vnode_vv(vptr), &UpdateSet);
-
-    if (isReplicated)
-        SetCOP2Pending(Vnode_vv(vptr));
-}
-
-/*
-  COP2Update: Increment the version vector of an object.
-  Only increment slots for servers that succeeded in COP1.
-*/
-
-static void COP2Update(Volume *volptr, Vnode *vptr,
-                       ViceVersionVector *UpdateSet, vmindex *freed_indices)
-{
-    /* Look up the VRDB entry. */
-    vrent *vre = VRDB.find(V_groupId(volptr));
-    if (!vre)
-        Die("COP2Update: VSG not found!");
-
-    /* Look up the index of this host. */
-    int ix = vre->index();
-    if (ix < 0)
-        Die("COP2Update: this host not found!");
-
-    SLog(2, "COP2Update: Fid = (%x),(%x.%x.%x)", V_groupId(volptr),
-         V_id(volptr), vptr->vnodeNumber, vptr->disk.uniquifier);
-
-    /* if the result was success everywhere, truncate the log */
-    int i;
-    if (vptr->disk.type == vDirectory) {
-        ViceVersionVector checkvv;
-        vre->GetCheckVV(&checkvv);
-
-        for (i = 0; i < VSG_MEMBERS; i++)
-            if (((&(checkvv.Versions.Site0))[i]) ^
-                ((&(UpdateSet->Versions.Site0))[i])) {
-                SLog(0, "Incomplete host set in COP2.\n");
-                break;
-            }
-    }
-
-    /* do a cop2 only if the cop2 pending flag is set */
-
-    if ((&(UpdateSet->Versions.Site0))[ix] != 0 &&
-        COP2Pending(Vnode_vv(vptr))) {
-        SLog(1, "Cop2 is pending for fid 0x%x.%x.%x", V_id(volptr),
-             vptr->vnodeNumber, vptr->disk.uniquifier);
-        /* Extract ThisHost from the UpdateSet. */
-        int tmp = (int)(&(UpdateSet->Versions.Site0))[ix];
-        (&(UpdateSet->Versions.Site0))[ix] = 0;
-
-        /* Update the Volume and Vnode VVs. */
-        UpdateVVs(&V_versionvector(volptr), &Vnode_vv(vptr), UpdateSet);
-        (&(UpdateSet->Versions.Site0))[ix] = tmp;
-
-        /* clear the pending flag */
-        ClearCOP2Pending(Vnode_vv(vptr));
-    } else {
-        SLog(1, "Cop2 is not pending for 0x%x.%x.%x", V_id(volptr),
-             vptr->vnodeNumber, vptr->disk.uniquifier);
-    }
 }
 
 void UpdateVVs(ViceVersionVector *VVV, ViceVersionVector *VV,
