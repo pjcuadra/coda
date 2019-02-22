@@ -67,9 +67,6 @@ extern "C" {
 #include <codaproc.h>
 #include <codadir.h>
 #include <operations.h>
-#include <resutil.h>
-#include <ops.h>
-#include <rsle.h>
 #include <inconsist.h>
 #include <vice.private.h>
 #include <dllist.h>
@@ -164,9 +161,9 @@ struct rle {
  *
  *    ToDo:
  *      1. Perform routines need OUT parameter for changed-disk-usage (?)
- *      2. Retried reintegrations fail because vnodes allocated during 
+ *      2. Retried reintegrations fail because vnodes allocated during
            reintegration aren't cleaned up properly
- *         (this should be fixed with the new fid allocation mechanism, 
+ *         (this should be fixed with the new fid allocation mechanism,
             separating fid and vnode allocation) (?)
  *
  */
@@ -308,8 +305,8 @@ FreeLocks:
 }
 
 /*
-  ViceQueryReintHandle: Get the status of a partially 
-  transferred file for an upcoming reintegration.  Now returns a byte offset, 
+  ViceQueryReintHandle: Get the status of a partially
+  transferred file for an upcoming reintegration.  Now returns a byte offset,
   but could be expanded to handle negotiation.
 */
 long FS_ViceQueryReintHandle(RPC2_Handle RPCid, VolumeId Vid,
@@ -358,7 +355,7 @@ Exit:
 }
 
 /*
-  ViceSendReintFragment:  append file data corresponding to the 
+  ViceSendReintFragment:  append file data corresponding to the
   handle for  an upcoming reintegration.
 */
 long FS_ViceSendReintFragment(RPC2_Handle RPCid, VolumeId Vid,
@@ -462,7 +459,7 @@ Exit:
 }
 
 /*
-  ViceCloseReintHandle: Reintegrate data corresponding 
+  ViceCloseReintHandle: Reintegrate data corresponding
   to the reintegration handle.  This corresponds to the reintegration of
   a single store record.
 */
@@ -522,7 +519,7 @@ FreeLocks:
  *      2. Looking up the client entry
  *      3. Fetching over the client's representation of the reintegrate log
  *      4. Parsing the client log into a server version (the RL)
- *      5. Translating the volume ids in all the RL entries from 
+ *      5. Translating the volume ids in all the RL entries from
  *         logical to physical
  *      6. Acquiring the volume in exclusive mode
  *
@@ -807,10 +804,10 @@ static int ValidateReintegrateParms(RPC2_Handle RPCid, VolumeId *Vid,
         }
     }
 
-    /* 
+    /*
      * Check that the first record has not been reintegrated before.
      * If it has, return VLOGSTALE and the identifier of the last
-     * successfully reintegrated record.  The identifier is the 
+     * successfully reintegrated record.  The identifier is the
      * uniquifier field from the storeid of the record.  Return it
      * in the index variable; saves a parameter for this special case.
      */
@@ -867,9 +864,9 @@ Exit:
  *
  *    Phase II consists of the following steps:
  *      1. Allocating vnodes for "new" objects
- *      2. Parsing the RL entries to create an ordered data 
+ *      2. Parsing the RL entries to create an ordered data
  *         structure of "participant" Fids
- *      3. Acquiring all corresponding vnodes in Fid-order, 
+ *      3. Acquiring all corresponding vnodes in Fid-order,
  *         and under write-locks
  *
  */
@@ -925,7 +922,7 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
             PollAndYield();
     }
 
-    /* 
+    /*
      Parse the RL entries, creating an ordered data structure of
      Fids.  N.B.  The targets of {unlink,rmdir,rename} are specified
      by <pfid,name> rather than fid, so a lookup in the parent must be
@@ -943,7 +940,7 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
      (and entries) do not yet exist.  Lookup must *not* be attempted
      until later in this case (which does not create deadlock problems
      because the new object is not yet visible to any other call).
-     
+
      3. If a name is inserted, deleted, and re-inserted in the course
      of reintegration, the binding of name to object will have
      changed.  Thus, we must ALWAYS look up again in
@@ -1080,7 +1077,7 @@ Exit:
 
 /*
  *    Phase III consists of the following steps:
- *      1. Check the semantics of each operation, then perform it 
+ *      1. Check the semantics of each operation, then perform it
  *         (delay bulk transfers)
  *      2. Do the bulk transfers
  *
@@ -1210,7 +1207,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     }
 #if 0
 		    int truncp = 0;
-		    int deltablocks = nBlocks(r->u.u_truncate.Length) - 
+		    int deltablocks = nBlocks(r->u.u_truncate.Length) -
 		      nBlocks(v->vptr->disk.length);
 
 		    /* XXX */
@@ -1254,23 +1251,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                                    r->u.u_utimes.Date, r->u.u_chown.Owner,
                                    r->u.u_chmod.Mode, Mask, &r->sid, &c_inode);
                     ReintPrelimCOP(v, &r->VV[0].StoreId, &r->sid);
-
-                    {
-                        int opcode = (v->vptr->disk.type == vDirectory &&
-                                      v->d_needsres) ?
-                                         ResolveViceNewStore_OP :
-                                         RES_NewStore_OP;
-                        SLog(5, "Spooling Reintegration newstore record \n");
-                        if ((errorCode = SpoolVMLogRecord(
-                                 vlist, v, volptr, &r->sid, opcode, STSTORE,
-                                 r->u.u_chown.Owner, r->u.u_chmod.Mode,
-                                 0, // r->u.u_store.Author,
-                                 r->u.u_utimes.Date, Mask, r->VV))) {
-                            SLog(0, "Reint: Error %d for spool of Store Op\n",
-                                 errorCode);
-                            goto Exit;
-                        }
-                    }
 
 #if 0
                     /* COW is only invoked by truncate, which we don't use
@@ -1317,7 +1297,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 			     child_v->vptr->disk.length == 0 ) {
 				/* don't do anything, go to next log entry */
 				errorCode = 0;
-				break; 
+				break;
 			}
 #endif
                 /* all other errors */
@@ -1343,22 +1323,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ? ResolveViceCreate_OP :
-                                                          RES_Create_OP;
-                    UserId owner = child_v->vptr->disk.owner;
-                    errorCode    = SpoolVMLogRecord(vlist, parent_v, volptr,
-                                                 &r->sid, opcode, r->Name[0],
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint(CSAP): Error %d during spooling log record for create\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -1396,22 +1360,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ? ResolveViceRemove_OP :
-                                                          RES_Remove_OP;
-                    ViceVersionVector *ghostVV =
-                        &Vnode_vv(child_v->vptr); /* ??? -JJK */
-                    if ((errorCode = SpoolVMLogRecord(
-                             vlist, parent_v, volptr, &r->sid, opcode,
-                             r->Name[0], r->u.u_remove.TgtFid.Vnode,
-                             r->u.u_remove.TgtFid.Unique, ghostVV))) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during spool log record for remove op\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += tblocks;
                 if (child_v->vptr->delete_me) {
                     int deltablocks = -nBlocks(child_v->vptr->disk.length);
@@ -1464,20 +1412,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ? ResolveViceLink_OP :
-                                                          RES_Link_OP;
-                    if ((errorCode = SpoolVMLogRecord(
-                             vlist, parent_v, volptr, &r->sid, opcode,
-                             r->Name[0], r->Fid[1].Vnode, r->Fid[1].Unique,
-                             &(Vnode_vv(child_v->vptr))))) {
-                        SLog(
-                            0,
-                            "Reint: error %d during spool log record for ViceLink\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -1563,18 +1497,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                         if (!sd_v->d_needsres && td_v->d_needsres)
                             sd_v->d_needsres = 1;
                     }
-                    int sd_opcode = (sd_v->d_needsres) ? ResolveViceRename_OP :
-                                                         RES_Rename_OP;
-                    // rvm resolution is on
-                    if ((errorCode = SpoolRenameLogRecord(
-                             sd_opcode, vlist, s_v, t_v, sd_v, td_v, volptr,
-                             r->Name[0], r->Name[1], &r->sid))) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during spool log record for rename\n",
-                            errorCode);
-                        goto Exit;
-                    }
                 }
 
                 if (TargetExists && t_v->vptr->delete_me) {
@@ -1621,35 +1543,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
-                {
-                    int p_opcode = (parent_v->d_needsres) ?
-                                       ResolveViceMakeDir_OP :
-                                       RES_MakeDir_OP;
-                    int c_opcode = RES_MakeDir_OP;
-                    UserId owner = child_v->vptr->disk.owner;
-                    errorCode    = SpoolVMLogRecord(vlist, parent_v, volptr,
-                                                 &r->sid, p_opcode, r->Name[0],
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during SpoolVMLogRecord for parent in MakeDir_OP\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                    errorCode = SpoolVMLogRecord(vlist, child_v, volptr,
-                                                 &r->sid, c_opcode, ".",
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint:  error %d during SpoolVMLogRecord for child in MakeDir_OP\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -1687,23 +1580,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ?
-                                     ResolveViceRemoveDir_OP :
-                                     RES_RemoveDir_OP;
-                    if ((errorCode = SpoolVMLogRecord(
-                             vlist, parent_v, volptr, &r->sid, opcode,
-                             r->Name[0], r->u.u_rmdir.TgtFid.Vnode,
-                             r->u.u_rmdir.TgtFid.Unique, VnLog(child_v->vptr),
-                             &(Vnode_vv(child_v->vptr).StoreId),
-                             &(Vnode_vv(child_v->vptr).StoreId)))) {
-                        SLog(
-                            0,
-                            "Reint(CSAP): Error %d during SpoolVMLogRecord for RmDir_OP\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += tblocks;
                 CODA_ASSERT(child_v->vptr->delete_me);
                 int deltablocks = -nBlocks(child_v->vptr->disk.length);
@@ -1753,23 +1629,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ?
-                                     ResolveViceSymLink_OP :
-                                     RES_SymLink_OP;
-                    UserId owner = child_v->vptr->disk.owner;
-                    errorCode    = SpoolVMLogRecord(vlist, parent_v, volptr,
-                                                 &r->sid, opcode, r->Name[0],
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during spool log record for ViceSymLink\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -2062,8 +1921,8 @@ int AddChild(Volume **volptr, dlist *vlist, ViceFid *Did, char *Name,
     }
 
     /* Parent must NOT have just been alloc'ed, else this will deadlock! */
-    /* Notice that the vlist->d_inodemod field must be 1 or we lose 
-       refcounts on this directory 
+    /* Notice that the vlist->d_inodemod field must be 1 or we lose
+       refcounts on this directory
     */
     if ((errorCode = GetFsObj(Did, volptr, &vptr, READ_LOCK, VOL_NO_LOCK,
                               IgnoreInc, 0, 1)))
@@ -2195,36 +2054,23 @@ static void ReintPrelimCOP(vle *v, const ViceStoreId *OldSid,
 static void ReintFinalCOP(vle *v, Volume *volptr, RPC2_Integer *VS, int voltype)
 {
     ViceStoreId *FinalSid;
-    ViceStoreId UniqueSid;
-    if (v->vptr->disk.type == vDirectory && v->d_needsres && AllowResolution &&
-        V_RVMResOn(volptr)) {
-        AllocStoreId(&UniqueSid);
-        FinalSid = &UniqueSid;
-    } else {
-        FinalSid = &Vnode_vv(v->vptr).StoreId;
-    }
+    FinalSid = &Vnode_vv(v->vptr).StoreId;
 
     /* 1. Record COP1 (for final update). */
     NewCOP1Update(volptr, v->vptr, FinalSid, VS, (voltype & REPVOL));
 
     /* 2. Record COP2 pending (for final update). */
-    /* Note that for directories that "need-resolved", 
-	   (1) there is no point in recording a COP2 pending 
-	   (since it would be ignored), and 
-	   (2) we must log a ResolveNULL_OP so that resolution 
-	   works correctly. 
+    /* Note that for directories that "need-resolved",
+	   (1) there is no point in recording a COP2 pending
+	   (since it would be ignored), and
+	   (2) we must log a ResolveNULL_OP so that resolution
+	   works correctly.
 	*/
-    if (v->vptr->disk.type == vDirectory && v->d_needsres && AllowResolution &&
-        V_RVMResOn(volptr)) {
-        int ret =
-            SpoolVMLogRecord(NULL, v, volptr, FinalSid, ResolveNULL_OP, 0);
-        CODA_ASSERT(ret == 0);
-    } else {
-        AddPairToCopPendingTable(FinalSid, &v->fid);
-    }
+
+    AddPairToCopPendingTable(FinalSid, &v->fid);
 }
 
-/* 
+/*
  * Extract and validate the reintegration handle.  Handle errors are
  * propagated back to the client as EBADF.
  */
