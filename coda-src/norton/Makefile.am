@@ -32,7 +32,6 @@ AM_CPPFLAGS = $(RVM_RPC2_CFLAGS) \
 	      -I$(top_builddir)/coda-src/volutil
 
 LDADD = libnorton.la \
-	$(top_builddir)/coda-src/resolution/libres.la \
 	$(top_builddir)/coda-src/vol/libvol.la \
 	$(top_builddir)/coda-src/volutil/libvolutil.la \
 	$(top_builddir)/coda-src/vv/libvv.la \

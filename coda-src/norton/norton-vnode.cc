@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -35,7 +35,6 @@ extern "C" {
 #include <volume.h>
 #include <index.h>
 #include <recov.h>
-#include <ops.h>
 #include <camprivate.h>
 #include <coda_globals.h>
 
@@ -104,7 +103,6 @@ void show_vnode(VolumeId volid, Unique_t uniquifier)
         PrintVnodeDiskObject(vnode);
         if (vnode->log) {
             printf("\n    Vnode Resolution Log:\n");
-            PrintLog(vnode->log, stdout);
         }
     }
 }
@@ -133,7 +131,6 @@ void show_vnode(VolumeId volid, VnodeId vnum, Unique_t uniquifier)
     PrintVnodeDiskObject(vnode);
     if (vnode->log) {
         printf("\n    Vnode Resolution Log:\n");
-        PrintLog(vnode->log, stdout);
     }
 }
 
@@ -290,7 +287,7 @@ void set_linkcount(int argc, char *argv[])
 
 #if 0
 // delete the RVM held vnode
-static void 
+static void
 delete_smallvnode(int volid, int vnum, int unique)
 {
     char buf[SIZEOF_SMALLDISKVNODE];
@@ -299,7 +296,7 @@ delete_smallvnode(int volid, int vnum, int unique)
     VnodeId vnodeindex = vnodeIdToBitNumber(vnum);
     int     vclass = vnodeIdToClass(vnum);
     int	    volindex;
-    
+
     volindex = GetVolIndex(volid);
     if (volindex < 0) {
 	fprintf(stderr, "Unable to get volume 0x%x\n", volid);
@@ -307,7 +304,7 @@ delete_smallvnode(int volid, int vnum, int unique)
     }
 
     rvmlib_begin_transaction(restore)
-	    
+
     if (ExtractVnode(&error, volindex, vclass, vnodeindex, unique, vnode) < 0) {
 	fprintf(stderr, "Unable to get vnode 0x%x.0x%x.0x%x\n", volid, vnum,
 		unique);
@@ -321,7 +318,7 @@ delete_smallvnode(int volid, int vnum, int unique)
 	rvmlib_abort(VFAIL);
 	return;
     }
-	    
+
     rvmlib_end_transaction(flush, &(error));
 
     if (error) {
