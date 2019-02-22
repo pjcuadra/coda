@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -100,7 +100,10 @@ public:
     void postprocess(int);
 };
 
-extern timing_path *tpinfo;
-extern timing_path *FileresTPinfo;
+timing_path *Gettpinfo();
+void Inittpinfo();
+timing_path *GetFileresTPinfo();
+void Cleartpinfo();
+void ClearFileresTPinfo();
 
 #endif /* _RES_TIMING_H_ */

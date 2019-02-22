@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -16,11 +16,11 @@ listed in the file CREDITS.
 
 #*/
 
-/* timing.c 
+/* timing.c
  * class for recording timevalues stamped with an id
- * 	post processing prints out the delta between the 
- *	different times 
- * This package does not do any locking - external 
+ * 	post processing prints out the delta between the
+ *	different times
+ * This package does not do any locking - external
  *	synchronization is required for correct functionality
  */
 
@@ -45,6 +45,36 @@ extern "C" {
 #endif
 
 #include "timing.h"
+
+static timing_path *tpinfo        = 0;
+static timing_path *FileresTPinfo = 0;
+
+timing_path *Gettpinfo()
+{
+    return tpinfo;
+}
+
+timing_path *GetFileresTPinfo()
+{
+    return FileresTPinfo;
+}
+
+void Inittpinfo()
+{
+    tpinfo = new timing_path(MAXPROBES);
+}
+
+void Cleartpinfo()
+{
+    delete tpinfo;
+    tpinfo = NULL;
+}
+
+void ClearFileresTPinfo()
+{
+    delete FileresTPinfo;
+    FileresTPinfo = 0;
+}
 
 /* c = a - b where a, b, c are timevals */
 void tvaminustvb(struct timeval *a, struct timeval *b, struct timeval *c)

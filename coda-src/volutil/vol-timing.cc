@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -43,7 +43,6 @@ extern "C" {
 #include <timing.h>
 #include <util.h>
 
-extern timing_path *tpinfo;
 extern int probingon;
 
 #define TIMINGFILE "/tmp/timing.tmp"
@@ -72,15 +71,13 @@ long S_VolTiming(RPC2_Handle rpcid, RPC2_Integer OnFlag,
         timingfile = fopen(TIMINGFILE, "w");
         fprintf(timingfile, "Processing tpinfo and FileresTPinfo \n");
         /* process the buffer */
-        if (tpinfo) {
-            tpinfo->postprocess(timingfile);
-            delete tpinfo;
-            tpinfo = 0;
+        if (Gettpinfo()) {
+            Gettpinfo()->postprocess(timingfile);
+            Cleartpinfo();
         }
-        if (FileresTPinfo) {
-            FileresTPinfo->postprocess(timingfile);
-            delete FileresTPinfo;
-            FileresTPinfo = 0;
+        if (GetFileresTPinfo()) {
+            GetFileresTPinfo()->postprocess(timingfile);
+            ClearFileresTPinfo();
         }
         fprintf(timingfile, "Finished processing tpinfo and FileresTPinfo \n");
         fclose(timingfile);
