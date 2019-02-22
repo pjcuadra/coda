@@ -1,9 +1,9 @@
 /* BLURB lgpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -48,7 +48,6 @@ class recov_vol_log {
     friend long RS_LockAndFetch(RPC2_Handle, ViceFid *, ResFetchType,
                                 ViceVersionVector *, ResStatus *,
                                 RPC2_Integer *);
-    friend void DumpLog(rec_dlist *, struct Volume *, char **, int *, int *);
     friend int DumpVolDiskData(int, VolumeDiskData *);
 
     // recoverable part
