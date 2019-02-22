@@ -67,9 +67,6 @@ extern "C" {
 #include <codaproc.h>
 #include <codadir.h>
 #include <operations.h>
-#include <resutil.h>
-#include <ops.h>
-#include <rsle.h>
 #include <inconsist.h>
 #include <vice.private.h>
 #include <dllist.h>
@@ -1255,23 +1252,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                                    r->u.u_chmod.Mode, Mask, &r->sid, &c_inode);
                     ReintPrelimCOP(v, &r->VV[0].StoreId, &r->sid);
 
-                    {
-                        int opcode = (v->vptr->disk.type == vDirectory &&
-                                      v->d_needsres) ?
-                                         ResolveViceNewStore_OP :
-                                         RES_NewStore_OP;
-                        SLog(5, "Spooling Reintegration newstore record \n");
-                        if ((errorCode = SpoolVMLogRecord(
-                                 vlist, v, volptr, &r->sid, opcode, STSTORE,
-                                 r->u.u_chown.Owner, r->u.u_chmod.Mode,
-                                 0, // r->u.u_store.Author,
-                                 r->u.u_utimes.Date, Mask, r->VV))) {
-                            SLog(0, "Reint: Error %d for spool of Store Op\n",
-                                 errorCode);
-                            goto Exit;
-                        }
-                    }
-
 #if 0
                     /* COW is only invoked by truncate, which we don't use
                      * support at the moment * (truncates are shipped as new
@@ -1343,22 +1323,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ? ResolveViceCreate_OP :
-                                                          RES_Create_OP;
-                    UserId owner = child_v->vptr->disk.owner;
-                    errorCode    = SpoolVMLogRecord(vlist, parent_v, volptr,
-                                                 &r->sid, opcode, r->Name[0],
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint(CSAP): Error %d during spooling log record for create\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -1396,22 +1360,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ? ResolveViceRemove_OP :
-                                                          RES_Remove_OP;
-                    ViceVersionVector *ghostVV =
-                        &Vnode_vv(child_v->vptr); /* ??? -JJK */
-                    if ((errorCode = SpoolVMLogRecord(
-                             vlist, parent_v, volptr, &r->sid, opcode,
-                             r->Name[0], r->u.u_remove.TgtFid.Vnode,
-                             r->u.u_remove.TgtFid.Unique, ghostVV))) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during spool log record for remove op\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += tblocks;
                 if (child_v->vptr->delete_me) {
                     int deltablocks = -nBlocks(child_v->vptr->disk.length);
@@ -1464,20 +1412,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ? ResolveViceLink_OP :
-                                                          RES_Link_OP;
-                    if ((errorCode = SpoolVMLogRecord(
-                             vlist, parent_v, volptr, &r->sid, opcode,
-                             r->Name[0], r->Fid[1].Vnode, r->Fid[1].Unique,
-                             &(Vnode_vv(child_v->vptr))))) {
-                        SLog(
-                            0,
-                            "Reint: error %d during spool log record for ViceLink\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -1563,18 +1497,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                         if (!sd_v->d_needsres && td_v->d_needsres)
                             sd_v->d_needsres = 1;
                     }
-                    int sd_opcode = (sd_v->d_needsres) ? ResolveViceRename_OP :
-                                                         RES_Rename_OP;
-                    // rvm resolution is on
-                    if ((errorCode = SpoolRenameLogRecord(
-                             sd_opcode, vlist, s_v, t_v, sd_v, td_v, volptr,
-                             r->Name[0], r->Name[1], &r->sid))) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during spool log record for rename\n",
-                            errorCode);
-                        goto Exit;
-                    }
                 }
 
                 if (TargetExists && t_v->vptr->delete_me) {
@@ -1621,35 +1543,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
-                {
-                    int p_opcode = (parent_v->d_needsres) ?
-                                       ResolveViceMakeDir_OP :
-                                       RES_MakeDir_OP;
-                    int c_opcode = RES_MakeDir_OP;
-                    UserId owner = child_v->vptr->disk.owner;
-                    errorCode    = SpoolVMLogRecord(vlist, parent_v, volptr,
-                                                 &r->sid, p_opcode, r->Name[0],
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during SpoolVMLogRecord for parent in MakeDir_OP\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                    errorCode = SpoolVMLogRecord(vlist, child_v, volptr,
-                                                 &r->sid, c_opcode, ".",
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint:  error %d during SpoolVMLogRecord for child in MakeDir_OP\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -1687,23 +1580,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ?
-                                     ResolveViceRemoveDir_OP :
-                                     RES_RemoveDir_OP;
-                    if ((errorCode = SpoolVMLogRecord(
-                             vlist, parent_v, volptr, &r->sid, opcode,
-                             r->Name[0], r->u.u_rmdir.TgtFid.Vnode,
-                             r->u.u_rmdir.TgtFid.Unique, VnLog(child_v->vptr),
-                             &(Vnode_vv(child_v->vptr).StoreId),
-                             &(Vnode_vv(child_v->vptr).StoreId)))) {
-                        SLog(
-                            0,
-                            "Reint(CSAP): Error %d during SpoolVMLogRecord for RmDir_OP\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += tblocks;
                 CODA_ASSERT(child_v->vptr->delete_me);
                 int deltablocks = -nBlocks(child_v->vptr->disk.length);
@@ -1753,23 +1629,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
                 ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
-                {
-                    int opcode = (parent_v->d_needsres) ?
-                                     ResolveViceSymLink_OP :
-                                     RES_SymLink_OP;
-                    UserId owner = child_v->vptr->disk.owner;
-                    errorCode    = SpoolVMLogRecord(vlist, parent_v, volptr,
-                                                 &r->sid, opcode, r->Name[0],
-                                                 r->Fid[1].Vnode,
-                                                 r->Fid[1].Unique, owner);
-                    if (errorCode) {
-                        SLog(
-                            0,
-                            "Reint: Error %d during spool log record for ViceSymLink\n",
-                            errorCode);
-                        goto Exit;
-                    }
-                }
                 *blocks += deltablocks;
             } break;
 
@@ -2195,14 +2054,7 @@ static void ReintPrelimCOP(vle *v, const ViceStoreId *OldSid,
 static void ReintFinalCOP(vle *v, Volume *volptr, RPC2_Integer *VS, int voltype)
 {
     ViceStoreId *FinalSid;
-    ViceStoreId UniqueSid;
-    if (v->vptr->disk.type == vDirectory && v->d_needsres && AllowResolution &&
-        V_RVMResOn(volptr)) {
-        AllocStoreId(&UniqueSid);
-        FinalSid = &UniqueSid;
-    } else {
-        FinalSid = &Vnode_vv(v->vptr).StoreId;
-    }
+    FinalSid = &Vnode_vv(v->vptr).StoreId;
 
     /* 1. Record COP1 (for final update). */
     NewCOP1Update(volptr, v->vptr, FinalSid, VS, (voltype == REPVOL));
@@ -2214,14 +2066,8 @@ static void ReintFinalCOP(vle *v, Volume *volptr, RPC2_Integer *VS, int voltype)
 	   (2) we must log a ResolveNULL_OP so that resolution
 	   works correctly.
 	*/
-    if (v->vptr->disk.type == vDirectory && v->d_needsres && AllowResolution &&
-        V_RVMResOn(volptr)) {
-        int ret =
-            SpoolVMLogRecord(NULL, v, volptr, FinalSid, ResolveNULL_OP, 0);
-        CODA_ASSERT(ret == 0);
-    } else {
-        AddPairToCopPendingTable(FinalSid, &v->fid);
-    }
+
+    AddPairToCopPendingTable(FinalSid, &v->fid);
 }
 
 /*

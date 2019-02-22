@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2018 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -88,7 +88,6 @@ extern "C" {
 #include <vlist.h>
 #include <vice.private.h>
 #include <operations.h>
-#include <ops.h>
 #include <lockqueue.h>
 #include <vice_file.h>
 #include "coppend.h"
@@ -429,7 +428,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     int aCLSize;
     int rights;
     int anyrights;
-    int oldquota = -1; /* Old quota if it was changed */
     int ReplicatedOp;
     vle *v       = 0;
     dlist *vlist = new dlist((CFN)VLECmp);
@@ -510,7 +508,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
         V_minquota(volptr) = (int)status->MinQuota;
 
     if (status->MaxQuota > -1) {
-        oldquota = V_maxquota(volptr);
         PerformSetQuota(client, VSGVolnum, volptr, v->vptr, &vfid,
                         (int)status->MaxQuota, ReplicatedOp, StoreId);
     }
@@ -523,21 +520,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
 
     if (motd->SeqLen > 1)
         strcpy(V_motd(volptr), (char *)motd->SeqBody);
-
-    // Only spool a log entry if the quota was set.
-    if (oldquota > -1)
-        if (ReplicatedOp && !errorCode) {
-            SLog(
-                1,
-                "ViceSetVolumeStatus: About to spool log record, oldquota = %d, new quota = %d\n",
-                oldquota, status->MaxQuota);
-            if ((errorCode = SpoolVMLogRecord(vlist, v, volptr, StoreId,
-                                              ViceSetVolumeStatus_OP, oldquota,
-                                              status->MaxQuota)))
-                SLog(0,
-                     "ViceSetVolumeStatus: Error %d during SpoolVMLogRecord\n",
-                     errorCode);
-        }
 
 Final:
 
@@ -804,7 +786,7 @@ static void SetRPCStats(ViceStatistics *stats)
     stats->TotalRPCPacketsReceived = rpc2_Recvd.Total + rpc2_MRecvd.Total +
                                      sftp_Recvd.Total + sftp_MRecvd.Total;
 
-    /* 
+    /*
      * Retries and busies appear only in rpc2_Send and rpc2_Recvd, because
      * they aren't multicasted.
      * Sftp is harder -- retries occur because of packet loss _and_ timeouts.
