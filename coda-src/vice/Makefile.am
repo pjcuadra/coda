@@ -8,7 +8,7 @@ dist_sysconf_DATA = server.conf.ex
 endif
 
 libviceerror_la_SOURCES = ViceErrorMsg.c
-codasrv_SOURCES = srv.cc srvproc.cc srvproc2.cc coppend.cc coppend.h \
+codasrv_SOURCES = srv.cc srvproc.cc srvproc2.cc \
 		  codaproc.cc codaproc.h codaproc2.cc clientproc.cc vicecb.cc \
 		  smon.cc timecalls.h vice.private.h
 printvrdb_SOURCES = printvrdb.cc

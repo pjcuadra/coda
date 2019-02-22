@@ -101,7 +101,6 @@ extern "C" {
 #include <nettohost.h>
 #include <cvnode.h>
 #include <operations.h>
-#include "coppend.h"
 
 #ifdef _TIMECALLS_
 #include "timecalls.h"
@@ -658,14 +657,6 @@ FreeLocks:
         if (newACL)
             AL_FreeAlist(&newACL);
 
-        if (errorCode) {
-            cpent *cpe = CopPendingMan->findanddeq(StoreId);
-            if (cpe) {
-                CopPendingMan->remove(cpe);
-                delete cpe;
-            }
-        }
-
         PutObjects(errorCode, volptr, SHARED_LOCK, vlist, 0, 1);
     }
 
@@ -1025,13 +1016,6 @@ int ValidateParms(RPC2_Handle RPCid, ClientEntry **client, int *voltype,
     int count, pos;
     int voltype_tmp;
 
-    /* 1. Apply PiggyBacked COP2 operations. */
-    if (PiggyBS && PiggyBS->SeqLen > 0) {
-        errorCode = (int)FS_ViceCOP2(RPCid, PiggyBS);
-        if (errorCode)
-            return (errorCode);
-    }
-
     /* 2. Map RPC handle to client structure. */
     errorCode = (int)RPC2_GetPrivatePointer(RPCid, (char **)client);
     if (errorCode != RPC2_SUCCESS) {
@@ -1049,6 +1033,7 @@ int ValidateParms(RPC2_Handle RPCid, ClientEntry **client, int *voltype,
 
     if (voltype_tmp & REPVOL) {
         SLog(10, "ValidateParms: %x --> %x", GroupVid, *Vidp);
+        return 1;
     } else if (voltype_tmp & NONREPVOL) {
         SLog(10, "ValidateParms: using non-replicated vol --> %x", *Vidp);
     } else if (!errorCode) {
@@ -2460,15 +2445,6 @@ void PerformStore(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     vptr->disk.unixModifyTime   = Mtime;
     vptr->disk.author           = client->Id;
     vptr->disk.dataVersion++;
-    if (ReplicatedOp) {
-        NewCOP1Update(volptr, vptr, StoreId, vsptr);
-
-        /* Await COP2 message. */
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, (int)(MAXFIDS * sizeof(ViceFid)));
-        fids[0] = Fid;
-        CopPendingMan->add(new cpent(StoreId, fids));
-    }
 }
 
 int StoreBulkTransfer(RPC2_Handle RPCid, ClientEntry *client, Volume *volptr,
@@ -2592,16 +2568,6 @@ void PerformSetAttr(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
             *CowInode = vptr->disk.node.inodeNumber;
             CopyOnWrite(vptr, volptr);
         }
-
-    if (ReplicatedOp) {
-        NewCOP1Update(volptr, vptr, StoreId, vsptr);
-
-        /* Await COP2 message. */
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, MAXFIDS * (int)sizeof(ViceFid));
-        fids[0] = Fid;
-        CopPendingMan->add(new cpent(StoreId, fids));
-    }
 }
 
 void PerformSetACL(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
@@ -2624,15 +2590,6 @@ void PerformSetACL(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     memcpy(aCL, newACL, newACL->MySize);
 
     NewCOP1Update(volptr, vptr, StoreId, vsptr, (voltype & REPVOL));
-
-    /* Just needed for replicated volumes */
-    if ((voltype & REPVOL)) {
-        /* Await COP2 message. */
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, (int)(MAXFIDS * sizeof(ViceFid)));
-        fids[0] = Fid;
-        CopPendingMan->add(new cpent(StoreId, fids));
-    }
 }
 
 int PerformCreate(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
@@ -2817,16 +2774,12 @@ void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     sd_vptr->disk.unixModifyTime = Mtime;
     sd_vptr->disk.author         = client ? client->Id : sd_vptr->disk.author;
     sd_vptr->disk.dataVersion++;
-    if (ReplicatedOp)
-        NewCOP1Update(volptr, sd_vptr, StoreId, vsptr);
 
     /* Update target parent vnode. */
     if (!SameParent) {
         td_vptr->disk.unixModifyTime = Mtime;
         td_vptr->disk.author = client ? client->Id : td_vptr->disk.author;
         td_vptr->disk.dataVersion++;
-        if (ReplicatedOp)
-            NewCOP1Update(volptr, td_vptr, StoreId, vsptr);
     }
     if (TargetExists && t_vptr->disk.type == vDirectory)
         td_vptr->disk.linkCount--;
@@ -2836,29 +2789,13 @@ void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
         s_vptr->disk.vparent = td_vptr->vnodeNumber;
         s_vptr->disk.uparent = td_vptr->disk.uniquifier;
     }
-    if (ReplicatedOp)
-        NewCOP1Update(volptr, s_vptr, StoreId, vsptr);
 
     /* Update target vnode. */
     if (TargetExists) {
         if (--t_vptr->disk.linkCount == 0 || t_vptr->disk.type == vDirectory) {
             t_vptr->delete_me = 1;
             DeleteFile(&TFid);
-        } else if (ReplicatedOp)
-            NewCOP1Update(volptr, t_vptr, StoreId, vsptr);
-    }
-
-    /* Await COP2 message. */
-    if (ReplicatedOp) {
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, (int)(MAXFIDS * sizeof(ViceFid)));
-        fids[0] = SDid;
-        if (!SameParent)
-            fids[1] = TDid;
-        fids[2] = SFid;
-        if (TargetExists && !t_vptr->delete_me)
-            fids[3] = TFid;
-        CopPendingMan->add(new cpent(StoreId, fids));
+        }
     }
 }
 
@@ -2955,9 +2892,6 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
         dirvptr->disk.author         = client->Id;
     }
 
-    if (ReplicatedOp)
-        NewCOP1Update(volptr, dirvptr, StoreId, vsptr);
-
     /* Initialize/Update the child vnode. */
     switch (opcode) {
     case CLMS_Create:
@@ -3039,17 +2973,9 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
         InitVV(&Vnode_vv(vptr));
         break;
     }
-    if (ReplicatedOp)
-        NewCOP1Update(volptr, vptr, StoreId, vsptr);
 
-    /* Await COP2 message. */
-    if (ReplicatedOp) {
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, (int)(MAXFIDS * sizeof(ViceFid)));
-        fids[0] = Did;
-        fids[1] = Fid;
-        CopPendingMan->add(new cpent(StoreId, fids));
-    }
+    NewCOP1Update(volptr, vptr, StoreId, vsptr);
+
     return 0;
 }
 
@@ -3097,8 +3023,6 @@ static void Perform_RR(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     if (vptr->disk.type == vDirectory)
         dirvptr->disk.linkCount--;
     dirvptr->disk.dataVersion++;
-    if (ReplicatedOp)
-        NewCOP1Update(volptr, dirvptr, StoreId, vsptr);
 
     /* PARANOIA: Flush directory pages for deleted child. */
     if (vptr->disk.type == vDirectory) {
@@ -3116,19 +3040,6 @@ static void Perform_RR(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     if (--vptr->disk.linkCount == 0 || vptr->disk.type == vDirectory) {
         vptr->delete_me = 1;
         DeleteFile(&Fid);
-    } else if (ReplicatedOp)
-        NewCOP1Update(volptr, vptr, StoreId, vsptr);
-
-    /* Await COP2 message. */
-    if (ReplicatedOp) {
-        ViceFid fids[MAXFIDS];
-        memset((void *)fids, 0, (MAXFIDS * sizeof(ViceFid)));
-        fids[0] = Did;
-        SLog(3, "Perform_RR: delete_me = %d, !delete_me = %d", vptr->delete_me,
-             !vptr->delete_me);
-        if (!vptr->delete_me)
-            fids[1] = Fid;
-        CopPendingMan->add(new cpent(StoreId, fids));
     }
 }
 

@@ -116,7 +116,6 @@ extern void rpc2_simplifyHost(RPC2_HostIdent *, RPC2_PortIdent *);
 #include <vrdb.h>
 #include <lockqueue.h>
 #include <coda_getservbyname.h>
-#include "coppend.h"
 #include "daemonizer.h"
 
 /* *****  Exported variables  ***** */
@@ -570,8 +569,6 @@ int main(int argc, char *argv[])
     InitCallBack();
     CheckVRDB();
     VInitVolumePackage(large, small, ForceSalvage);
-
-    InitCopPendingTable();
 
     /* Initialize the lock queue and the resolution comm package */
     InitLockQueue();
