@@ -94,7 +94,6 @@ extern "C" {
 #include <vlist.h>
 #include <vrdb.h>
 #include <volume.h>
-#include <repio.h>
 #include <codadir.h>
 #include <operations.h>
 #include <lockqueue.h>
