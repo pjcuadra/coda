@@ -183,65 +183,6 @@ int ObjectExists(int volindex, int vclass, VnodeId vnodeindex, Unique_t u,
     return 1;
 }
 
-/* Get fid of parent of a given fid - the child fid exists
- * This violates locking - but we are assuming this is called only from
- * resolution where the volume is locked.  So no mutations can occur.
- */
-int GetParentFid(Volume *vp, ViceFid *cFid, ViceFid *pFid)
-{
-    rec_smolist *vlist;
-    VolumeId maxid;
-    VnodeDiskObject *vdo;
-
-    VLog(9, "Entering GetParentFid(%x.%x)", cFid->Vnode, cFid->Unique);
-
-    int volindex = V_volumeindex(vp);
-    /* check volume index */
-    {
-        maxid = (SRV_RVM(MaxVolId) & 0x00FFFFFF);
-        if (volindex < 0 || volindex > (int)maxid || volindex > MAXVOLS) {
-            VLog(0, "GetParentFid: bogus volume index %d", volindex);
-            return 0;
-        }
-    }
-
-    unsigned long vclass     = vnodeIdToClass(cFid->Vnode);
-    unsigned long vnodeindex = vnodeIdToBitNumber(cFid->Vnode);
-    if (vclass == vSmall) {
-        if (vnodeindex >= SRV_RVM(VolumeList[volindex]).data.nsmallLists) {
-            VLog(0, "GetParentFid: bogus small vnode index %x", vnodeindex);
-            return 0;
-        }
-        vlist =
-            &(SRV_RVM(VolumeList[volindex]).data.smallVnodeLists[vnodeindex]);
-    } else {
-        if (vnodeindex >= SRV_RVM(VolumeList[volindex]).data.nlargeLists) {
-            VLog(0, "GetParentFid: bogus large vnode index %x", vnodeindex);
-            return 0;
-        }
-        vlist =
-            &(SRV_RVM(VolumeList[volindex]).data.largeVnodeLists[vnodeindex]);
-    }
-
-    vdo = FindVnode(vlist, cFid->Unique);
-    if (!vdo) {
-        VLog(9, "GetParentFid: NO object %x.%x", cFid->Vnode, cFid->Unique);
-        return 0;
-    }
-
-    if (vdo->uparent != 0) {
-        pFid->Volume = cFid->Volume;
-        pFid->Vnode  = vdo->vparent;
-        pFid->Unique = vdo->uparent;
-    } else {
-        /* root vnode */
-        CODA_ASSERT(vclass == vLarge);
-        *pFid = *cFid;
-    }
-
-    return 1;
-}
-
 int ReplaceVnode(int volindex, int vclass, VnodeId vnodeindex, Unique_t u,
                  VnodeDiskObject *vnode)
 {

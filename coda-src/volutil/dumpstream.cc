@@ -52,7 +52,7 @@ extern "C" {
 
 /*************************** From readstuff.c */
 
-int GetShort(FILE *stream, unsigned short *sp)
+static int GetShort(FILE *stream, unsigned short *sp)
 { /* Assuming two byte words. */
     unsigned char a, b;
     a = fgetc(stream);
@@ -65,7 +65,7 @@ int GetShort(FILE *stream, unsigned short *sp)
     return TRUE;
 }
 
-int GetInt32(FILE *stream, unsigned int *lp)
+static int GetInt32(FILE *stream, unsigned int *lp)
 {
     unsigned char a, b, c, d;
     a = fgetc(stream);
@@ -80,7 +80,7 @@ int GetInt32(FILE *stream, unsigned int *lp)
     return TRUE;
 }
 
-int GetString(FILE *stream, char *to, unsigned int max)
+static int GetString(FILE *stream, char *to, unsigned int max)
 {
     unsigned int len, tail = 0;
     if (!GetInt32(stream, &len))
@@ -114,7 +114,7 @@ int GetString(FILE *stream, char *to, unsigned int max)
     return TRUE;
 }
 
-int GetByteString(FILE *stream, byte *to, int size)
+static int GetByteString(FILE *stream, byte *to, int size)
 {
     while (size--)
         *to++ = fgetc(stream);
@@ -125,7 +125,7 @@ int GetByteString(FILE *stream, byte *to, int size)
     return TRUE;
 }
 
-int GetVV(FILE *stream, ViceVersionVector *vv)
+static int GetVV(FILE *stream, ViceVersionVector *vv)
 {
     int tag;
     while ((tag = fgetc(stream)) > D_MAX && tag) {
@@ -538,7 +538,7 @@ int dumpstream::skip_vnode_garbage()
 
 /* next byte should be a D_DIRPAGES; reads the directory pages and
    constructs in VM a directory representation that can be used by the
-   routines in the coddir module 
+   routines in the coddir module
 
    Returns 0 on success, -1 on failure of any kind */
 
@@ -829,7 +829,7 @@ int dumpstream::CopyBytesToMemory(char *membuf, int nbytes)
 
 /* Copy nbytes of file data at current position in dumpstream to outfile in
    512-byte records.  Last block is padded to 512 bytes.
-   Returns 0 on success, -1 on failure 
+   Returns 0 on success, -1 on failure
 */
 int dumpstream::CopyBytesToFile(FILE *outfile, int nbytes)
 {

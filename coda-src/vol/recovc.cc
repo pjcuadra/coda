@@ -70,7 +70,7 @@ NOTE: The Recovery Log stuff in RVM modifies data structures in RVM without
     the use of transaction because the data is transient. Thus we do not need
     transactions for it. This in turn means that checking vm via checkvm()
     will not work, since the state after Salvage *should not* match the dataseg.
-    
+
 extern int nodumpvm;
 extern rvm_offset_t _Rvm_DataLength;
 
@@ -327,7 +327,7 @@ VolumeId VGetMaxVolumeId()
 }
 
 /*
- * Force a new volume MaxVolId.  Return 0 an error occurs or if the new 
+ * Force a new volume MaxVolId.  Return 0 an error occurs or if the new
  * volume id is lower than the current MaxVolId, otherwise, return 1.
  */
 void VSetMaxVolumeId(VolumeId newid)
@@ -451,47 +451,4 @@ void ExtractVolDiskInfo(Error *ec, int volindex, VolumeDiskData *vol)
                SRV_RVM(VolumeList[volindex]).data.volumeInfo->stamp.magic,
                SRV_RVM(VolumeList[volindex]).data.volumeInfo->stamp.version);
     }
-}
-
-/* returns 1 if the slot is available, 0 if it's in use */
-/* if Uniquifier parameter is 0 then check if entire slot is empty */
-int AvailVnode(int volindex, int vclass, VnodeId vnodeindex, Unique_t u)
-{
-    VolumeId maxid;
-    rec_smolist *vlist;
-
-    maxid = (SRV_RVM(MaxVolId) & 0x00FFFFFF);
-    if (volindex < 0 || volindex > (int)maxid || volindex > MAXVOLS) {
-        LogMsg(0, VolDebugLevel, stdout, "ExtractVnode: bogus volume index %d",
-               volindex);
-        return (0);
-    }
-    if (vclass == vSmall) {
-        if (vnodeindex >= SRV_RVM(VolumeList[volindex]).data.nsmallLists) {
-            LogMsg(0, VolDebugLevel, stdout,
-                   "ExtractVnode: bogus small vnode index %d", vnodeindex);
-            return (0);
-        }
-        vlist =
-            &(SRV_RVM(VolumeList[volindex]).data.smallVnodeLists[vnodeindex]);
-    } else {
-        if (vnodeindex >= SRV_RVM(VolumeList[volindex]).data.nlargeLists) {
-            LogMsg(0, VolDebugLevel, stdout,
-                   "ExtractVnode: bogus large vnode index %d", vnodeindex);
-            return (0);
-        }
-        vlist =
-            &(SRV_RVM(VolumeList[volindex]).data.largeVnodeLists[vnodeindex]);
-    }
-
-    /* check the lists for vnode existence */
-    if (u == 0)
-        return (vlist->IsEmpty());
-
-    /* check if vnode matching uniquifier exists in list */
-    VnodeDiskObject *vdo = FindVnode(vlist, u);
-    if (vdo)
-        return 0;
-
-    return 1;
 }

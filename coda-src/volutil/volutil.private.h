@@ -50,6 +50,4 @@ Pittsburgh, PA.
 #define VOLUTIL_RESTART 64 /* please restart this job later */
 #define VOLUTIL_ABORT 1 /* do not restart this job */
 
-void PrintVersionVector(FILE *outfile, ViceVersionVector vv);
-
 #endif /* _VOLUTIL_PRIVATE_H_ */

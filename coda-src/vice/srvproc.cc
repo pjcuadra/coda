@@ -112,14 +112,12 @@ extern "C" {
 /* From Vol package. */
 extern void VCheckDiskUsage(Error *, Volume *, int);
 
-extern void MakeLogNonEmpty(Vnode *);
 extern void GetMaxVV(ViceVersionVector *, ViceVersionVector **, int);
 
-extern int CheckReadMode(ClientEntry *, Vnode *);
-extern int CheckWriteMode(ClientEntry *, Vnode *);
+static int CheckReadMode(ClientEntry *, Vnode *);
+static int CheckWriteMode(ClientEntry *, Vnode *);
 static void CopyOnWrite(Vnode *, Volume *);
 extern int AdjustDiskUsage(Volume *, int);
-extern int CheckDiskUsage(Volume *, int);
 extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
 
 /* *****  Private routines  ***** */
@@ -247,7 +245,6 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
             if ((errorCode = FetchBulkTransfer(RPCid, client, volptr, v->vptr,
                                                Offset, Count, VV)))
                 goto FreeLocks;
-        PerformFetch(client, volptr, v->vptr);
 
         SetStatus(v->vptr, Status, rights, anyrights);
 
@@ -264,22 +261,6 @@ FreeLocks:
     SLog(2, "ViceFetch returns %s", ViceErrorMsg(errorCode));
     END_TIMING(Fetch_Total);
     return (errorCode);
-}
-
-/*
- OBSOLETE:  Delete code once old clients are gone (Satya, 12/02)
-
- ViceGetAttr: Fetch the attributes for a file/directory
-*/
-long FS_ViceGetAttr(RPC2_Handle RPCid, ViceFid *Fid, RPC2_Unsigned InconOK,
-                    ViceStatus *Status, RPC2_Unsigned Unused,
-                    RPC2_CountedBS *PiggyBS)
-{
-    long rc;
-
-    rc = FS_ViceGetAttrPlusSHA(RPCid, Fid, InconOK, Status, NULL, Unused,
-                               PiggyBS);
-    return (rc);
 }
 
 /* ViceGetAttrPlusSHA() is a replacement for ViceGetAttr().  It does
@@ -887,7 +868,7 @@ void HandleWeakEquality(Volume *volptr, Vnode *vptr, ViceVersionVector *vv)
 #define ANYREAD 0004
 #define ANYWRITE 0002
 
-int CheckWriteMode(ClientEntry *client, Vnode *vptr)
+static int CheckWriteMode(ClientEntry *client, Vnode *vptr)
 {
     if (vptr->disk.type != vDirectory)
         if (!(OWNERWRITE & vptr->disk.modeBits))
@@ -895,7 +876,7 @@ int CheckWriteMode(ClientEntry *client, Vnode *vptr)
     return (0);
 }
 
-int CheckReadMode(ClientEntry *client, Vnode *vptr)
+static int CheckReadMode(ClientEntry *client, Vnode *vptr)
 {
     if (vptr->disk.type != vDirectory)
         if (!(OWNERREAD & vptr->disk.modeBits))
@@ -976,28 +957,10 @@ int AdjustDiskUsage(Volume *volptr, int length)
     return (rc);
 }
 
-int CheckDiskUsage(Volume *volptr, int length)
-{
-    Error rc = VCheckDiskUsage(volptr, length);
-
-    if (rc == ENOSPC)
-        SLog(0, "Partition %s that contains volume %u is full",
-             volptr->partition->name, V_id(volptr));
-
-    else if (rc == EDQUOT)
-        SLog(0, "Volume %u (%s) is full (quota reached)", V_id(volptr),
-             V_name(volptr));
-
-    else if (rc)
-        SLog(0, "Got error return %s from VCheckDiskUsage", ViceErrorMsg(rc));
-
-    return (rc);
-}
-
 /* This function seems to be called when directory entries are added/removed.
  * But directory data is stored in RVM, and not on-disk.
  * Something seems wrong here --JH */
-void ChangeDiskUsage(Volume *volptr, int length)
+static void ChangeDiskUsage(Volume *volptr, int length)
 {
     VAdjustDiskUsage(volptr, length);
 }
@@ -1079,8 +1042,8 @@ int AllocVnode(Vnode **vptr, Volume *volptr, ViceDataType vtype, ViceFid *Fid,
         goto FreeLocks;
     *blocks = tblocks;
 
-    *vptr = VAllocVnode((Error *)&errorCode, volptr, vtype, Fid->Vnode,
-                        Fid->Unique);
+    *vptr = VAllocVnode((Error *)&errorCode, volptr, vtype, (int)Fid->Vnode,
+                        (int)Fid->Unique);
     if (errorCode != 0)
         goto FreeLocks;
 
@@ -2191,11 +2154,6 @@ static int Check_RR_Semantics(ClientEntry *client, Vnode **dirvptr,
     return (errorCode);
 }
 
-void PerformFetch(ClientEntry *client, Volume *volptr, Vnode *vptr)
-{
-    /* Nothing to do here. */
-}
-
 int FetchBulkTransfer(RPC2_Handle RPCid, ClientEntry *client, Volume *volptr,
                       Vnode *vptr, RPC2_Unsigned Offset, RPC2_Integer Count,
                       ViceVersionVector *VV)
@@ -2363,67 +2321,13 @@ Exit:
     return (errorCode);
 }
 
-int FetchFileByName(RPC2_Handle RPCid, char *name, ClientEntry *client)
-{
-    int errorCode = 0;
-    SE_Descriptor sid;
-    memset(&sid, 0, sizeof(SE_Descriptor));
-    sid.Tag = client ? client->SEType : SMARTFTP;
-    sid.Value.SmartFTPD.TransmissionDirection          = CLIENTTOSERVER;
-    sid.Value.SmartFTPD.Tag                            = FILEBYNAME;
-    sid.Value.SmartFTPD.FileInfo.ByName.ProtectionBits = 0600;
-    strncpy(sid.Value.SmartFTPD.FileInfo.ByName.LocalFileName, name, 255);
-    sid.Value.SmartFTPD.ByteQuota  = -1;
-    sid.Value.SmartFTPD.SeekOffset = 0;
-    sid.Value.SmartFTPD.hashmark   = 0;
-    if ((errorCode = (int)RPC2_InitSideEffect(RPCid, &sid)) <= RPC2_ELIMIT) {
-        SLog(0, "FetchFileByFD: InitSideEffect failed %d", errorCode);
-        return (errorCode);
-    }
-
-    if ((errorCode = (int)RPC2_CheckSideEffect(
-             RPCid, &sid, SE_AWAITLOCALSTATUS)) <= RPC2_ELIMIT) {
-        if (errorCode == RPC2_SEFAIL1)
-            errorCode = EIO;
-        SLog(0, "FetchFileByFD: CheckSideEffect failed %d", errorCode);
-        return (errorCode);
-    }
-    return (0);
-}
-
-int FetchFileByFD(RPC2_Handle RPCid, int fd, ClientEntry *client)
-{
-    int errorCode = 0;
-    SE_Descriptor sid;
-    memset(&sid, 0, sizeof(SE_Descriptor));
-    sid.Tag = client ? client->SEType : SMARTFTP;
-    sid.Value.SmartFTPD.TransmissionDirection = CLIENTTOSERVER;
-    sid.Value.SmartFTPD.Tag                   = FILEBYFD;
-    sid.Value.SmartFTPD.FileInfo.ByFD.fd      = fd;
-    sid.Value.SmartFTPD.ByteQuota             = -1;
-    sid.Value.SmartFTPD.SeekOffset            = 0;
-    sid.Value.SmartFTPD.hashmark              = 0;
-    if ((errorCode = (int)RPC2_InitSideEffect(RPCid, &sid)) <= RPC2_ELIMIT) {
-        SLog(0, "FetchFileByFD: InitSideEffect failed %d", errorCode);
-        return (errorCode);
-    }
-
-    if ((errorCode = (int)RPC2_CheckSideEffect(
-             RPCid, &sid, SE_AWAITLOCALSTATUS)) <= RPC2_ELIMIT) {
-        if (errorCode == RPC2_SEFAIL1)
-            errorCode = EIO;
-        SLog(0, "FetchFileByFD: CheckSideEffect failed %d", errorCode);
-        return (errorCode);
-    }
-    return (0);
-}
-
 void PerformGetAttr(ClientEntry *client, Volume *volptr, Vnode *vptr)
 {
     /* Nothing to do here. */
 }
 
 void PerformGetACL(ClientEntry *client, Volume *volptr, Vnode *vptr,
+
                    RPC2_BoundedBS *AccessList, RPC2_String eACL)
 {
     strcpy((char *)(AccessList->SeqBody), (char *)eACL);

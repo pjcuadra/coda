@@ -1391,7 +1391,8 @@ static void CountVolumeInodes(struct ViceInodeInfo *ip, int maxInodes,
     summary->maxUniquifier = maxunique;
 }
 
-int OnlyOneVolume(struct ViceInodeInfo *inodeinfo, VolumeId singleVolumeNumber)
+static int OnlyOneVolume(struct ViceInodeInfo *inodeinfo,
+                         VolumeId singleVolumeNumber)
 {
     if (inodeinfo->VnodeNumber == INODESPECIAL) {
         VLog(0, "OnlyOneVolume: tripped over INODESPECIAL- can't happen!");

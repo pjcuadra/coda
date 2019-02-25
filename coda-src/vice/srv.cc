@@ -128,7 +128,6 @@ const ViceFid NullFid = { 0, 0, 0 };
 const int MaxVols     = MAXVOLS; /* so we can use it in vicecb.c. yuck. */
 
 /* defaults set by ReadConfigFile() */
-int probingon; // default 0
 int optimizationson; // default 0
 int Authenticate; // default 1
 int AllowResolution; // default 1, controls directory resolution
@@ -211,7 +210,6 @@ struct camlib_recoverable_segment *camlibRecoverableSegment;
 /*static */ int DumpVM       = 0;
 int prottrunc                = FALSE;
 /* static */ int MallocTrace = FALSE;
-/* static */ void rds_printer(char *fmt...);
 
 /* vicetab */
 const char *vicetab = NULL; /* default db/vicetab */
@@ -258,7 +256,7 @@ static void InitializeServerRVM(const char *name);
 
 extern void dumpvm();
 
-void zombie(int sig)
+static void zombie(int sig)
 {
     SLog(0, "****** FILE SERVER INTERRUPTED BY SIGNAL %d ******", sig);
     SLog(0, "****** Aborting outstanding transactions, stand by...");
@@ -1185,40 +1183,6 @@ void SwapMalloc()
         rds_trace_dump_heap();
         MallocTrace = TRUE;
     }
-}
-
-/* Note  TimeStamp and rds_printer are stolen directly from the SLog
-   implementation.  I couldn't get SLog to work directly, because
-   of problem relating to varargs.  SMN
-   */
-static void RdsTimeStamp(FILE *f)
-{
-    struct tm *t;
-    time_t clock;
-    static int oldyear = -1, oldyday = -1;
-
-    time(&clock);
-    t = localtime(&clock);
-    if ((t->tm_year > oldyear) || (t->tm_yday > oldyday)) {
-        char datestr[80];
-
-        strftime(datestr, sizeof(datestr), "\nDate: %a %m/%d/%Y\n\n", t);
-        fputs(datestr, f);
-    }
-    fprintf(f, "%02d:%02d:%02d ", t->tm_hour, t->tm_min, t->tm_sec);
-    oldyear = t->tm_year; /* remember when we were last called */
-    oldyday = t->tm_yday;
-}
-
-void rds_printer(char *fmt...)
-{
-    va_list ap;
-
-    RdsTimeStamp(stdout);
-
-    va_start(ap, fmt);
-    vfprintf(stdout, fmt, ap);
-    va_end(ap);
 }
 
 static void SigTerm(int sig)

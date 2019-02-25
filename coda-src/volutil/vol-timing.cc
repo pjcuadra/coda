@@ -42,10 +42,6 @@ extern "C" {
 #include <volume.h>
 #include <util.h>
 
-extern int probingon;
-
-#define TIMINGFILE "/tmp/timing.tmp"
-static FILE *timingfile;
 /*
   BEGIN_HTML
   <a name="S_VolTiming"><strong>Toggle timing flag and process timing trace</strong></a>

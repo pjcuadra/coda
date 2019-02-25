@@ -224,29 +224,6 @@ static long VolGetKey(RPC2_Integer *authtype, RPC2_CountedBS *cid,
     return (0);
 }
 
-long GetVolId(char *volume)
-{
-    LogMsg(29, SrvDebugLevel, stdout, "Entering GetVolId(%s)", volume);
-    long volid = 0;
-    if (sscanf(volume, "%lX", &volid) != 1) {
-        LogMsg(29, SrvDebugLevel, stdout,
-               "GetVolId: Failed to convert volume number");
-        /* try to look up the volume in the VLDB */
-        struct vldb *vldp = NULL;
-        vldp              = VLDBLookup(volume);
-        if (vldp != NULL) {
-            volid = vldp->volumeId[vldp->volumeType];
-            LogMsg(29, SrvDebugLevel, stdout,
-                   "GetVolId: Id is 0x%x for name %s", volid, volume);
-            return volid;
-        }
-        LogMsg(29, SrvDebugLevel, stdout, "GetVolId Returns 0");
-        return 0;
-    }
-    LogMsg(29, SrvDebugLevel, stdout, "GetVolId Returns %x", volid);
-    return volid;
-}
-
 /*
  * Routines for forwarding volutil administrative
  * calls to the appropriate fileserver routines.
@@ -254,7 +231,7 @@ long GetVolId(char *volume)
 
 /*
   BEGIN_HTML
-  <a name="S_VolUpdateDB"><strong>Update the VLDB, VRDB and VSGDB </strong></a> 
+  <a name="S_VolUpdateDB"><strong>Update the VLDB, VRDB and VSGDB </strong></a>
   END_HTML
 */
 long S_VolUpdateDB(RPC2_Handle cid)
@@ -265,7 +242,7 @@ long S_VolUpdateDB(RPC2_Handle cid)
 
 /*
   BEGIN_HTML
-  <a name="S_VolShutdown"><strong>Request a server shutdown</strong></a> 
+  <a name="S_VolShutdown"><strong>Request a server shutdown</strong></a>
   END_HTML
 */
 long S_VolShutdown(RPC2_Handle cid)
@@ -277,7 +254,7 @@ long S_VolShutdown(RPC2_Handle cid)
 /*
   BEGIN_HTML
   <a name="S_VolSwaplog"><strong>Request a server to move its log file from
-  <tt>SrvLog</tt> to <tt>SrvLog-1</tt></strong></a> 
+  <tt>SrvLog</tt> to <tt>SrvLog-1</tt></strong></a>
   END_HTML
 */
 long S_VolSwaplog(RPC2_Handle cid)
@@ -288,7 +265,7 @@ long S_VolSwaplog(RPC2_Handle cid)
 
 /*
   BEGIN_HTML
-  <a name="S_VolSwapmalloc"><strong>Toggle rds malloc tracing</strong></a> 
+  <a name="S_VolSwapmalloc"><strong>Toggle rds malloc tracing</strong></a>
   END_HTML
 */
 long S_VolSwapmalloc(RPC2_Handle cid)
@@ -299,8 +276,8 @@ long S_VolSwapmalloc(RPC2_Handle cid)
 
 /*
   BEGIN_HTML
-  <a name="S_VolSetDebug"><strong>Set the debug level 
-  printing</strong></a> 
+  <a name="S_VolSetDebug"><strong>Set the debug level
+  printing</strong></a>
   END_HTML
 */
 long S_VolSetDebug(RPC2_Handle cid, RPC2_Integer debuglevel)

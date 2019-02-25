@@ -105,7 +105,7 @@ DumpBuffer_t *InitDumpBuf(char *ptr, long size, int fd)
     return InitDumpBuf(ptr, size, fd, 0);
 }
 
-int FlushBuf(DumpBuffer_t *buf)
+static int FlushBuf(DumpBuffer_t *buf)
 {
     LogMsg(2, VolDebugLevel, stdout, "Flushing dump buf: %d bytes",
            buf->DumpBufPtr - buf->DumpBuf);

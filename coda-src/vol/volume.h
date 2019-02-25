@@ -341,7 +341,6 @@ struct volHeader {
 #define V_motd(vp) ((vp)->header->diskstuff.motd)
 #define V_disk(vp) ((vp)->header->diskstuff)
 
-extern char *ThisHost; /* This machine's hostname */
 extern uint8_t ThisServerId; /* this server id, as found in
 				   /vice/db/servers */
 extern bit32 HostAddress[]; /* Assume host addresses are 32 bits */
@@ -349,45 +348,41 @@ extern int VInit; /* Set to 1 when the volume package is
 				   initialized */
 extern int HInit; /* Set to 1 when the volid hash table
 				   is initialized */
-extern const char *VSalvageMessage; /* Common message used when the volume goes
-				       off line */
 extern int VolDebugLevel; /* Controls level of debugging information */
 extern int AllowResolution; /* global flag to turn on dir. resolution */
-extern void VInitVolumePackage(int nLargeVnodes, int nSmallVnodes,
-                               int DoSalvage);
-extern int VInitVolUtil(ProgramType pt);
-extern void VInitServerList(const char *host);
-extern int VConnectFS();
-extern void VDisconnectFS();
-extern void VUCloneVolume(Error *, Volume *, Volume *);
-extern void VListVolumes(char **buf, unsigned int *buflen);
-extern void VGetVolumeInfo(Error *ec, char *key, VolumeInfo *info);
-extern const char *VGetVolumeLocation(VolumeId vid);
-extern Volume *VGetVolume(Error *ec, VolumeId volumeId);
-extern void VPutVolume(Volume *vp);
-extern Volume *VAttachVolume(Error *ec, VolumeId volumeId, int mode);
-extern void VDetachVolume(Error *ec, Volume *vp);
-extern void VUpdateVolume(Error *ec, Volume *vp);
-extern int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
-                             int stride, int ix, int count);
-extern int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
-                             VnodeId vnode);
-extern void VFreeBitMapEntry(Error *ec, struct vnodeIndex *index,
-                             int bitNumber);
-extern int VolumeNumber(char *name);
-extern char *VolumeExternalName(VolumeId volumeId);
-extern Volume *VAttachVolumeById(Error *ec, char *partition, VolumeId volid,
-                                 int mode);
-extern void VOffline(Volume *vp, const char *message);
-extern void VForceOffline(Volume *vp);
-extern void VPurgeVolume(Volume *vp);
-extern void VShutdown();
-extern void VSetDiskUsage();
-extern void SetVolDebugLevel(int);
-extern void FreeVolume(Volume *vp);
-extern void DeleteVolumeFromHashTable(Volume *vp);
-extern void PrintVolumesInHashTable();
-extern void InitLRU(int howmany);
+void VInitVolumePackage(int nLargeVnodes, int nSmallVnodes, int DoSalvage);
+int VInitVolUtil(ProgramType pt);
+void VInitServerList(const char *host);
+int VConnectFS();
+void VDisconnectFS();
+void VUCloneVolume(Error *, Volume *, Volume *);
+void VListVolumes(char **buf, unsigned int *buflen);
+void VGetVolumeInfo(Error *ec, char *key, VolumeInfo *info);
+const char *VGetVolumeLocation(VolumeId vid);
+Volume *VGetVolume(Error *ec, VolumeId volumeId);
+void VPutVolume(Volume *vp);
+Volume *VAttachVolume(Error *ec, VolumeId volumeId, int mode);
+void VDetachVolume(Error *ec, Volume *vp);
+void VUpdateVolume(Error *ec, Volume *vp);
+int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
+                      int stride, int ix, int count);
+int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
+                      VnodeId vnode);
+void VFreeBitMapEntry(Error *ec, struct vnodeIndex *index, int bitNumber);
+int VolumeNumber(char *name);
+char *VolumeExternalName(VolumeId volumeId);
+Volume *VAttachVolumeById(Error *ec, char *partition, VolumeId volid, int mode);
+void VOffline(Volume *vp, const char *message);
+void VForceOffline(Volume *vp);
+void VPurgeVolume(Volume *vp);
+void VShutdown();
+void VSetDiskUsage();
+void SetVolDebugLevel(int);
+void FreeVolume(Volume *vp);
+void DeleteVolumeFromHashTable(Volume *vp);
+void PrintVolumesInHashTable();
+void InitLRU(int howmany);
+void FreeVolumeHeader(Volume *vp);
 
 /* Naive formula relating number of file size to number of 1K blocks in file */
 /* Note:  we charge 1 block for 0 length files so the user can't store

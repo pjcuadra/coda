@@ -73,8 +73,10 @@ extern "C" {
 #define O_BINARY 0
 #endif /* O_BINARY */
 
-extern void MakeLogNonEmpty(Vnode *);
 extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
+static int LookupChild(Volume *volptr, Vnode *vptr, char *Name, ViceFid *Fid);
+static int AddChild(Volume **volptr, dlist *vlist, ViceFid *Did, char *Name,
+                    int IgnoreInc);
 
 /* Yield parameters (i.e., after how many loop iterations do I poll and yield). */
 /* N.B.  Yield "periods" MUST all be power of two so that AND'ing can be used! */
@@ -1888,8 +1890,8 @@ Exit:
    objects.  We also add the child's inode to deal with rename and
    makedir.  */
 
-int AddChild(Volume **volptr, dlist *vlist, ViceFid *Did, char *Name,
-             int IgnoreInc)
+static int AddChild(Volume **volptr, dlist *vlist, ViceFid *Did, char *Name,
+                    int IgnoreInc)
 {
     int errorCode = 0;
     Vnode *vptr   = 0;
@@ -1940,7 +1942,7 @@ Exit:
     return (errorCode);
 }
 
-int LookupChild(Volume *volptr, Vnode *vptr, char *Name, ViceFid *Fid)
+static int LookupChild(Volume *volptr, Vnode *vptr, char *Name, ViceFid *Fid)
 {
     int errorCode = 0;
 

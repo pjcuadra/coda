@@ -546,62 +546,6 @@ long FS_ViceGetRootVolume(RPC2_Handle RPCid, RPC2_BoundedBS *volume)
     return 0;
 }
 
-/* ViceSetRootVolume: Set the .../db/ROOTVOLUME file to contain the
-  name of the new root volume */
-long FS_ViceSetRootVolume(RPC2_Handle RPCid, RPC2_String volume)
-{
-    long errorCode = 0;
-    ClientEntry *client; /* pointer to client entry */
-    int fd, rc, len;
-    char *rock;
-
-    SLog(1, "ViceSetRootVolume to %s", (char *)volume);
-
-    errorCode = RPC2_GetPrivatePointer(RPCid, &rock);
-    if (errorCode != RPC2_SUCCESS)
-        goto exit;
-    client = (ClientEntry *)rock;
-
-    if (!client) {
-        errorCode = EFAULT;
-        SLog(0, "Client pointer is zero in SetRootVolume");
-        goto exit;
-    }
-
-    if (!SystemUser(client)) {
-        errorCode = EACCES;
-        goto exit;
-    }
-
-    fd = open(vice_config_path("db/ROOTVOLUME.new"),
-              O_WRONLY | O_CREAT | O_EXCL, 0644);
-    if (fd < 0) {
-        errorCode = errno;
-        SLog(0, "SetRootVolume failed to open ROOTVOLUME.new");
-        goto exit;
-    }
-
-    len = strlen((char *)volume);
-    rc  = write(fd, (char *)volume, len);
-    close(fd);
-    if (rc != len) {
-        errorCode = ENOSPC;
-        SLog(0, "SetRootVolume failed to write ROOTVOLUME.new");
-        goto exit;
-    }
-
-    rc = rename(vice_config_path("db/ROOTVOLUME.new"),
-                vice_config_path("db/ROOTVOLUME"));
-    if (rc == -1) {
-        errorCode = errno;
-        SLog(0, "SetRootVolume failed to rename ROOTVOLUME.new");
-    }
-
-exit:
-    SLog(2, "ViceSetRootVolume returns %s", ViceErrorMsg(errorCode));
-    return errorCode;
-}
-
 /*
   ViceGetTime: Returns time of day (a time ping)
 */
@@ -930,7 +874,7 @@ static void SetSystemStats_bsd44(ViceStatistics *stats)
 #ifdef __linux__
 /* Actually, most of these statistics could also be read from an snmp daemon
  * running on the server host. */
-void SetSystemStats_linux(ViceStatistics *stats)
+static void SetSystemStats_linux(ViceStatistics *stats)
 {
     uint32_t d1, d2, d3, d4;
     static char line[1024];

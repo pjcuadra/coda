@@ -129,59 +129,58 @@ public:
 /* ------------ Global variable definitions ------------ */
 
 /* from "-f xxx" on command line; default of zero implies stdin */
-char DumpFileName[MAXPATHLEN];
-dumpstream *DStream; /* open stream */
+static char DumpFileName[MAXPATHLEN];
+static dumpstream *DStream; /* open stream */
 
 /* from "-o xxx" on command line; default of zero means STDOUT */
-char TarFileName[MAXPATHLEN];
-FILE *TarFile = stdout; /* open file handle for output */
+static char TarFileName[MAXPATHLEN];
+static FILE *TarFile = stdout; /* open file handle for output */
 
 /* from "-rn xxx" on command line; if not specified, uses
    volume name from dump */
-char *RootName;
+static char *RootName;
 
-int DebugLevel = 0; /* set by "-d xxx" command line switch */
+static int DebugLevel = 0; /* set by "-d xxx" command line switch */
 #define DEBUG_HEAVY (DebugLevel >= 10)
 #define DEBUG_LIGHT (DebugLevel > 0 && DebugLevel < 10)
 
-int Verbose  = 0; /* set by "-v" command line switch */
-size_t Bytes = 0;
+static int Verbose  = 0; /* set by "-v" command line switch */
+static size_t Bytes = 0;
 
 /* Hash table of all objects found in dump */
-ohashtab *DumpTable;
+static ohashtab *DumpTable;
 
 /* stuff read from dump */
-struct DumpHeader ThisHead; /* info about this dump */
-VolumeDiskData ThisVDD; /* info pertaining to entire volume */
+static struct DumpHeader ThisHead; /* info about this dump */
+static VolumeDiskData ThisVDD; /* info pertaining to entire volume */
 
 /* Array of all directory vnodes */
-DumpObject **LVNlist; /* malloc'ed when no. of large vnodes known */
-int LVNfillcount; /* no of entries filled in LVNlist */
+static DumpObject **LVNlist; /* malloc'ed when no. of large vnodes known */
+static int LVNfillcount; /* no of entries filled in LVNlist */
 
 /* TarObj is used to create and write out tar records */
-TarRecd TarObj;
+static TarRecd TarObj;
 
 #define DEFAULT_HASHPOWER 12 /* 2^HashPower is # of buckets in hash table */
-int HashPower = DEFAULT_HASHPOWER; /* can be set by "-hp x" on command line */
+static int HashPower =
+    DEFAULT_HASHPOWER; /* can be set by "-hp x" on command line */
 
 /* ----- Forward refs to non-method procs defined later in this file ----- */
 
 /* steps of main() */
-void ParseArgs(int, char **);
-void DoGlobalSetup();
-int ProcessDirectory();
-void DiscoverPathnames();
-void VerifyEverythingNamed();
-void CreateDirectories();
-int ProcessFileOrSymlink();
-void ProcessHardLinks();
+static void ParseArgs(int, char **);
+static void DoGlobalSetup();
+static int ProcessDirectory();
+static void CreateDirectories();
+static int ProcessFileOrSymlink();
+static void ProcessHardLinks();
 
 /* helper routines */
-DumpObject *GetDumpObj(VnodeId, Unique_t);
-intptr_t LowBits(void *arg);
-void FreeDirectory(PDirInode);
-int AddNameEntry(struct DirEntry *, void *);
-void CreateHardLinkRecd(DumpObject *, int idx);
+static DumpObject *GetDumpObj(VnodeId, Unique_t);
+static intptr_t LowBits(void *arg);
+static void FreeDirectory(PDirInode);
+static int AddNameEntry(struct DirEntry *, void *);
+static void CreateHardLinkRecd(DumpObject *, int idx);
 
 /* -------------------------------------------------- */
 

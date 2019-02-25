@@ -148,6 +148,7 @@ static void DeleteFileStruct(struct FileEntry *);
 static void GetCBEBlock();
 static struct CallBackEntry *GetCBE();
 static void FreeCBE(struct CallBackEntry *);
+static void DeleteCallBack(HostTable *client, ViceFid *afid);
 static void SDeleteCallBack(HostTable *, struct FileEntry *);
 
 /* *****  File Entries  ***** */
@@ -340,7 +341,7 @@ static int order_helist(const void *x, const void *y)
   BreakCallBack: Break a callback for afid at all clients except those
   connected via the "client" parameter
 */
-void BreakCallBack(HostTable *client, ViceFid *afid)
+static void BreakCallBack(HostTable *client, ViceFid *afid)
 {
     struct CallBackEntry *tc;
 
@@ -359,8 +360,8 @@ void BreakCallBack(HostTable *client, ViceFid *afid)
     ViceFid vFid = NullFid;
     vFid.Volume  = afid->Volume;
 
-    /* 
-     * Break all callbacks for this file.  Clean up failed veni. 
+    /*
+     * Break all callbacks for this file.  Clean up failed veni.
      * If the object is a file, remove any volume callbacks that
      * that host may have.
      */
@@ -484,12 +485,12 @@ void BreakCallBack(HostTable *client, ViceFid *afid)
 }
 
 /*
-  
+
   DeleteCallBack : Delete a callback for afid with client connected
   via client
- 
+
 */
-void DeleteCallBack(HostTable *client, ViceFid *afid)
+static void DeleteCallBack(HostTable *client, ViceFid *afid)
 {
     SDeleteCallBack(client, FindEntry(afid));
 }
@@ -531,7 +532,7 @@ static void SDeleteCallBack(HostTable *client, struct FileEntry *af)
 }
 
 /*
-  DeleteVenus: Delete all callbacks for a client 
+  DeleteVenus: Delete all callbacks for a client
 */
 void DeleteVenus(HostTable *client)
 {
@@ -594,7 +595,7 @@ CallBackStatus CodaAddCallBack(HostTable *VenusId, ViceFid *Fid,
 }
 
 /*
-  
+
   CodaBreakCallBack: Break the callback with a client, for the
   non-replicated and replicated fid of an object.
 
