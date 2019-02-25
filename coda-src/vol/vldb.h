@@ -91,6 +91,5 @@ struct vldbHeader {
 #define BACKUPLIST_PATH vice_config_path("vol/BackupList")
 
 extern struct vldb *VLDBLookup(char *key);
-extern int VLDBPrint();
 
 #endif /* _VLDB_H_ */

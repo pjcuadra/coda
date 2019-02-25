@@ -65,33 +65,33 @@ typedef struct {
 #define VOLID DumpFd /* Overload this field if using newstyle dump */
 
 /* Exported Routines (from dumpstuff.c) */
-extern DumpBuffer_t *InitDumpBuf(char *buf, long size, VolumeId volid,
-                                 RPC2_Handle rpcid);
-extern DumpBuffer_t *InitDumpBuf(char *buf, long size, int fd);
-extern int DumpDouble(DumpBuffer_t *, char, unsigned int, unsigned int);
-extern int DumpInt32(DumpBuffer_t *, char tag, unsigned int value);
-extern int DumpByte(DumpBuffer_t *, char tag, char value);
-extern int DumpBool(DumpBuffer_t *, char tag, unsigned int value);
-extern int DumpArrayInt32(DumpBuffer_t *, char, unsigned int *, int nelem);
-extern int DumpShort(DumpBuffer_t *, char tag, unsigned int value);
-extern int DumpString(DumpBuffer_t *, char tag, char *s);
-extern int DumpByteString(DumpBuffer_t *, char tag, char *bs, int nbytes);
-extern int DumpVV(DumpBuffer_t *, char tag, struct ViceVersionVector *vv);
-extern int DumpFile(DumpBuffer_t *, char tag, int fd, int vnode);
-extern int DumpTag(DumpBuffer_t *, char tag);
-extern int DumpEnd(DumpBuffer_t *);
+DumpBuffer_t *InitDumpBuf(char *buf, long size, VolumeId volid,
+                          RPC2_Handle rpcid);
+DumpBuffer_t *InitDumpBuf(char *buf, long size, int fd);
+int DumpDouble(DumpBuffer_t *, char, unsigned int, unsigned int);
+int DumpInt32(DumpBuffer_t *, char tag, unsigned int value);
+int DumpByte(DumpBuffer_t *, char tag, char value);
+int DumpBool(DumpBuffer_t *, char tag, unsigned int value);
+int DumpArrayInt32(DumpBuffer_t *, char, unsigned int *, int nelem);
+int DumpShort(DumpBuffer_t *, char tag, unsigned int value);
+int DumpString(DumpBuffer_t *, char tag, char *s);
+int DumpByteString(DumpBuffer_t *, char tag, char *bs, int nbytes);
+int DumpVV(DumpBuffer_t *, char tag, struct ViceVersionVector *vv);
+int DumpFile(DumpBuffer_t *, char tag, int fd, int vnode);
+int DumpTag(DumpBuffer_t *, char tag);
+int DumpEnd(DumpBuffer_t *);
 
 /* Exported Routines (from readstuff.c) */
-extern signed char ReadTag(DumpBuffer_t *);
-extern int PutTag(char, DumpBuffer_t *);
-extern int ReadShort(DumpBuffer_t *, unsigned short *sp);
-extern int ReadInt32(DumpBuffer_t *, unsigned int *lp);
-extern int ReadString(DumpBuffer_t *, char *to, int max);
-extern int ReadByteString(DumpBuffer_t *, char *to, int size);
-extern int ReadDumpHeader(DumpBuffer_t *, struct DumpHeader *hp);
-extern int ReadVolumeDiskData(DumpBuffer_t *, VolumeDiskData *vol);
-extern int ReadVV(DumpBuffer_t *, ViceVersionVector *vv);
-extern int ReadFile(DumpBuffer_t *, FILE *);
-extern int EndOfDump(DumpBuffer_t *);
+signed char ReadTag(DumpBuffer_t *);
+int PutTag(char, DumpBuffer_t *);
+int ReadShort(DumpBuffer_t *, unsigned short *sp);
+int ReadInt32(DumpBuffer_t *, unsigned int *lp);
+int ReadString(DumpBuffer_t *, char *to, int max);
+int ReadByteString(DumpBuffer_t *, char *to, int size);
+int ReadDumpHeader(DumpBuffer_t *, struct DumpHeader *hp);
+int ReadVolumeDiskData(DumpBuffer_t *, VolumeDiskData *vol);
+int ReadVV(DumpBuffer_t *, ViceVersionVector *vv);
+int ReadFile(DumpBuffer_t *, FILE *);
+int EndOfDump(DumpBuffer_t *);
 
 #endif /* _DUMP_H_ */

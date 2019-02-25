@@ -16,8 +16,8 @@ listed in the file CREDITS.
 
 #*/
 
-/* 
- * 
+/*
+ *
  * Implementation of the Volume Lock Queue
  */
 
@@ -40,9 +40,9 @@ extern "C" {
 #include <volume.h>
 #include "lockqueue.h"
 
-const int LQTIMEOUT         = 300; /* seconds */
-const int LQINTERVAL        = 60; /* seconds */
-const int LockQueManStkSize = 16384;
+static const int LQTIMEOUT         = 300; /* seconds */
+static const int LQINTERVAL        = 60; /* seconds */
+static const int LockQueManStkSize = 16384;
 lqman *LockQueueMan;
 
 // used by the lock queue manager to unlock expired locks

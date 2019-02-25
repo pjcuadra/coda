@@ -55,12 +55,12 @@ extern "C" {
 #include "dump.h"
 #include "dumpstream.h"
 
-void OpenDumpFile(int, char **);
-void setIndex(int, char **);
-void showHeader(int, char **);
-void showVolumeDiskData(int, char **);
-void showVnodeDiskObject(int, char **);
-void skipVnodes(int, char **);
+static void OpenDumpFile(int, char **);
+static void setIndex(int, char **);
+static void showHeader(int, char **);
+static void showVolumeDiskData(int, char **);
+static void showVnodeDiskObject(int, char **);
+static void skipVnodes(int, char **);
 
 command_t list[] = { { "openDumpFile", OpenDumpFile, 0, "" }, /* FileName */
                      { "setIndex", setIndex, 0, "" }, /* "large" or "small" */
@@ -77,7 +77,7 @@ char DefaultSize[10]; /* "large" or "small" */
 dumpstream *DumpStream;
 int Open = 0;
 
-void OpenDumpFile(int largc, char **largv)
+static void OpenDumpFile(int largc, char **largv)
 { /* FileName */
     char filename[MAXPATHLEN];
 
@@ -102,7 +102,7 @@ void OpenDumpFile(int largc, char **largv)
     return;
 }
 
-int Rewind(char *args)
+static int Rewind(char *args)
 {
     if (!Open) {
         printf("No DumpFile open yet!\n");
@@ -115,14 +115,14 @@ int Rewind(char *args)
     return 0;
 }
 
-void PrintVersionVector(ViceVersionVector *v, const char *prefix)
+static void PrintVersionVector(ViceVersionVector *v, const char *prefix)
 {
     printf("%s{", prefix);
     FPrintVV(stdout, v);
     printf("}\n");
 }
 
-void showHeader(int largc, char **largv)
+static void showHeader(int largc, char **largv)
 {
     time_t timestamp;
 
@@ -149,7 +149,7 @@ void showHeader(int largc, char **largv)
     return;
 }
 
-void showVolumeDiskData(int largc, char **largv)
+static void showVolumeDiskData(int largc, char **largv)
 {
     if (!Open) {
         printf("No DumpFile open yet!\n");
@@ -277,7 +277,7 @@ void showVolumeDiskData(int largc, char **largv)
     return;
 }
 
-void setIndex(int largc, char **largv)
+static void setIndex(int largc, char **largv)
 {
     char vnodeType[10];
 
@@ -353,7 +353,7 @@ void setIndex(int largc, char **largv)
     return;
 }
 
-void skipVnodes(int largc, char **largv)
+static void skipVnodes(int largc, char **largv)
 {
     if (!Open) {
         printf("No DumpFile open yet!\n");
@@ -410,7 +410,7 @@ void skipVnodes(int largc, char **largv)
     return;
 }
 
-void showVnodeDiskObject(int largc, char **largv)
+static void showVnodeDiskObject(int largc, char **largv)
 {
     if (!Open) {
         printf("No DumpFile open yet!\n");

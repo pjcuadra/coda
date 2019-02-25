@@ -526,9 +526,6 @@ static int HasBackVols(VolumeId *skipvols, int nskipvols)
     return ret;
 }
 
-// So we can add volume headers back to LRU.
-extern void FreeVolumeHeader(Volume *vp);
-
 static int load_server_state(char *dump_file, VolumeId *skipvols, int nskipvols)
 {
     int dump_fd, volindex;

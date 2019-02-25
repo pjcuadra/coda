@@ -74,7 +74,6 @@ static HostTable hostTable[MAXHOSTTABLEENTRIES];
 
 static void client_GetVenusId(RPC2_Handle, ClientEntry *);
 static void client_RemoveClients(HostTable *);
-static const char *client_SLDecode(RPC2_Integer);
 static void client_SetUserName(ClientEntry *);
 
 int CLIENT_Build(RPC2_Handle RPCid, char *User, RPC2_Integer sl,
@@ -393,40 +392,6 @@ static void client_RemoveClients(HostTable *ht)
         if (next->prev == curr) {
             SLog(0, "RemoveClients got a failure from DeleteClient");
             break;
-        }
-    }
-}
-
-static const char *client_SLDecode(RPC2_Integer sl)
-{
-    if (sl == RPC2_OPENKIMONO)
-        return "OpenKimono";
-    if (sl == RPC2_AUTHONLY)
-        return "AuthOnly";
-    if (sl == RPC2_HEADERSONLY)
-        return "HeadersOnly";
-    if (sl == RPC2_SECURE)
-        return "Secure";
-    return "Unknown";
-}
-
-void CLIENT_PrintClients()
-{
-    struct timeval tp;
-    struct timezone tsp;
-    TM_GetTimeOfDay(&tp, &tsp);
-    SLog(1, "List of active users at %s", ctime((const time_t *)&tp.tv_sec));
-    struct dllist_head *curr;
-    ClientEntry *cp;
-    int i;
-
-    for (i = 0; i < MAXHOSTTABLEENTRIES; i++) {
-        list_for_each(curr, hostTable[i].Clients)
-        {
-            cp = list_entry(curr, ClientEntry, Clients);
-            SLog(1, "user = %s at %s:%d cid %d security level %s", cp->UserName,
-                 inet_ntoa(hostTable[i].host), ntohs(hostTable[i].port),
-                 cp->RPCid, client_SLDecode(cp->SecurityLevel));
         }
     }
 }

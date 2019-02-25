@@ -110,7 +110,7 @@ const char *SmonHost = DFLT_MONDHOST; /* may be overridden from command line */
 int SmonPort         = DFLT_MONDPORT; /* may be overridden from command line */
 /*  *****  Smon  *****  */
 
-void SmonInit()
+static void SmonInit()
 {
     MyViceId.IPAddress = gethostid();
     MyViceId.BirthTime = ::time(0);

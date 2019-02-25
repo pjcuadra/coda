@@ -89,7 +89,7 @@ extern int CloneVnode(Volume *, Volume *, int, rec_smolist *, VnodeDiskObject *,
                       VnodeClass);
 
 /* Temp check for debugging. */
-void checklists(int vol_index)
+static void checklists(int vol_index)
 {
     unsigned int i;
     bit32 nlists = SRV_RVM(VolumeList[vol_index]).data.nsmallLists;
@@ -346,7 +346,7 @@ static int MakeNewClone(Volume *rwvp, VolumeId *backupId, Volume **backupvp)
     checklists(V_volumeindex(rwvp));
     checklists(V_volumeindex(newvp));
 
-    /* Modify backup stats and pointers in the original volume, this includes 
+    /* Modify backup stats and pointers in the original volume, this includes
      * the BackupId, BackupDate, and deleting the old Backup volume.
      */
     VLog(0, "S_VolMakeBackups: Deleting the old backup volume");
@@ -387,7 +387,7 @@ static int MakeNewClone(Volume *rwvp, VolumeId *backupId, Volume **backupvp)
     /* Finalize operation by setting up VolData */
 
     V_backupDate(rwvp) = V_creationDate(newvp);
-    /* assign a name to the clone by appending ".backup" 
+    /* assign a name to the clone by appending ".backup"
        to the original name. */
     AssignVolumeName(&V_disk(newvp), V_name(rwvp), ".backup");
 
@@ -480,7 +480,7 @@ static void ModifyIndex(Volume *rwvp, Volume *backupvp, VnodeClass vclass)
 }
 
 /*
- * Step through the list of backup vnodes. Delete any that don't have 
+ * Step through the list of backup vnodes. Delete any that don't have
  * corresponding vnodes (i.e. matching uniquifiers) in the read/write volume.
  * Must be called from within a transaction.
  */

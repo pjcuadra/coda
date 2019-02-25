@@ -61,6 +61,4 @@ public:
     }
 };
 
-extern int PerformTreeRemoval(PDirEntry, void *);
-
 #endif /* _VOL_TREEREMOVE_H_ */

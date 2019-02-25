@@ -92,20 +92,18 @@ extern "C" {
 #include "volhash.h"
 #include "volutil.h"
 
-extern void InitLogStorage();
 extern void print_VnodeDiskObject(VnodeDiskObject *);
 extern int HashLookup(VolumeId);
 
 /* Exported Variables */
-char *ThisHost; /* This machine's hostname */
+static char *ThisHost; /* This machine's hostname */
 uint8_t ThisServerId; /* this server id, as found in  .../db/servers */
 bit32 HostAddress[N_SERVERIDS]; /* Assume host addresses are 32 bits */
 int VInit; /* Set to 1 when the volume package is initialized */
 int HInit; /* Set to 1 when the volid hash table is  initialized */
-const char *VSalvageMessage = /* Common message used when volume goes off line */
-    "Files in this volume are currently unavailable; call operations";
 
-const char *Server_FQDN[N_SERVERIDS]; /* DNS host name (with optional port) */
+static const char
+    *Server_FQDN[N_SERVERIDS]; /* DNS host name (with optional port) */
 /* something like "codaserverN.foo.bar:2432" */
 
 /*
@@ -119,7 +117,6 @@ static Volume *VolumeHashTable[VOLUME_HASH_TABLE_SIZE];
 
 extern void dump_storage(int level, const char *s);
 extern void VBumpVolumeUsage(Volume *vp);
-extern int VCheckVLDB();
 extern int InSkipVolumeList(VolumeId, VolumeId *, int);
 extern void
 InitVolTable(int); // Setup (volume id -> VolumeList index) hash table
@@ -148,9 +145,7 @@ static void VScanUpdateList();
 static int GetVolumeHeader(Volume *vp);
 static int AvailVolumeHeader(Volume *vp);
 static void ReleaseVolumeHeader(struct volHeader *hd);
-void FreeVolumeHeader(Volume *vp);
 static void AddVolumeToHashTable(Volume *vp, int hashid);
-void DeleteVolumeFromHashTable(Volume *vp);
 
 /* InitVolUtil has a problem right now -
    It seems to get advisory locks on these files, but

@@ -39,9 +39,9 @@ extern "C" {
 #include <srv.h>
 
 extern int stack;
-int rvm_truncate_stack = 1024;
+static int rvm_truncate_stack = 1024;
 
-void TruncProcess(void *)
+static void TruncProcess(void *)
 {
     PROCESS mypid;
     LogMsg(0, VolDebugLevel, stdout,

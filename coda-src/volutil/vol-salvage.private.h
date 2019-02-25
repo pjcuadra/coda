@@ -103,7 +103,7 @@ static void FixInodeLinkcount(struct ViceInodeInfo *, struct InodeSummary *);
 static int DestroyBadVolumes();
 
 /* misc routines */
-int OnlyOneVolume(struct ViceInodeInfo *, VolumeId);
+static int OnlyOneVolume(struct ViceInodeInfo *, VolumeId);
 int InSkipVolumeList(VolumeId, VolumeId *, int);
 static struct VnodeEssence *CheckVnodeNumber(VnodeId vnodeNumber, Unique_t);
 static int AskOffline(VolumeId volumeId);

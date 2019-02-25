@@ -149,7 +149,7 @@ struct vldb *VLDBLookup(char *key)
     }
 }
 
-int VLDBPrint()
+static int VLDBPrint()
 {
     struct vldb VLDB_records[8];
 

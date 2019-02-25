@@ -85,24 +85,13 @@ ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
 /* globals */
 int OngoingRepairs = 0;
 
-/* external routines */
-extern int CmpPlus(AL_AccessEntry *a, AL_AccessEntry *b);
-
-extern int CmpMinus(AL_AccessEntry *a, AL_AccessEntry *b);
-
-extern int CheckWriteMode(ClientEntry *, Vnode *);
-
-extern int FetchFileByFD(RPC2_Handle, int fd, ClientEntry *);
-
-int GetSubTree(ViceFid *, Volume *, dlist *);
-
-int PerformTreeRemoval(struct DirEntry *, void *);
-
 /* ***** Private routines  ***** */
-void UpdateVVs(ViceVersionVector *, ViceVersionVector *, ViceVersionVector *);
+static int GetSubTree(ViceFid *, Volume *, dlist *);
 
-static int CheckTreeRemoveSemantics(ClientEntry *, Volume *, ViceFid *,
-                                    dlist *);
+static int PerformTreeRemoval(struct DirEntry *, void *);
+
+static void UpdateVVs(ViceVersionVector *, ViceVersionVector *,
+                      ViceVersionVector *);
 
 static int getFids(struct DirEntry *dirent, void *data);
 
@@ -203,7 +192,6 @@ long FS_OldViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
         Range->Count = 0;
     }
 
-FreeLocks:
     SLog(2, "OldViceAllocFids returns %s (count = %d)",
          ViceErrorMsg((int)errorCode), Range->Count);
     return (errorCode);
@@ -289,126 +277,6 @@ long FS_ViceRepair(RPC2_Handle cid, ViceFid *Fid, ViceStatus *status,
     return RPC2_INVALIDOPCODE;
 }
 
-/* Set positive rights for user "name"; zero means delete */
-int SetRights(Vnode *vptr, char *name, int rights)
-{
-    int Id;
-    AL_AccessList *aCL = 0;
-    // int aCLSize        = 0;
-
-    SLog(9, "Entering SetRights(%s %d)", name, rights);
-    if (AL_NameToId(name, &Id) < 0) {
-        SLog(0, "SetRights: couldnt get id for %s ", name);
-        return -1;
-    }
-    /* set the ACL */
-    aCL = VVnodeACL(vptr);
-    // aCLSize = VAclSize(vptr);
-
-    /* find the entry */
-    for (int i = 0; i < aCL->PlusEntriesInUse; i++) {
-        if (aCL->ActualEntries[i].Id == Id) {
-            if (rights)
-                aCL->ActualEntries[i].Rights = rights;
-            else {
-                /* remove this entry since rights are zero */
-                for (int j = i; j < (aCL->PlusEntriesInUse - 1); j++)
-                    memcpy(&(aCL->ActualEntries[j]),
-                           &(aCL->ActualEntries[j + 1]),
-                           sizeof(AL_AccessEntry));
-                aCL->PlusEntriesInUse--;
-                aCL->TotalNoOfEntries--;
-                aCL->MySize -= (int)sizeof(AL_AccessEntry);
-            }
-            return (0);
-        }
-    }
-
-    /* didnt find the entry - create one */
-    if (aCL->PlusEntriesInUse + aCL->MinusEntriesInUse ==
-        aCL->TotalNoOfEntries) {
-        /* allocate some more entries */
-        for (int i = aCL->TotalNoOfEntries - 1;
-             i > (aCL->TotalNoOfEntries - aCL->MinusEntriesInUse - 1); i--)
-            memcpy(&(aCL->ActualEntries[i + 1]), &(aCL->ActualEntries[i]),
-                   sizeof(AL_AccessEntry));
-        aCL->TotalNoOfEntries++;
-        aCL->MySize += (int)sizeof(AL_AccessEntry);
-    }
-
-    aCL->ActualEntries[aCL->PlusEntriesInUse].Id     = Id;
-    aCL->ActualEntries[aCL->PlusEntriesInUse].Rights = rights;
-    aCL->PlusEntriesInUse++;
-
-    /* sort the entries */
-    qsort((char *)&(aCL->ActualEntries[0]), aCL->PlusEntriesInUse,
-          sizeof(AL_AccessEntry), (int (*)(const void *, const void *))CmpPlus);
-    printf("The accessList after setting rights is \n");
-    AL_PrintAlist(aCL);
-    return (0);
-}
-
-/* set negative rights for user "name"; zero means delete */
-int SetNRights(Vnode *vptr, char *name, int rights)
-{
-    int Id;
-    AL_AccessList *aCL = 0;
-    // int aCLSize        = 0;
-    int p, m, t;
-
-    SLog(9, "Entering SetNRights(%s %d)", name, rights);
-    if (AL_NameToId(name, &Id) < 0) {
-        SLog(0, "SetRights: couldnt get id for %s ", name);
-        return -1;
-    }
-    /* set the ACL */
-    aCL = VVnodeACL(vptr);
-    // aCLSize = VAclSize(vptr);
-
-    p = aCL->PlusEntriesInUse;
-    m = aCL->MinusEntriesInUse;
-    t = aCL->TotalNoOfEntries;
-
-    /* find the entry */
-    for (int i = t - 1; i >= t - m; i--) {
-        if (aCL->ActualEntries[i].Id == Id) {
-            if (rights)
-                aCL->ActualEntries[i].Rights = rights;
-            else {
-                /* remove this entry since rights are zero */
-                for (int j = i; j > t - m; j--)
-                    memcpy(&(aCL->ActualEntries[j]),
-                           &(aCL->ActualEntries[j - 1]),
-                           sizeof(AL_AccessEntry));
-                aCL->MinusEntriesInUse--;
-                aCL->TotalNoOfEntries--;
-                aCL->MySize -= (int)sizeof(AL_AccessEntry);
-            }
-            return (0);
-        }
-    }
-    /* didnt find the entry - create one */
-    if ((m + p) == t) {
-        /* all entries are taken - create one */
-        for (int i = t - 1; i > t - m - 1; i--)
-            memcpy(&(aCL->ActualEntries[i + 1]), &(aCL->ActualEntries[i]),
-                   sizeof(AL_AccessEntry));
-        t = ++aCL->TotalNoOfEntries;
-        aCL->MySize += (int)sizeof(AL_AccessEntry);
-    }
-    aCL->ActualEntries[t - m - 1].Id     = Id;
-    aCL->ActualEntries[t - m - 1].Rights = rights;
-    aCL->MinusEntriesInUse++;
-
-    /* sort the entry */
-    qsort((char *)&(aCL->ActualEntries[t - m - 1]), aCL->MinusEntriesInUse,
-          sizeof(AL_AccessEntry),
-          (int (*)(const void *, const void *))CmpMinus);
-    printf("The accessList after setting rights is \n");
-    AL_PrintAlist(aCL);
-    return 0;
-}
-
 /*
  * data structure used to pass arguments
  * for the recursive tree removal routines
@@ -419,7 +287,7 @@ int SetNRights(Vnode *vptr, char *name, int rights)
     Get all the fids in a subtree - deadlock free solution
     add the fids to the vlist
 */
-int GetSubTree(ViceFid *fid, Volume *volptr, dlist *vlist)
+static int GetSubTree(ViceFid *fid, Volume *volptr, dlist *vlist)
 {
     Vnode *vptr = 0;
     vle *v;
@@ -598,38 +466,10 @@ static int RecursiveCheckRemoveSemantics(PDirEntry de, void *data)
 }
 
 /*
-  CheckTreeRemoveSemantics: Check the semantic constraints for
-  removing a subtree
-*/
-static int CheckTreeRemoveSemantics(ClientEntry *client, Volume *volptr,
-                                    ViceFid *tFid, dlist *vlist)
-{
-    vle *tv = 0;
-
-    /* get the root's vnode */
-    {
-        tv = FindVLE(*vlist, tFid);
-        CODA_ASSERT(tv != 0);
-    }
-
-    /* recursively check semantics */
-    {
-        PDirHandle td;
-        td = VN_SetDirHandle(tv->vptr);
-        rmblk enumparm(vlist, volptr, client);
-        if (!DH_IsEmpty(td))
-            DH_EnumerateDir(td, RecursiveCheckRemoveSemantics,
-                            (void *)&enumparm);
-        VN_PutDirHandle(tv->vptr);
-        return (enumparm.result);
-    }
-}
-
-/*
  *  PerformTreeRemove: Perform the actions for removing a subtree
  */
 
-int PerformTreeRemoval(PDirEntry de, void *data)
+static int PerformTreeRemoval(PDirEntry de, void *data)
 {
     TreeRmBlk *pkdparm = (TreeRmBlk *)data;
     VnodeId vnode;

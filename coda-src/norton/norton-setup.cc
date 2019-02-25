@@ -136,9 +136,6 @@ void NortonInitVolPackage()
 
     VInitVnodes(vLarge, 10);
     VInitVnodes(vSmall, 10);
-
-    /* Initialize the resolution storage structures */
-    //InitLogStorage();
 }
 
 void NortonInit(char *log_dev, char *data_dev, int data_len)
