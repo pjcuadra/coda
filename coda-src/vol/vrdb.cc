@@ -212,7 +212,7 @@ int DumpVRDB(int outfd)
     return VRDB.dump(outfd);
 }
 
-bool IsReplicated(VolumeId *vidp)
+bool IsReplicatedVolID(VolumeId *vidp)
 {
     uint8_t *vid = (uint8_t *)vidp;
 
@@ -220,50 +220,6 @@ bool IsReplicated(VolumeId *vidp)
         return true;
 
     return false;
-}
-
-int XlateVid(VolumeId *vidp, int *count, int *pos, int *voltype)
-{
-    if (!IsReplicated(vidp)) {
-        if (count)
-            *count = 1;
-        if (pos)
-            *pos = 0;
-        if (voltype)
-            *voltype = NONREPVOL;
-        return (1);
-    }
-
-    if (voltype)
-        *voltype = 0;
-
-    vrent *vre = VRDB.find(*vidp);
-    if (!vre)
-        return (0);
-
-    int ix = vre->index();
-    if (ix == -1)
-        return (0);
-
-    if (voltype)
-        *voltype = REPVOL;
-
-    *vidp = vre->ServerVolnum[ix];
-    if (count)
-        *count = vre->nServers;
-    if (pos)
-        *pos = ix;
-    return (1);
-}
-
-int ReverseXlateVid(VolumeId *vidp, int *idx)
-{
-    vrent *vre = VRDB.ReverseFind(*vidp, idx);
-    if (!vre)
-        return (0);
-
-    *vidp = vre->volnum;
-    return (1);
 }
 
 vrent::vrent()

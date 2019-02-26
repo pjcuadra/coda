@@ -104,10 +104,8 @@ long FS_ViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
                       ViceFidRange *Range)
 {
     long errorCode      = 0;
-    VolumeId VSGVolnum  = Vid;
     Volume *volptr      = 0;
     ClientEntry *client = 0;
-    int stride, ix;
     char *rock;
 
     START_TIMING(AllocFids_Total);
@@ -125,10 +123,8 @@ long FS_ViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
             goto FreeLocks;
         }
 
-        /* Translate the GroupVol into this host's RWVol. */
-        /* This host's {stride, ix} are returned as side effects; they will be needed in the Alloc below. */
-        if (!XlateVid(&Vid, &stride, &ix)) {
-            SLog(0, "ViceAllocFids: XlateVid (%x) failed", VSGVolnum);
+        if (IsReplicatedVolID(&Vid)) {
+            eprint("Trying to access %x replicated volume", Vid);
             errorCode = EINVAL;
             goto FreeLocks;
         }
@@ -161,7 +157,7 @@ long FS_ViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
      * can potentially grow or shrink the replication group without
      * affecting previously issued fids which are being used by
      * disconnected clients --JH */
-    if ((errorCode = VAllocFid(volptr, Type, Range, stride, ix))) {
+    if ((errorCode = VAllocFid(volptr, Type, Range))) {
         SLog(0, "ViceAllocFids: VAllocVnodes error %s",
              ViceErrorMsg((int)errorCode));
         goto FreeLocks;
@@ -231,8 +227,11 @@ long FS_ViceSetVV(RPC2_Handle cid, ViceFid *Fid, ViceVersionVector *VV,
 
     SLog(9, "Entering ViceSetVV(%s", FID_(Fid));
 
-    /* translate replicated fid to rw fid */
-    XlateVid(&Fid->Volume); /* dont bother checking for errors */
+    if (IsReplicatedVolID(&Fid->Volume)) {
+        eprint("Trying to access %x replicated volume", Fid->Volume);
+        return (EINVAL);
+    }
+
     if (RPC2_GetPrivatePointer(cid, &rock) != RPC2_SUCCESS)
         return (EINVAL);
     client = (ClientEntry *)rock;
@@ -299,7 +298,7 @@ static int GetSubTree(ViceFid *fid, Volume *volptr, dlist *vlist)
     /* get root vnode */
     {
         if ((errorCode =
-                 GetFsObj(fid, &volptr, &vptr, READ_LOCK, NO_LOCK, 1, 0, 1)))
+                 GetFsObj(fid, &volptr, &vptr, READ_LOCK, NO_LOCK, 1)))
             goto Exit;
 
         CODA_ASSERT(vptr->disk.type == vDirectory);
@@ -519,11 +518,11 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
     {
         int nblocks = 0;
         if (cv->vptr->disk.type == vDirectory) {
-            PerformRmdir(pkdparm->client, pkdparm->VSGVnum, pkdparm->volptr,
+            PerformRmdir(pkdparm->client, pkdparm->volptr,
                          pv->vptr, cv->vptr, name,
                          pkdparm->status ? pkdparm->status->Date :
                                            pv->vptr->disk.unixModifyTime,
-                         0, pkdparm->storeid, &pv->d_cinode, &nblocks);
+                         pkdparm->storeid, &pv->d_cinode, &nblocks);
             *(pkdparm->blocks) += nblocks;
             CODA_ASSERT(cv->vptr->delete_me);
             nblocks = (int)-nBlocks(cv->vptr->disk.length);
@@ -531,11 +530,11 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
             *(pkdparm->blocks) += nblocks;
 
         } else {
-            PerformRemove(pkdparm->client, pkdparm->VSGVnum, pkdparm->volptr,
+            PerformRemove(pkdparm->client, pkdparm->volptr,
                           pv->vptr, cv->vptr, name,
                           pkdparm->status ? pkdparm->status->Date :
                                             pv->vptr->disk.unixModifyTime,
-                          0, pkdparm->storeid, &pv->d_cinode, &nblocks);
+                          pkdparm->storeid, &pv->d_cinode, &nblocks);
             *(pkdparm->blocks) += nblocks;
             if (cv->vptr->delete_me) {
                 nblocks = (int)-nBlocks(cv->vptr->disk.length);
@@ -552,15 +551,11 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
 /*
   NewCOP1Update: Increment the version number and update the
   storeid of an object.
-
-  Only the version number of this replica is incremented.  The
-  other replicas's version numbers are incremented by COP2Update
 */
 void NewCOP1Update(Volume *volptr, Vnode *vptr, ViceStoreId *StoreId,
-                   RPC2_Integer *vsptr, bool isReplicated)
+                   RPC2_Integer *vsptr)
 {
     int ix     = 0;
-    vrent *vre = NULL;
 
     SLog(2, "COP1Update: Fid = (%x.%x.%x), StoreId = (%x.%x)", V_id(volptr),
          vptr->vnodeNumber, vptr->disk.uniquifier, StoreId->HostId,
@@ -586,7 +581,7 @@ void NewCOP1Update(Volume *volptr, Vnode *vptr, ViceStoreId *StoreId,
     UpdateVVs(&V_versionvector(volptr), &Vnode_vv(vptr), &UpdateSet);
 }
 
-void UpdateVVs(ViceVersionVector *VVV, ViceVersionVector *VV,
+static void UpdateVVs(ViceVersionVector *VVV, ViceVersionVector *VV,
                ViceVersionVector *US)
 {
     if (SrvDebugLevel >= 2) {
@@ -637,7 +632,6 @@ long FS_ViceGetVolVS(RPC2_Handle cid, VolumeId Vid, RPC2_Integer *VS,
     VolumeId rwVid;
     ViceFid fid;
     ClientEntry *client = 0;
-    int ix, count;
     char *rock;
 
     SLog(1, "ViceGetVolVS for volume 0x%x", Vid);
@@ -651,11 +645,12 @@ long FS_ViceGetVolVS(RPC2_Handle cid, VolumeId Vid, RPC2_Integer *VS,
 
     /* now get the version stamp for Vid */
     rwVid = Vid;
-    if (!XlateVid(&rwVid, &count, &ix)) {
-        SLog(1, "GetVolVV: Couldn't translate VSG %u", Vid);
+    if (IsReplicatedVolID(&rwVid)) {
+        eprint("Trying to access %x replicated volume", rwVid);
         errorCode = EINVAL;
         goto Exit;
     }
+
 
     SLog(9, "GetVolVS: Going to get volume %u pointer", rwVid);
     volptr = VGetVolume((Error *)&errorCode, rwVid);
@@ -667,7 +662,7 @@ long FS_ViceGetVolVS(RPC2_Handle cid, VolumeId Vid, RPC2_Integer *VS,
         goto Exit;
     }
 
-    *VS = (&(V_versionvector(volptr).Versions.Site0))[ix];
+    *VS = (&(V_versionvector(volptr).Versions.Site0))[0];
     VPutVolume(volptr);
 
     /*
@@ -687,69 +682,28 @@ Exit:
     return (errorCode);
 }
 
-void GetMyVS(Volume *volptr, RPC2_CountedBS *VSList, RPC2_Integer *MyVS,
-             int voltype)
+void GetMyVS(Volume *volptr, RPC2_CountedBS *VSList, RPC2_Integer *MyVS)
 {
-    vrent *vre;
-    int ix;
-
     *MyVS = 0;
     if (VSList->SeqLen == 0)
         return;
 
-    if (voltype & REPVOL) {
-        /* Look up the VRDB entry. */
-        vre = VRDB.find(V_groupId(volptr));
-        if (!vre)
-            Die("GetMyVS: VSG not found!");
-
-        /* Look up the index of this host. */
-        ix = vre->index();
-        if (ix < 0)
-            Die("GetMyVS: this host not found!");
-
-    } else if (voltype & NONREPVOL) {
-        ix = 0;
-    } else {
-        return;
-    }
-
     /* get the version stamp from our slot in the vector */
-    *MyVS = ((RPC2_Unsigned *)VSList->SeqBody)[ix];
+    *MyVS = ((RPC2_Unsigned *)VSList->SeqBody)[0];
 
     SLog(1, "GetMyVS: 0x%x, incoming stamp %d", V_id(volptr), *MyVS);
-
-    return;
 }
 
 void SetVSStatus(ClientEntry *client, Volume *volptr, RPC2_Integer *NewVS,
-                 CallBackStatus *VCBStatus, int voltype)
+                 CallBackStatus *VCBStatus)
 {
-    int ix = 0;
-    if (voltype & REPVOL) {
-        /* Look up the VRDB entry. */
-        vrent *vre = VRDB.find(V_groupId(volptr));
-        if (!vre)
-            Die("SetVSStatus: VSG not found!");
-
-        /* Look up the index of this host. */
-        ix = vre->index();
-        if (ix < 0)
-            Die("SetVSStatus: this host not found!");
-
-    } else if (voltype & NONREPVOL) {
-        ix = 0;
-    } else {
-        return;
-    }
-
     *VCBStatus = NoCallBack;
 
     SLog(1, "SetVSStatus: 0x%x, client %d, server %d", V_id(volptr), *NewVS,
-         (&(V_versionvector(volptr).Versions.Site0))[ix]);
+         (&(V_versionvector(volptr).Versions.Site0))[0]);
 
     /* check the version stamp in our slot in the vector */
-    if (*NewVS == (&(V_versionvector(volptr).Versions.Site0))[ix]) {
+    if (*NewVS == (&(V_versionvector(volptr).Versions.Site0))[0]) {
         /*
 	 * add a volume callback. don't need to use CodaAddCallBack because
 	 * we always send in the VSG volume id.
@@ -812,8 +766,8 @@ long FS_ViceValidateVols(RPC2_Handle cid, RPC2_Unsigned numVids,
         RPC2_Integer myVS;
 
         rwVid = Vids[i].Vid;
-        if (!XlateVid(&rwVid, &count, &ix)) {
-            SLog(1, "ValidateVolumes: Couldn't translate VSG %x", Vids[i].Vid);
+        if (IsReplicatedVolID(&rwVid)) {
+            eprint("Trying to access %x replicated volume", rwVid);
             goto InvalidVolume;
         }
 

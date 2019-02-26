@@ -232,12 +232,10 @@ char *ViceErrorMsg(int);
 
 /* codaproc.c */
 extern ViceVersionVector NullVV;
-void NewCOP1Update(Volume *, Vnode *, ViceStoreId *, RPC2_Integer * = NULL,
-                   bool isReplicated = true);
+void NewCOP1Update(Volume *, Vnode *, ViceStoreId *, RPC2_Integer * = NULL);
 void PollAndYield();
-void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *, int voltype);
-void SetVSStatus(ClientEntry *, Volume *, RPC2_Integer *, CallBackStatus *,
-                 int voltype);
+void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *);
+void SetVSStatus(ClientEntry *, Volume *, RPC2_Integer *, CallBackStatus *);
 
 /* codasrv.c */
 extern int SystemId, AnyUserId;
@@ -262,7 +260,7 @@ void Die(const char *);
 /* srv.c */
 void SetStatus(Vnode *, ViceStatus *, Rights, Rights);
 int GetRights(PRS_InternalCPS *, AL_AccessList *, int, Rights *, Rights *);
-int GetFsObj(ViceFid *, Volume **, Vnode **, int, int, int, int, int);
+int GetFsObj(ViceFid *, Volume **, Vnode **, int, int, int);
 int SystemUser(ClientEntry *);
 int AdjustDiskUsage(Volume *, int);
 int GetVolObj(VolumeId, Volume **, int, int = 0, unsigned = 0);
@@ -290,8 +288,8 @@ void DeleteVenus(HostTable *);
 void DeleteFile(ViceFid *);
 void PrintCallBackState(FILE *);
 void PrintCallBacks(ViceFid *, FILE *);
-CallBackStatus CodaAddCallBack(HostTable *, ViceFid *, VolumeId);
-void CodaBreakCallBack(HostTable *, ViceFid *, VolumeId);
+CallBackStatus CodaAddCallBack(HostTable *, ViceFid *);
+void CodaBreakCallBack(HostTable *, ViceFid *);
 
 /* lookaside */
 extern int AllowSHA;

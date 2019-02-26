@@ -101,7 +101,7 @@ int CloneVnode(Volume *rwVp, Volume *cloneVp, int vnodeIndex,
 /*
     S_VolClone: Create a new readonly clone of a volume.
 */
-/* ovolid: Volume Id of the volume to be cloned 
+/* ovolid: Volume Id of the volume to be cloned
  * cloneId: OUT Parameter; Id of cloned volume returned in that param.
  */
 long S_VolClone(RPC2_Handle rpcid, RPC2_Unsigned formal_ovolid,
@@ -488,7 +488,7 @@ int CloneVnode(Volume *rwVp, Volume *cloneVp, int vnodeIndex,
     /* Mark the RW vnode as cloned, !docreate ==> vnode was cloned. */
     if (VolumeWriteable(rwVp) && !docreate) {
         Vnode *tmp = VGetVnode(&error, rwVp, vnodeNum, vnode->uniquifier,
-                               WRITE_LOCK, 1, 1);
+                               WRITE_LOCK, 1);
         if (error) {
             VLog(0, "CloneVnode(%s): Error %d getting vnode index %d",
                  (vclass == vLarge) ? "Large" : "Small", error, vnodeIndex);

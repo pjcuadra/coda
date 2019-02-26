@@ -100,9 +100,6 @@ unsigned int etherGoodReads    = 0;
 unsigned int etherBytesRead    = 0;
 unsigned int etherBytesWritten = 0;
 
-/* *****  External routines ***** */
-int ValidateParms(RPC2_Handle, ClientEntry **, int *ReplicatedOp, VolumeId *,
-                  RPC2_CountedBS *, int *Nservers);
 /* *****  Private routines  ***** */
 
 static void SetVolumeStatus(VolumeStatus *, RPC2_BoundedBS *, RPC2_BoundedBS *,
@@ -242,8 +239,6 @@ long FS_ViceGetVolumeInfo(RPC2_Handle RPCid, RPC2_String VolName,
             } else if (Info->Type == RWVOL) {
                 /* Stuff the GroupId in the Info->Type[REPVOL] field. */
                 VolumeId Vid = Info->Vid;
-                if (ReverseXlateVid(&Vid))
-                    (&(Info->Type0))[replicatedVolume] = Vid;
             }
         }
     }
@@ -314,7 +309,6 @@ long FS_ViceGetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     errorCode = fileCode = 0;
     vptr                 = 0;
     volptr               = 0;
-    VolumeId VSGVolnum   = vid;
 
     SLog(1, "GetVolumeStatus for volume %u", vid);
 
@@ -323,14 +317,10 @@ long FS_ViceGetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
         goto Final;
     }
 
-    if (XlateVid(&vid)) {
-        SLog(1, "XlateVid: %u --> %u", VSGVolnum, vid);
-    } else {
-        if (IsReplicated != 0) {
-            SLog(0, "Failed to translate VSG but IsReplicated != 0");
-            errorCode = EINVAL; /* ??? -JJK */
-            goto Final;
-        }
+    if (IsReplicatedVolID(&vid)) {
+        eprint("Trying to access %x replicated volume", vid);
+        errorCode = EINVAL;
+        goto Final;
     }
 
     if (name->MaxSeqLen < V_MAXVOLNAMELEN || offlineMsg->MaxSeqLen < VMSGSIZE ||
@@ -344,8 +334,7 @@ long FS_ViceGetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     vfid.Unique = 1;
 
     // get the root vnode even if it is inconsistent
-    if ((errorCode = GetFsObj(&vfid, &volptr, &vptr, READ_LOCK, VOL_NO_LOCK, 1,
-                              0, 0))) {
+    if ((errorCode = GetFsObj(&vfid, &volptr, &vptr, READ_LOCK, VOL_NO_LOCK, 0))) {
         goto Final;
     }
 
@@ -387,11 +376,11 @@ Final:
     return (errorCode);
 }
 
-void PerformSetQuota(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
-                     Vnode *vptr, ViceFid *fid, int NewQuota, int ReplicatedOp,
+void PerformSetQuota(ClientEntry *client, Volume *volptr,
+                     Vnode *vptr, ViceFid *fid, int NewQuota,
                      ViceStoreId *StoreId)
 {
-    CodaBreakCallBack((client ? client->VenusId : 0), fid, VSGVolnum);
+    CodaBreakCallBack((client ? client->VenusId : 0), fid);
 
     V_maxquota(volptr) = NewQuota;
 }
@@ -416,13 +405,11 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     int aCLSize;
     int rights;
     int anyrights;
-    int ReplicatedOp;
     vle *v       = 0;
     dlist *vlist = new dlist((CFN)VLECmp);
 
     errorCode = fileCode = 0;
     volptr               = 0;
-    VolumeId VSGVolnum   = vid;
 
     SLog(1, "ViceSetVolumeStatus for volume %u", vid);
     SLog(
@@ -440,8 +427,7 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     }
 
     {
-        if ((errorCode = ValidateParms(RPCid, &client, &ReplicatedOp, &vid,
-                                       PiggyCOP2, NULL)))
+        if ((errorCode = ValidateParms(RPCid, &client, &vid, PiggyCOP2)))
             goto Final;
     }
 
@@ -471,8 +457,7 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     }
 
     v = AddVLE(*vlist, &vfid);
-    if ((errorCode = GetFsObj(&vfid, &volptr, &v->vptr, READ_LOCK, VOL_NO_LOCK,
-                              0, 0, 0))) {
+    if ((errorCode = GetFsObj(&vfid, &volptr, &v->vptr, READ_LOCK, VOL_NO_LOCK, 0))) {
         goto Final;
     }
 
@@ -496,8 +481,8 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
         V_minquota(volptr) = (int)status->MinQuota;
 
     if (status->MaxQuota > -1) {
-        PerformSetQuota(client, VSGVolnum, volptr, v->vptr, &vfid,
-                        (int)status->MaxQuota, ReplicatedOp, StoreId);
+        PerformSetQuota(client, volptr, v->vptr, &vfid,
+                        (int)status->MaxQuota, StoreId);
     }
 
     if (offlineMsg->SeqLen > 1)

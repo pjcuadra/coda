@@ -581,26 +581,18 @@ void DeleteFile(ViceFid *afid)
   CodaAddCallBack: Establish a callback with a client
   for the non-replicated and replicated fid of an object
 */
-CallBackStatus CodaAddCallBack(HostTable *VenusId, ViceFid *Fid,
-                               VolumeId VSGVolnum)
+CallBackStatus CodaAddCallBack(HostTable *VenusId, ViceFid *Fid)
 {
-    if (Fid->Volume == VSGVolnum)
-        return (AddCallBack(VenusId, Fid));
-
-    ViceFid VSGFid;
-    VSGFid.Volume = VSGVolnum;
-    VSGFid.Vnode  = (Fid)->Vnode;
-    VSGFid.Unique = (Fid)->Unique;
-    return (AddCallBack(VenusId, &VSGFid));
+    return (AddCallBack(VenusId, Fid));
 }
 
 /*
 
   CodaBreakCallBack: Break the callback with a client, for the
-  non-replicated and replicated fid of an object.
+  fid of an object.
 
   */
-void CodaBreakCallBack(HostTable *VenusId, ViceFid *Fid, VolumeId VSGVolnum)
+void CodaBreakCallBack(HostTable *VenusId, ViceFid *Fid)
 {
     ViceFid VolFid;
 
@@ -609,29 +601,12 @@ void CodaBreakCallBack(HostTable *VenusId, ViceFid *Fid, VolumeId VSGVolnum)
     BreakCallBack(VenusId, Fid);
     BreakCallBack(VenusId, &VolFid);
 
-    if (Fid->Volume != VSGVolnum) {
-        ViceFid VSGFid;
-        VSGFid.Volume = VSGVolnum;
-        VSGFid.Vnode  = Fid->Vnode;
-        VSGFid.Unique = Fid->Unique;
-        VolFid.Volume = VSGVolnum;
-        BreakCallBack(VenusId, &VSGFid);
-        BreakCallBack(VenusId, &VolFid);
-    }
     return;
 }
 
-void CodaDeleteCallBack(HostTable *VenusId, ViceFid *Fid, VolumeId VSGVolnum)
+void CodaDeleteCallBack(HostTable *VenusId, ViceFid *Fid)
 {
-    if (Fid->Volume == VSGVolnum)
-        DeleteCallBack(VenusId, Fid);
-    else {
-        ViceFid VSGFid;
-        VSGFid.Volume = VSGVolnum;
-        VSGFid.Vnode  = Fid->Vnode;
-        VSGFid.Unique = Fid->Unique;
-        DeleteCallBack(VenusId, &VSGFid);
-    }
+    DeleteCallBack(VenusId, Fid);
     return;
 }
 
@@ -817,24 +792,14 @@ static void GetCallBacks(VolumeId vid, FILE *fp)
 // for the entire volume.
 void PrintCallBacks(ViceFid *fid, FILE *fp)
 {
-    // check for the replicated id also
-
-    ViceFid ofid = *fid;
-    int useofid  = 0;
-    if (!XlateVid(&ofid.Volume)) {
-        ofid.Volume = fid->Volume;
-        if (ReverseXlateVid(&ofid.Volume))
-            useofid = 1;
-    } else
-        useofid = 1;
+    if (IsReplicatedVolID(&fid->Volume)) {
+        eprint("Trying to access %x replicated volume", fid->Volume);
+        return;
+    }
 
     if (fid->Vnode && fid->Unique) {
         GetCallBacks(fid, fp);
-        if (useofid)
-            GetCallBacks(&ofid, fp);
     } else {
         GetCallBacks(fid->Volume, fp);
-        if (useofid)
-            GetCallBacks(ofid.Volume, fp);
     }
 }

@@ -80,10 +80,9 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     ViceVersionVector UpdateSet;
 
     VLog(9, "Entering VolSetVV(%d, %u, %u)", rpcid, volid, vnodeid);
-    VolumeId tmpvolid = volid;
-    if (!XlateVid(&tmpvolid)) {
-        VLog(0, "S_VolSetVV Couldn't translate VSG ");
-        tmpvolid = volid;
+    if (IsReplicatedVolID(&volid)) {
+        eprint("Trying to access %x replicated volume", volid);
+        return (EINVAL);
     }
 
     rvmlib_begin_transaction(restore);
@@ -91,9 +90,9 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     /*    vp = VAttachVolume(&error, volid, V_READONLY); */
     /* Ignoring the volume lock for now - assume this will
        be used in bad situations only*/
-    vp = VGetVolume(&error, tmpvolid);
+    vp = VGetVolume(&error, volid);
     if (error) {
-        VLog(0, "S_VolSetVV: failure attaching volume %d", tmpvolid);
+        VLog(0, "S_VolSetVV: failure attaching volume %d", volid);
         if (error != VNOVOL) {
             VPutVolume(vp);
         }
@@ -112,7 +111,7 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     } else {
         /* error == EIO */
         /* barren object - debarrenize it - setvv is overloaded here */
-        vnp = VGetVnode(&error, vp, vnodeid, unique, WRITE_LOCK, 1, 1);
+        vnp = VGetVnode(&error, vp, vnodeid, unique, WRITE_LOCK, 1);
         CODA_ASSERT(IsBarren(vnp->disk.versionvector));
 
         VLog(0, "%x.%x.%x is barren - Debarrenizing it", V_id(vp),
@@ -150,7 +149,7 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     fid.Volume = formal_volid;
     fid.Vnode  = vnodeid;
     fid.Unique = unique;
-    CodaBreakCallBack(0, &fid, formal_volid);
+    CodaBreakCallBack(0, &fid);
 
     VPutVnode((Error *)&error, vnp);
 

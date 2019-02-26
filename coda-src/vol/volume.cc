@@ -1275,13 +1275,12 @@ void VDetachVolume(Error *ec, Volume *vp)
 }
 
 int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
-                      int stride, int ix, int count)
+                      int count)
 {
     *ec = 0;
 
-    VLog(9, "VAllocBitmapEntry: volume = %x, count = %d, stride = %d, ix = %d",
-         V_id(vp), count, stride, ix);
-    CODA_ASSERT(count > 0 && stride > 0 && ix >= 0);
+    VLog(9, "VAllocBitmapEntry: volume = %x, count = %d", V_id(vp), count);
+    CODA_ASSERT(count > 0);
 
     if (index->bitmap == NULL) {
         VLog(0, "VAllocBitmapEntry: uninitialized bitmap");
@@ -1300,21 +1299,18 @@ int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
                index->bitmapSize; /* ptr to first byte beyond current bitmap */
     int ebn = index->bitmapSize * 8; /* one past the last bit in the map */
 
-    /* Compute the starting bit number of a sequence of free bits, count entries long, which satisfies the */
-    /* specified <stride, ix> requirements.  Note that sbn may be beyond the current end of the bitmap! */
     int sbn;
     {
         int cbn  = bbn; /* current bit under consideration */
         int free = 0; /* free bits in the sequence beginning with sbn */
 
         /* Current bit may need to be incremented to satisfy <stride, ix>! */
-        cbn += (cbn < stride ? ix : ((stride - (cbn % stride) + ix) % stride));
         sbn = cbn;
-        for (; free < count && cbn < ebn; cbn += stride) {
+        for (; free < count && cbn < ebn; cbn ++) {
             byte *cbp = (index->bitmap + cbn / 8);
 
             if ((*cbp) & (1 << (cbn % 8))) {
-                sbn  = cbn + stride;
+                sbn  = cbn + 1;
                 free = 0;
             } else {
                 free++;
@@ -1324,7 +1320,7 @@ int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
     VLog(19, "VAllocBitmapEntry: sbn = %d (bbn = %d, ebn = %d)", sbn, bbn, ebn);
 
     /* Compute the number of bitmap bytes needed to satisfy this allocation, and grow the map if needed. */
-    int newsize  = (((sbn + (count - 1) * stride) / 32 + 1) * 4);
+    int newsize  = ((sbn + (count - 1) / 32 + 1) * 4);
     int growsize = (newsize - index->bitmapSize);
     if (growsize > 0) {
         if (growsize < VOLUME_BITMAP_GROWSIZE) {
@@ -1345,7 +1341,7 @@ int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
 
     /* Set the specified sequence of bits, starting with sbn. */
     int cbn = sbn;
-    for (; count > 0; cbn += stride, count--) {
+    for (; count > 0; cbn++, count--) {
         byte *cbp = (index->bitmap + (cbn / 8));
         byte mask = (1 << (cbn % 8));
         CODA_ASSERT((*cbp & mask) == 0);
