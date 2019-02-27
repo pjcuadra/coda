@@ -1987,18 +1987,14 @@ static int ReintNormalVCmp(VnodeType type, void *arg1,
                            void *arg2)
 {
 
-    SLog(0, "ReintNormalVCmp: starting\n");
-    SLog(0, "ReintNormalVCmp: starting %x\n", arg1);
-    SLog(0, "ReintNormalVCmp: starting %x\n", arg2);
-
     switch (type) {
     case vDirectory:
         return (0);
 
     case vFile:
     case vSymlink: {
-        FileVersion *vva = (FileVersion *)arg1;
-        FileVersion *vvb = (FileVersion *)arg2;
+        uint64_t *vva = (uint64_t *)arg1;
+        uint64_t *vvb = (uint64_t *)arg2;
 
         SLog(0, "ReintNormalVCmp: %x %x\n", *vva, *vvb);
 

@@ -802,8 +802,8 @@ static int NormalVCmp(VnodeType type, void *arg1, void *arg2)
 {
     int errorCode = 0;
 
-    FileVersion fva = *((FileVersion *)arg1);
-    FileVersion fvb = *((FileVersion *)arg2);
+    uint64_t fva = *((uint64_t *)arg1);
+    uint64_t fvb = *((uint64_t *)arg2);
 
     if (fva != fvb)
         errorCode = EINCOMPATIBLE;
@@ -1212,7 +1212,7 @@ int CheckStoreSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (void *)&(*vptr)->disk.localDataVersion;
+        void *arg1 = (void *)&Vnode_dataversion(*vptr);
         void *arg2 = (void *)&DataVersion;
         if ((errorCode =
                  VCmpProc((*vptr)->disk.type, arg1, arg2))) {
@@ -1278,7 +1278,7 @@ int CheckSetAttrSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (void *)&(*vptr)->disk.localDataVersion;
+        void *arg1 = (void *)&Vnode_dataversion(*vptr);
         void *arg2 = (void *)&DataVersion;
         if ((errorCode =
                  VCmpProc((*vptr)->disk.type, arg1, arg2))) {
@@ -1403,7 +1403,7 @@ int CheckSetACLSemantics(ClientEntry *client, Vnode **vptr, Volume **volptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (void *)&(*vptr)->disk.localDataVersion;
+        void *arg1 = (void *)&Vnode_dataversion(*vptr);
         void *arg2 = (void *)&DataVersion;
         rc         = VCmpProc((*vptr)->disk.type, arg1, arg2);
         if (rc) {
@@ -1535,7 +1535,7 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Source directory. */
         {
-            arg1 = (void *)&(*s_dirvptr)->disk.localDataVersion;
+            arg1 = (void *)&Vnode_dataversion(*s_dirvptr);
             if ((errorCode = VCmpProc((*s_dirvptr)->disk.type,
                                       arg1, s_dirVersion))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&SDid),
@@ -1546,7 +1546,7 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Target directory. */
         {
-            arg1 = (void *)&(*t_dirvptr)->disk.localDataVersion;
+            arg1 = (void *)&Vnode_dataversion(*t_dirvptr);
             if ((errorCode = VCmpProc((*t_dirvptr)->disk.type, arg1, t_dirVersion))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&TDid),
                      errorCode);
@@ -1556,7 +1556,7 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Source object. */
         {
-            arg1 = (void *)&(*s_vptr)->disk.localDataVersion;
+            arg1 = (void *)&Vnode_dataversion(*s_vptr);
             if ((errorCode = VCmpProc((*s_vptr)->disk.type, arg1, s_Version))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&SFid),
                      errorCode);
@@ -1566,7 +1566,7 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Target object. */
         if (TargetExists) {
-            arg1 = (void *)&(*t_vptr)->disk.localDataVersion;
+            arg1 = (void *)&Vnode_dataversion(*t_vptr);
             if ((errorCode = VCmpProc((*t_vptr)->disk.type, arg1,
                                       t_Version))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&TFid),
@@ -1873,7 +1873,7 @@ static int Check_CLMS_Semantics(ClientEntry *client, Vnode **dirvptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (void *)&(*dirvptr)->disk.localDataVersion;
+        void *arg1 = (void *)&Vnode_dataversion(*dirvptr);
         if ((errorCode = VCmpProc((*dirvptr)->disk.type, arg1,
                                   &dirVersion))) {
             SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Did), errorCode);
@@ -1881,7 +1881,7 @@ static int Check_CLMS_Semantics(ClientEntry *client, Vnode **dirvptr,
         }
 
         if (vptr) {
-            arg1 = (void *)&(*vptr)->disk.localDataVersion;
+            arg1 = (void *)&Vnode_dataversion(*vptr);
             if ((errorCode = VCmpProc((*vptr)->disk.type, arg1,
                                       &Version))) {
                 SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Fid),
@@ -1998,14 +1998,14 @@ static int Check_RR_Semantics(ClientEntry *client, Vnode **dirvptr,
     if (VCmpProc) {
         void *arg1 = 0;
 
-        arg1 = (void *)&(*dirvptr)->disk.localDataVersion;
+        arg1 = (void *)&Vnode_dataversion(*dirvptr);
         if ((errorCode = VCmpProc((*dirvptr)->disk.type, arg1,
                                   dirVersion))) {
             SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Did), errorCode);
             return (errorCode);
         }
 
-        arg1 = (void *)&(*vptr)->disk.localDataVersion;
+        arg1 = (void *)&Vnode_dataversion(*vptr);
         if ((errorCode =
                  VCmpProc((*vptr)->disk.type, arg1, Version))) {
             SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Fid), errorCode);
