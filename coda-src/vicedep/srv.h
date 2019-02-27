@@ -231,7 +231,7 @@ typedef struct ClientEntry {
 char *ViceErrorMsg(int);
 
 /* codaproc.c */
-extern ViceVersionVector NullVV;
+const ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
 void NewCOP1Update(Volume *, Vnode *);
 void PollAndYield();
 void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *);

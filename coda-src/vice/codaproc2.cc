@@ -188,8 +188,8 @@ static int AllocReintegrateVnode(Volume **, dlist *, ViceFid *, ViceFid *,
 
 static int AddParent(Volume **, dlist *, ViceFid *);
 static int ReintNormalVCmp(VnodeType, void *, void *);
-static void ReintPrelimCOP(vle *, const ViceStoreId *oldSID,
-                           const ViceStoreId *newSID);
+// static void ReintPrelimCOP(vle *, const ViceStoreId *oldSID,
+//                            const ViceStoreId *newSID);
 static void ReintFinalCOP(vle *, Volume *);
 static int ValidateRHandle(VolumeId, ViceReintHandle *);
 
@@ -759,7 +759,7 @@ static int ValidateReintegrateParms(RPC2_Handle RPCid, VolumeId *Vid,
         /* Translate the Vid for each Fid. */
         for (int i = 0; i < 3; i++) {
             if (!FID_EQ(&r->Fid[i], &NullFid)) {
-                if (IsReplicatedVolID(&r->Fid[i].Volume)) {
+                if (IsReplicatedVolID(&r->Fid[i].Volume) || r->Fid[i].Volume != *Vid) {
                     eprint("Trying to access %x replicated volume", r->Fid[i].Volume);
                     errorCode = EINVAL;
                     goto Exit;
@@ -1110,9 +1110,9 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 }
                 int deltablocks = nBlocks(r->u.u_store.Length) -
                                   nBlocks(v->vptr->disk.length);
-                if (errorCode = CheckStoreSemantics(
+                if ((errorCode = CheckStoreSemantics(
                          client, &a_v->vptr, &v->vptr, &volptr,
-                         ReintNormalVCmp, r->dataversion[0], 0, 0)) {
+                         ReintNormalVCmp, r->dataversion[0], 0, 0))) {
                     goto Exit;
                 }
                 /* Perform. */
@@ -1283,7 +1283,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
 
                 /* directory concurrency check */
-                if (Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
+                if ((uint64_t)Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
                     parent_v->d_reintstale = 1;
 
                 /* Perform. */
@@ -1322,7 +1322,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
 
                 /* directory concurrency check */
-                if (Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
+                if ((uint64_t)Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
                     parent_v->d_reintstale = 1;
 
                 /* Perform. */
@@ -1373,7 +1373,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
 
                 /* directory concurrency check */
-                if (Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
+                if ((uint64_t)Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
                     parent_v->d_reintstale = 1;
 
                 /* Perform. */
@@ -1434,11 +1434,11 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
 
                 /* directory concurrency checks */
-                if (Vnode_dataversion(sd_v->vptr) != r->dataversion[0])
+                if ((uint64_t)Vnode_dataversion(sd_v->vptr) != r->dataversion[0])
                     sd_v->d_reintstale = 1;
 
                 if (!SameParent &&
-                    (Vnode_dataversion(td_v->vptr) != r->dataversion[1]))
+                    ((uint64_t)Vnode_dataversion(td_v->vptr) != r->dataversion[1]))
                     td_v->d_reintstale = 1;
 
                 /* Perform. */
@@ -1504,7 +1504,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
 
                 /* directory concurrency check */
-                if (Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
+                if ((uint64_t)Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
                     parent_v->d_reintstale = 1;
 
                 /* Perform. */
@@ -1542,7 +1542,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
 
                 /* directory concurrency check */
-                if (Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
+                if ((uint64_t)Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
                     parent_v->d_reintstale = 1;
 
                 /* Perform. */
@@ -1579,7 +1579,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
 
                 /* directory concurrency check */
-                if (Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
+                if ((uint64_t)Vnode_dataversion(parent_v->vptr) != r->dataversion[0])
                     parent_v->d_reintstale = 1;
 
                 /* Perform. */
@@ -2009,9 +2009,9 @@ static int ReintNormalVCmp(VnodeType type, void *arg1,
 }
 
 /* This probably ought to be folded into the PerformXXX routines!  -JJK */
-static void ReintPrelimCOP(vle *v, const ViceStoreId *OldSid,
-                           const ViceStoreId *NewSid)
-{
+// static void ReintPrelimCOP(vle *v, const ViceStoreId *OldSid,
+//                            const ViceStoreId *NewSid)
+// {
     // ViceStoreId *current = &Vnode_vv(v->vptr).StoreId;
 
     // /* Directories which are not identical to "old" contents MUST be
@@ -2024,7 +2024,7 @@ static void ReintPrelimCOP(vle *v, const ViceStoreId *OldSid,
     // }
 
     // *current = *NewSid;
-}
+// }
 
 static void ReintFinalCOP(vle *v, Volume *volptr)
 {

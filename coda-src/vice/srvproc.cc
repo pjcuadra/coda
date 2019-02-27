@@ -124,7 +124,8 @@ extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
 
 static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
                            vle **av, int lock, int vollock, int ignoreIncon);
-static int GrabFsObj(ViceFid *, Volume **, Vnode **, int, int, int);
+static int GrabFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
+                     int VolumeLock);
 static int NormalVCmp(VnodeType, void *, void *);
 
 typedef enum
@@ -1001,6 +1002,7 @@ int AllocVnode(Vnode **vptr, Volume *volptr, ViceDataType vtype, ViceFid *Fid,
     /* Initialize the new vnode. */
     (*vptr)->disk.node.dirNode = NEWVNODEINODE;
     (*vptr)->disk.localDataVersion  = (vtype == vFile ? 0 : 1);
+    InitVV(&(*vptr)->disk.versionvector);
     (*vptr)->disk.vparent        = pFid->Vnode;
     (*vptr)->disk.uparent        = pFid->Unique;
     (*vptr)->disk.length         = 0;
@@ -2747,6 +2749,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
         vptr->disk.localDataVersion = 0;
+        InitVV(&(vptr->disk.versionvector));
         break;
 
     case CLMS_Link:
@@ -2777,6 +2780,8 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
         vptr->disk.localDataVersion = 1;
+        InitVV(&(vptr->disk.versionvector));
+        
 
         /* Child inherits access list. */
         {
@@ -2809,6 +2814,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
         vptr->disk.localDataVersion = 1;
+        InitVV(&(vptr->disk.versionvector));
         break;
     }
 

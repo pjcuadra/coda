@@ -236,9 +236,6 @@ long FS_ViceGetVolumeInfo(RPC2_Handle RPCid, RPC2_String VolName,
             if (Info->Type == ROVOL) {
                 SLog(0, "GetVolumeInfo called for ROVOL");
                 Info->VSGAddr = 0;
-            } else if (Info->Type == RWVOL) {
-                /* Stuff the GroupId in the Info->Type[REPVOL] field. */
-                VolumeId Vid = Info->Vid;
             }
         }
     }

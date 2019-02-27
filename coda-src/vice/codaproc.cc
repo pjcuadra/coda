@@ -80,8 +80,6 @@ class rmblk;
 
 /* *****  Exported variables  ***** */
 
-ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
-
 /* globals */
 int OngoingRepairs = 0;
 
@@ -89,9 +87,6 @@ int OngoingRepairs = 0;
 static int GetSubTree(ViceFid *, Volume *, dlist *);
 
 static int PerformTreeRemoval(struct DirEntry *, void *);
-
-static void UpdateVVs(ViceVersionVector *, ViceVersionVector *,
-                      ViceVersionVector *);
 
 static int getFids(struct DirEntry *dirent, void *data);
 
@@ -438,7 +433,7 @@ static int RecursiveCheckRemoveSemantics(PDirEntry de, void *data)
         if (ov->vptr->disk.type == vFile || ov->vptr->disk.type == vSymlink) {
             errorCode = CheckRemoveSemantics(rb->client, &(pv->vptr),
                                              &(ov->vptr), name, &(rb->volptr),
-                                             0, NULL, NULL, NULL, NULL, NULL);
+                                             0, NULL, NULL, NULL, NULL, 0);
             if (errorCode) {
                 rb->result = errorCode;
                 return (errorCode);
@@ -448,7 +443,7 @@ static int RecursiveCheckRemoveSemantics(PDirEntry de, void *data)
             /* child is a directory */
             errorCode = CheckRmdirSemantics(rb->client, &(pv->vptr),
                                             &(ov->vptr), name, &(rb->volptr), 0,
-                                            NULL, NULL, NULL, NULL, NULL);
+                                            NULL, NULL, NULL, NULL, 0);
             if (errorCode) {
                 rb->result = errorCode;
                 return (errorCode);
@@ -562,28 +557,6 @@ void NewCOP1Update(Volume *volptr, Vnode *vptr)
     (&V_versionvector(volptr).Versions.Site0)[0]++;
 
     Vnode_dataversion(vptr)++;
-}
-
-static void UpdateVVs(ViceVersionVector *VVV, ViceVersionVector *VV,
-               ViceVersionVector *US)
-{
-    if (SrvDebugLevel >= 2) {
-        SLog(2, "\tVVV = [%d %d %d %d %d %d %d %d]", VVV->Versions.Site0,
-             VVV->Versions.Site1, VVV->Versions.Site2, VVV->Versions.Site3,
-             VVV->Versions.Site4, VVV->Versions.Site5, VVV->Versions.Site6,
-             VVV->Versions.Site7);
-        SLog(2, "\tVV = [%d %d %d %d %d %d %d %d]", VV->Versions.Site0,
-             VV->Versions.Site1, VV->Versions.Site2, VV->Versions.Site3,
-             VV->Versions.Site4, VV->Versions.Site5, VV->Versions.Site6,
-             VV->Versions.Site7);
-        SLog(2, "\tUS = [%d %d %d %d %d %d %d %d]", US->Versions.Site0,
-             US->Versions.Site1, US->Versions.Site2, US->Versions.Site3,
-             US->Versions.Site4, US->Versions.Site5, US->Versions.Site6,
-             US->Versions.Site7);
-    }
-
-    AddVVs(VVV, US);
-    AddVVs(VV, US);
 }
 
 void PollAndYield()
@@ -732,7 +705,7 @@ long FS_ViceValidateVols(RPC2_Handle cid, RPC2_Unsigned numVids,
     /* check the piggybacked volumes */
 
     for (unsigned int i = 0; i < numVids; i++) {
-        int error, index, ix, count;
+        int error;
         Volume *volptr;
         VolumeId rwVid;
         RPC2_Integer myVS;
@@ -753,17 +726,16 @@ long FS_ViceValidateVols(RPC2_Handle cid, RPC2_Unsigned numVids,
             goto InvalidVolume;
         }
 
-        myVS = (&(V_versionvector(volptr).Versions.Site0))[ix];
+        myVS = (&(V_versionvector(volptr).Versions.Site0))[0];
         VPutVolume(volptr);
 
         /* check the version stamp in our slot in the vector */
-        index = i * count + ix;
-        if (VSBS->SeqLen < ((index + 1) * sizeof(RPC2_Unsigned))) {
+        if (VSBS->SeqLen < ((i + 1) * sizeof(RPC2_Unsigned))) {
             SLog(9, "ValidateVolumes: short input");
             goto InvalidVolume;
         }
 
-        if ((long)ntohl(((RPC2_Unsigned *)VSBS->SeqBody)[index]) == myVS) {
+        if ((long)ntohl(((RPC2_Unsigned *)VSBS->SeqBody)[i]) == myVS) {
             SLog(8, "ValidateVolumes: 0x%x ok, adding callback", Vids[i].Vid);
             /*
 	     * add a volume callback. don't need to use CodaAddCallBack because

@@ -38,8 +38,6 @@ int large             = 500;
 int small             = 500;
 const char *CodaSrvIp = NULL;
 
-ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
-
 void PollAndYield()
 {
     dlist dl;

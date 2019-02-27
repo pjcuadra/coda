@@ -111,6 +111,7 @@ extern "C" {
 #include <volhash.h>
 #include <bitmap.h>
 #include <vice_file.h>
+#include <srv.h>
 
 #include "volutil.private.h"
 #include "vol-salvage.private.h"
@@ -675,7 +676,6 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                             vnode->uniquifier, vnode->localDataVersion);
                         CODA_ASSERT(vnode->node.inodeNumber > 0);
                         vnode->length = 0;
-                        extern ViceVersionVector NullVV;
                         vnode->versionvector = NullVV;
                     }
                     CODA_ASSERT(v_index.put(vnodeNumber, vnode->uniquifier,
@@ -690,7 +690,6 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                             vnode->uniquifier, vnode->localDataVersion);
                         CODA_ASSERT(vnode->node.inodeNumber > 0);
                         vnode->length = 0;
-                        extern ViceVersionVector NullVV;
                         vnode->versionvector = NullVV;
                         CODA_ASSERT(v_index.put(vnodeNumber, vnode->uniquifier,
                                                 vnode) == 0);
