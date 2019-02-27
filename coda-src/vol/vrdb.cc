@@ -164,8 +164,12 @@ void vrtab::print(FILE *fp)
 void vrtab::print(int afd)
 {
     char buf[40];
+    ssize_t written = 0;
     sprintf(buf, "%p : %-16s\n", this, name);
-    write(afd, buf, strlen(buf));
+    written = write(afd, buf, strlen(buf));
+    if ((size_t)written != strlen(buf))
+        LogMsg(0, VolDebugLevel, stdout, "vrtab::print: write returned %d",
+               written);
 
     ohashtab_iterator next(*this, (void *)(intptr_t)-1);
     vrent *vre;
@@ -394,9 +398,13 @@ void vrent::print(FILE *fp)
 void vrent::print(int afd)
 {
     char buf[512];
+    ssize_t written = 0;
     sprintf(buf, "%p : %s : %08x, %d, (x.x.x.x.x.x.x.x)\n", this, key, volnum,
             nServers);
-    write(afd, buf, strlen(buf));
+    written = write(afd, buf, strlen(buf));
+    if ((size_t)written != strlen(buf))
+        LogMsg(0, VolDebugLevel, stdout, "vrent::print: write returned %d",
+               written);
 }
 
 int vrent::dump(int afd)

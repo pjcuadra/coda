@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -184,8 +184,12 @@ void lqman::print(int fd)
 {
     ObtainReadLock(&lock);
     char buf[80];
+    ssize_t written = 0;
     sprintf(buf, "%-16s\n", name);
-    write(fd, buf, (int)strlen(buf));
+    written = write(fd, buf, (int)strlen(buf));
+    if ((size_t)written != strlen(buf))
+        LogMsg(0, VolDebugLevel, stdout, "vrtab::print: write returned %d",
+               written);
 
     lq_iterator next(objects);
     lqent *lqe;
@@ -224,8 +228,12 @@ void lqent::print(FILE *fp)
 void lqent::print(int fd)
 {
     char buf[80];
+    ssize_t written = 0;
 
     sprintf(buf, "VolumeId = %08x, time = %ld, deqing = %d\n", Vid, Time,
             deqing);
-    write(fd, buf, (int)strlen(buf));
+    written = write(fd, buf, (int)strlen(buf));
+    if ((size_t)written != strlen(buf))
+        LogMsg(0, VolDebugLevel, stdout, "lqent::print: write returned %d",
+               written);
 }
