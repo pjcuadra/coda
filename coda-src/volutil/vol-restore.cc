@@ -640,7 +640,7 @@ static int ReadVnodeDiskObject(DumpBuffer_t *buf, VnodeDiskObject *vdop,
             ReadInt32(buf, (unsigned int *)&vdop->length);
             break;
         case 'v':
-            ReadInt32(buf, (unsigned int *)&vdop->dataVersion);
+            ReadInt32(buf, (unsigned int *)&vdop->localDataVersion);
             break;
         case 'V':
             ReadVV(buf, &vdop->versionvector);
@@ -708,7 +708,7 @@ static int ReadVnodeDiskObject(DumpBuffer_t *buf, VnodeDiskObject *vdop,
 
             vdop->node.inodeNumber = icreate(V_device(vp), V_parentId(vp),
                                              *vnodeNumber, vdop->uniquifier,
-                                             vdop->dataVersion);
+                                             vdop->localDataVersion);
             if (vdop->node.inodeNumber == (unsigned)-1) {
                 VLog(0, "Unable to allocate inode for vnode %#x: aborted",
                      *vnodeNumber);
@@ -739,7 +739,7 @@ static int ReadVnodeDiskObject(DumpBuffer_t *buf, VnodeDiskObject *vdop,
             /* Create a null inode. */
             vdop->node.inodeNumber = icreate(V_device(vp), V_parentId(vp),
                                              *vnodeNumber, vdop->uniquifier,
-                                             vdop->dataVersion);
+                                             vdop->localDataVersion);
             if (vdop->node.inodeNumber == (unsigned)-1) {
                 VLog(0, "Unable to allocate inode for vnode %d: aborted",
                      *vnodeNumber);

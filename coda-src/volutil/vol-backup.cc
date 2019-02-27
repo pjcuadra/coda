@@ -666,13 +666,13 @@ static void updateBackupVnodes(Volume *rwvp, Volume *backupvp,
                         rwVnode->uniquifier, rwVnode->uniquifier,
                         bvdop->uniquifier);
 
-                if (rwVnode->dataVersion != bvdop->dataVersion)
+                if (rwVnode->localDataVersion != bvdop->localDataVersion)
                     VLog(
                         0, 0, stdout,
                         "VolBackup: RW and RO dataVersions don't match (%x.%x.%x) %d != %d\n",
                         V_id(rwvp), bitNumberToVnodeNumber(vnodeIndex, vclass),
-                        rwVnode->uniquifier, rwVnode->dataVersion,
-                        bvdop->dataVersion);
+                        rwVnode->uniquifier, rwVnode->localDataVersion,
+                        bvdop->localDataVersion);
 
                 if (rwVnode->type != vDirectory) {
                     if (rwVnode->node.inodeNumber != bvdop->node.inodeNumber) {

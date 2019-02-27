@@ -128,7 +128,7 @@ long S_VolShowVnode(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     infofile = fopen(INFOFILE, "w");
     fprintf(infofile,
             "%08x.%08x (%x), %s, cloned=%d, mode=%o, links=%d, length=%d\n",
-            vnodeid, vnp->disk.uniquifier, vnp->disk.dataVersion,
+            vnodeid, vnp->disk.uniquifier, vnp->disk.localDataVersion,
             vnp->disk.type == vFile ?
                 "file" :
                 vnp->disk.type == vDirectory ?

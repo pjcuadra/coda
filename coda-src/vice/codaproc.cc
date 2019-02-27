@@ -247,7 +247,8 @@ long FS_ViceSetVV(RPC2_Handle cid, ViceFid *Fid, ViceVersionVector *VV,
             goto FreeLocks;
         }
     }
-    memcpy(&(Vnode_vv(vptr)), VV, sizeof(ViceVersionVector));
+
+    Vnode_dataversion(vptr) = (&(VV->Versions.Site0))[0];
 
 FreeLocks:
     rvmlib_begin_transaction(restore);
@@ -552,33 +553,15 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
   NewCOP1Update: Increment the version number and update the
   storeid of an object.
 */
-void NewCOP1Update(Volume *volptr, Vnode *vptr, ViceStoreId *StoreId,
-                   RPC2_Integer *vsptr)
+void NewCOP1Update(Volume *volptr, Vnode *vptr)
 {
-    int ix     = 0;
+    SLog(2, "COP1Update: Fid = (%x.%x.%x)", V_id(volptr),
+         vptr->vnodeNumber, vptr->disk.uniquifier);
 
-    SLog(2, "COP1Update: Fid = (%x.%x.%x), StoreId = (%x.%x)", V_id(volptr),
-         vptr->vnodeNumber, vptr->disk.uniquifier, StoreId->HostId,
-         StoreId->Uniquifier);
+    /* Increment the volume and vnode version */
+    (&V_versionvector(volptr).Versions.Site0)[0]++;
 
-    /* If a volume version stamp was sent in, and if it matches, update it. */
-    if (vsptr) {
-        SLog(2, "COP1Update: client VS %d", *vsptr);
-        if (*vsptr == (&(V_versionvector(volptr).Versions.Site0))[ix])
-            (*vsptr)++;
-        else
-            *vsptr = 0;
-    }
-
-    /* Fashion an UpdateSet using just ThisHost. */
-    ViceVersionVector UpdateSet       = NullVV;
-    (&(UpdateSet.Versions.Site0))[ix] = 1;
-
-    /* Install the new StoreId in the Vnode. */
-    Vnode_vv(vptr).StoreId = *StoreId;
-
-    /* Update the Volume and Vnode VVs. */
-    UpdateVVs(&V_versionvector(volptr), &Vnode_vv(vptr), &UpdateSet);
+    Vnode_dataversion(vptr)++;
 }
 
 static void UpdateVVs(ViceVersionVector *VVV, ViceVersionVector *VV,
@@ -694,30 +677,19 @@ void GetMyVS(Volume *volptr, RPC2_CountedBS *VSList, RPC2_Integer *MyVS)
     SLog(1, "GetMyVS: 0x%x, incoming stamp %d", V_id(volptr), *MyVS);
 }
 
-void SetVSStatus(ClientEntry *client, Volume *volptr, RPC2_Integer *NewVS,
-                 CallBackStatus *VCBStatus)
+void SetVSStatus(ClientEntry *client, Volume *volptr, CallBackStatus *VCBStatus)
 {
     *VCBStatus = NoCallBack;
 
-    SLog(1, "SetVSStatus: 0x%x, client %d, server %d", V_id(volptr), *NewVS,
+    SLog(1, "SetVSStatus: 0x%x, server %d", V_id(volptr), 
          (&(V_versionvector(volptr).Versions.Site0))[0]);
 
-    /* check the version stamp in our slot in the vector */
-    if (*NewVS == (&(V_versionvector(volptr).Versions.Site0))[0]) {
-        /*
-	 * add a volume callback. don't need to use CodaAddCallBack because
-	 * we always send in the VSG volume id.
-	 */
-        ViceFid fid;
-        fid.Volume = V_id(volptr);
-        fid.Vnode = fid.Unique = 0;
-        *VCBStatus             = AddCallBack(client->VenusId, &fid);
-    } else {
-        *NewVS = 0;
-    }
+    ViceFid fid;
+    fid.Volume = V_id(volptr);
+    fid.Vnode = fid.Unique = 0;
+    *VCBStatus             = AddCallBack(client->VenusId, &fid);
 
-    SLog(1, "SetVSStatus: 0x%x, NewVS %d, CBstatus %d", V_id(volptr), *NewVS,
-         *VCBStatus);
+    SLog(1, "SetVSStatus: 0x%x, CBstatus %d", V_id(volptr), *VCBStatus);
     return;
 }
 

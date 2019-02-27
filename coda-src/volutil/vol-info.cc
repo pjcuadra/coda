@@ -247,7 +247,7 @@ void PrintVnode(FILE *outfile, VnodeDiskObject *vnode, VnodeId vnodeNumber)
 {
     fprintf(outfile,
             "Vnode %08x.%08x.%08x, cloned = %u, length = %u, inode = %p\n",
-            vnodeNumber, vnode->uniquifier, vnode->dataVersion, vnode->cloned,
+            vnodeNumber, vnode->uniquifier, vnode->localDataVersion, vnode->cloned,
             vnode->length, vnode->node.dirNode);
     fprintf(outfile, "link count = %u, type = %u, volume index = %d\n",
             vnode->linkCount, vnode->type, vnode->vol_index);

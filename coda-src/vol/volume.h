@@ -319,6 +319,7 @@ struct volHeader {
 #define V_needsCallback(vp) ((vp)->header->diskstuff.needsCallback)
 #define V_destroyMe(vp) ((vp)->header->diskstuff.destroyMe)
 #define V_versionvector(vp) ((vp)->header->diskstuff.versionvector)
+#define V_dataversion(vp) (&((vp)->header->diskstuff.versionvector.Versions.Site0))[0]
 #define V_dontSalvage(vp) ((vp)->header->diskstuff.dontSalvage)
 #define V_maxquota(vp) ((vp)->header->diskstuff.maxquota)
 #define V_minquota(vp) ((vp)->header->diskstuff.minquota)

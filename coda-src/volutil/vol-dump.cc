@@ -170,7 +170,7 @@ static int DumpVnodeDiskObject(DumpBuffer_t *dbuf, VnodeDiskObject *v,
     DumpShort(dbuf, 'b', v->modeBits);
     DumpShort(dbuf, 'l', v->linkCount); /* May not need this */
     DumpInt32(dbuf, 'L', v->length);
-    DumpInt32(dbuf, 'v', v->dataVersion);
+    DumpInt32(dbuf, 'v', v->localDataVersion);
     DumpVV(dbuf, 'V', (ViceVersionVector *)(&(v->versionvector)));
     DumpInt32(dbuf, 'm', v->unixModifyTime);
     DumpInt32(dbuf, 'a', v->author);

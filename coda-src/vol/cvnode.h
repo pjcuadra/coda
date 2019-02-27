@@ -106,7 +106,7 @@ typedef struct VnodeDiskObjectStruct {
     Unique_t uniquifier; /* Uniquifier for the vnode; assigned from the volume
                             uniquifier (actually from nextVnodeUnique in the
                             Volume structure) */
-    FileVersion dataVersion; /* version number of the data */
+    FileVersion localDataVersion; /* version number of the data */
 
 /* inode number for a vnode allocated but not used for creation */
 #define NEWVNODEINODE ((PDirInode)-1)
@@ -180,7 +180,8 @@ typedef struct Vnode {
      * because the ACLs are dangling off the end... */
 } Vnode;
 
-#define Vnode_vv(vptr) ((vptr)->disk.versionvector)
+// #define Vnode_vv(vptr) ((vptr)->disk.versionvector)
+#define Vnode_dataversion(vptr) (&((vptr)->disk.versionvector.Versions.Site0))[0]
 
 #define SIZEOF_LARGEVNODE \
     (sizeof(struct Vnode) - sizeof(VnodeDiskObject) + SIZEOF_LARGEDISKVNODE)

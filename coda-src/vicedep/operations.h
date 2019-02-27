@@ -34,27 +34,27 @@ int CheckStoreSemantics(ClientEntry *, Vnode **, Vnode **, Volume **, VCP,
                         FileVersion, Rights *, Rights *);
 int CheckSetAttrSemantics(ClientEntry *, Vnode **, Vnode **, Volume **,
                           VCP, RPC2_Integer, Date_t, UserId, RPC2_Unsigned,
-                          RPC2_Integer, ViceVersionVector *, FileVersion,
+                          RPC2_Integer, FileVersion,
                           Rights *, Rights *);
 int CheckSetACLSemantics(ClientEntry *, Vnode **, Volume **, VCP,
                          ViceVersionVector *, FileVersion, Rights *, Rights *,
                          RPC2_CountedBS *, AL_AccessList **);
 int CheckCreateSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
-                         VCP, void *, void *, Rights *, Rights *, int = 1);
+                         VCP, FileVersion, FileVersion, Rights *, Rights *, int = 1);
 int CheckRemoveSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
                          VCP, void *, void *, Rights *, Rights *, int = 1);
 int CheckLinkSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
-                        VCP, void *, void *, Rights *, Rights *, int = 1);
+                        VCP, FileVersion, FileVersion, Rights *, Rights *, int = 1);
 int CheckRenameSemantics(ClientEntry *, Vnode **, Vnode **, Vnode **, char *,
                          Vnode **, char *, Volume **, VCP, void *, void *,
                          void *, void *, Rights *, Rights *, Rights *, Rights *,
                          Rights *, Rights *, int = 1, int = 0, dlist * = NULL);
 int CheckMkdirSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
-                        VCP, void *, void *, Rights *, Rights *, int = 1);
+                        VCP, FileVersion, FileVersion, Rights *, Rights *, int = 1);
 int CheckRmdirSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
                         VCP, void *, void *, Rights *, Rights *, int = 1);
 int CheckSymlinkSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
-                          VCP, void *, void *, Rights *, Rights *,
+                          VCP, FileVersion, FileVersion, Rights *, Rights *,
                           int = 1);
 void PerformFetch(ClientEntry *, Volume *, Vnode *);
 int FetchBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *,
@@ -64,36 +64,30 @@ void PerformGetAttr(ClientEntry *, Volume *, Vnode *);
 void PerformGetACL(ClientEntry *, Volume *, Vnode *, RPC2_BoundedBS *,
                    RPC2_String);
 void PerformStore(ClientEntry *, Volume *, Vnode *, Inode,
-                  RPC2_Integer, Date_t, ViceStoreId *, RPC2_Integer * = NULL);
+                  RPC2_Integer, Date_t, ViceStoreId *);
 int StoreBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *, Inode,
                       RPC2_Integer);
 void PerformSetAttr(ClientEntry *, Volume *, Vnode *,
                     RPC2_Integer, Date_t, UserId, RPC2_Unsigned, RPC2_Integer,
-                    ViceStoreId *, Inode *, RPC2_Integer * = NULL);
+                    ViceStoreId *, Inode *);
 void PerformSetACL(ClientEntry *, Volume *, Vnode *,
-                   ViceStoreId *, AL_AccessList *, RPC2_Integer * = NULL);
+                   AL_AccessList *);
 int PerformCreate(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                  Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *,
-                  RPC2_Integer * = NULL);
+                  Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *);
 void PerformRemove(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                   Date_t, ViceStoreId *, DirInode **, int *,
-                   RPC2_Integer * = NULL);
+                   Date_t, ViceStoreId *, DirInode **, int *);
 int PerformLink(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                Date_t, ViceStoreId *, DirInode **, int *,
-                RPC2_Integer * = NULL);
+                Date_t, ViceStoreId *, DirInode **, int *);
 void PerformRename(ClientEntry *, Volume *, Vnode *, Vnode *, Vnode *,
                    Vnode *, char *, char *, Date_t, ViceStoreId *,
-                   DirInode **, DirInode **, DirInode **, int * = NULL,
-                   RPC2_Integer * = NULL);
+                   DirInode **, DirInode **, DirInode **, int * = NULL);
 int PerformMkdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                 Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *,
-                 RPC2_Integer * = NULL);
+                 Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *);
 void PerformRmdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                  Date_t, ViceStoreId *, DirInode **, int *,
-                  RPC2_Integer * = NULL);
+                  Date_t, ViceStoreId *, DirInode **, int *);
 int PerformSymlink(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                    Inode, RPC2_Unsigned, Date_t, RPC2_Unsigned,
-                   ViceStoreId *, DirInode **, int *, RPC2_Integer * = NULL);
+                   ViceStoreId *, DirInode **, int *);
 void PerformSetQuota(ClientEntry *, Volume *, Vnode *, ViceFid *, int, ViceStoreId *);
 
 void PutObjects(int, Volume *, int, dlist *, int, int, int = 0);

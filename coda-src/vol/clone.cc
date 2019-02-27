@@ -117,18 +117,18 @@ static void CloneIndex(Volume *ovp, Volume *cvp, Volume *dvp, VnodeClass vclass)
             CODA_ASSERT(vnode->vnodeMagic == vcp->magic);
             if (vnode->type == vDirectory && RWOriginal) {
                 vnode->cloned = 1;
-                /* NOTE:  the dataVersion++ is incredibly important!!!.
+                /* NOTE:  the localDataVersion++ is incredibly important!!!.
 		   This will cause the inode created by the file server
-		   on copy-on-write to be stamped with a dataVersion bigger
+		   on copy-on-write to be stamped with a localDataVersion bigger
 		   than the current one.  The salvager will then do the
 		   right thing */
-                vnode->dataVersion++;
+                vnode->localDataVersion++;
                 /* write out the changed old vnode */
                 CODA_ASSERT(oindex.oput(offset, vnode) == 0);
                 /* Turn clone flag off for the cloned volume, just for
 		   cleanliness */
                 vnode->cloned = 0;
-                vnode->dataVersion--; /* Really needs to be set to the value in the inode,
+                vnode->localDataVersion--; /* Really needs to be set to the value in the inode,
 					 for the read-only volume */
             }
             if (vnode->inodeNumber == dinode) {
