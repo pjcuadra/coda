@@ -107,7 +107,7 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     }
 
     if (!error) {
-        memcpy(&Vnode_vv(vnp), vv, sizeof(ViceVersionVector));
+        Vnode_dataversion(vnp) = vv->Versions.Site0;
     } else {
         /* error == EIO */
         /* barren object - debarrenize it - setvv is overloaded here */

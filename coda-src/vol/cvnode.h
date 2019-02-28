@@ -180,7 +180,6 @@ typedef struct Vnode {
      * because the ACLs are dangling off the end... */
 } Vnode;
 
-#define Vnode_vv(vptr) ((vptr)->disk.versionvector)
 #define Vnode_dataversion(vptr) (vptr)->disk.dataVersion
 
 #define SIZEOF_LARGEVNODE \

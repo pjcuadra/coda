@@ -242,7 +242,8 @@ long FS_ViceSetVV(RPC2_Handle cid, ViceFid *Fid, ViceVersionVector *VV,
             goto FreeLocks;
         }
     }
-    memcpy(&(Vnode_vv(vptr)), VV, sizeof(ViceVersionVector));
+
+    Vnode_dataversion(vptr) = (&(VV->Versions.Site0))[0];
 
 FreeLocks:
     rvmlib_begin_transaction(restore);
@@ -617,7 +618,7 @@ long FS_ViceGetVolVS(RPC2_Handle cid, VolumeId Vid, RPC2_Integer *VS,
         goto Exit;
     }
 
-    *VS = (&(V_versionvector(volptr).Versions.Site0))[ix];
+    *VS = V_dataversion(volptr);
     VPutVolume(volptr);
 
     /*

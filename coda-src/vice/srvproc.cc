@@ -1039,7 +1039,6 @@ int AllocVnode(Vnode **vptr, Volume *volptr, ViceDataType vtype, ViceFid *Fid,
     /* Initialize the new vnode. */
     (*vptr)->disk.node.dirNode = NEWVNODEINODE;
     (*vptr)->disk.dataVersion  = (vtype == vFile ? 0 : 1);
-    InitVV(&Vnode_vv((*vptr)));
     (*vptr)->disk.vparent        = pFid->Vnode;
     (*vptr)->disk.uparent        = pFid->Unique;
     (*vptr)->disk.length         = 0;
@@ -1239,7 +1238,7 @@ static int IsVirgin(Vnode *vptr)
 
 int CheckStoreSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
                         Volume **volptr, VCP VCmpProc,
-                        ViceVersionVector *VV, FileVersion DataVersion,
+                        FileVersion DataVersion,
                         Rights *rights, Rights *anyrights)
 {
     int errorCode = 0;
@@ -1301,7 +1300,7 @@ int CheckSetAttrSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
                           Volume **volptr, VCP VCmpProc,
                           RPC2_Integer Length, Date_t Mtime, UserId Owner,
                           RPC2_Unsigned Mode, RPC2_Integer Mask,
-                          ViceVersionVector *VV, FileVersion DataVersion,
+                          FileVersion DataVersion,
                           Rights *rights, Rights *anyrights)
 {
     int errorCode = 0;
@@ -2328,7 +2327,7 @@ void PerformStore(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     vptr->disk.length           = Length;
     vptr->disk.unixModifyTime   = Mtime;
     vptr->disk.author           = client->Id;
-    vptr->disk.dataVersion++;
+    NewCOP1Update(volptr, vptr);
 }
 
 int StoreBulkTransfer(RPC2_Handle RPCid, ClientEntry *client, Volume *volptr,
@@ -2452,6 +2451,8 @@ void PerformSetAttr(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
             *CowInode = vptr->disk.node.inodeNumber;
             CopyOnWrite(vptr, volptr);
         }
+
+    NewCOP1Update(volptr, vptr);
 }
 
 void PerformSetACL(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
@@ -2657,13 +2658,13 @@ void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     /* Update source parent vnode. */
     sd_vptr->disk.unixModifyTime = Mtime;
     sd_vptr->disk.author         = client ? client->Id : sd_vptr->disk.author;
-    sd_vptr->disk.dataVersion++;
+    NewCOP1Update(volptr, sd_vptr);
 
     /* Update target parent vnode. */
     if (!SameParent) {
         td_vptr->disk.unixModifyTime = Mtime;
         td_vptr->disk.author = client ? client->Id : td_vptr->disk.author;
-        td_vptr->disk.dataVersion++;
+        NewCOP1Update(volptr, td_vptr);
     }
     if (TargetExists && t_vptr->disk.type == vDirectory)
         td_vptr->disk.linkCount--;
@@ -2674,11 +2675,15 @@ void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
         s_vptr->disk.uparent = td_vptr->disk.uniquifier;
     }
 
+    NewCOP1Update(volptr, s_vptr);
+
     /* Update target vnode. */
     if (TargetExists) {
         if (--t_vptr->disk.linkCount == 0 || t_vptr->disk.type == vDirectory) {
             t_vptr->delete_me = 1;
             DeleteFile(&TFid);
+        } else {
+            NewCOP1Update(volptr, t_vptr);
         }
     }
 }
@@ -2766,8 +2771,10 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     /* Update the parent vnode. */
     if (vptr->disk.type == vDirectory)
         dirvptr->disk.linkCount++;
+
     dirvptr->disk.length = newlength;
-    dirvptr->disk.dataVersion++;
+    NewCOP1Update(volptr, dirvptr);
+
 
     /* If we are called from resolution (client == NULL), the mtime and author
      * fields are already set correctly */
@@ -2790,7 +2797,6 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
         vptr->disk.dataVersion = 0;
-        InitVV(&Vnode_vv(vptr));
         break;
 
     case CLMS_Link:
@@ -2821,7 +2827,7 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
         vptr->disk.dataVersion = 1;
-        InitVV(&Vnode_vv(vptr));
+
 
         /* Child inherits access list. */
         {
@@ -2854,11 +2860,10 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
         vptr->disk.dataVersion = 1;
-        InitVV(&Vnode_vv(vptr));
         break;
     }
 
-    NewCOP1Update(volptr, vptr, StoreId, vsptr);
+    NewCOP1Update(volptr, vptr);
 
     return 0;
 }
@@ -2906,7 +2911,7 @@ static void Perform_RR(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     dirvptr->disk.unixModifyTime = Mtime;
     if (vptr->disk.type == vDirectory)
         dirvptr->disk.linkCount--;
-    dirvptr->disk.dataVersion++;
+    NewCOP1Update(volptr, dirvptr);
 
     /* PARANOIA: Flush directory pages for deleted child. */
     if (vptr->disk.type == vDirectory) {
@@ -2924,6 +2929,8 @@ static void Perform_RR(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     if (--vptr->disk.linkCount == 0 || vptr->disk.type == vDirectory) {
         vptr->delete_me = 1;
         DeleteFile(&Fid);
+    } else {
+        NewCOP1Update(volptr, vptr);
     }
 }
 

@@ -32,10 +32,10 @@ int CheckGetAttrSemantics(ClientEntry *, Vnode **, Vnode **, Volume **,
 int CheckGetACLSemantics(ClientEntry *, Vnode **, Volume **, Rights *, Rights *,
                          RPC2_BoundedBS *, RPC2_String *);
 int CheckStoreSemantics(ClientEntry *, Vnode **, Vnode **, Volume **, VCP,
-                        ViceVersionVector *, FileVersion, Rights *, Rights *);
+                        FileVersion, Rights *, Rights *);
 int CheckSetAttrSemantics(ClientEntry *, Vnode **, Vnode **, Volume **,
                           VCP, RPC2_Integer, Date_t, UserId, RPC2_Unsigned,
-                          RPC2_Integer, ViceVersionVector *, FileVersion,
+                          RPC2_Integer, FileVersion,
                           Rights *, Rights *);
 int CheckSetACLSemantics(ClientEntry *, Vnode **, Volume **, VCP,
                          ViceVersionVector *, FileVersion, Rights *, Rights *,
