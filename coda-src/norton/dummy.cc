@@ -56,7 +56,7 @@ void Die(const char *msg)
 }
 
 int GetFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
-             int VolumeLock, int ignoreIncon, int ignoreBQ, int getdirhandle)
+             int VolumeLock, int getdirhandle)
 {
     CODA_ASSERT(0);
     return (0);

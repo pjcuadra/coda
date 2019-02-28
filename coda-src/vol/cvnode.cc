@@ -462,7 +462,7 @@ static Vnode *VAllocVnodeCommon(Error *ec, Volume *vp, VnodeType type,
       vnode.  int ignoreBarren TRUE (non-zero) iff it is ok for barren
       flag to be set in vnode */
 Vnode *VGetVnode(Error *ec, Volume *vp, VnodeId vnodeNumber, Unique_t unq,
-                 int locktype, int ignoreIncon, int ignoreBarren)
+                 int locktype, int ignoreBarren)
 
 {
     Vnode *vnp;
@@ -472,8 +472,8 @@ Vnode *VGetVnode(Error *ec, Volume *vp, VnodeId vnodeNumber, Unique_t unq,
     ProgramType *pt;
     char *rock;
 
-    SLog(9, "Entering VGetVnode(vol %08x, vnode %x, lock %d, ignoreIncon %d)",
-         V_id(vp), vnodeNumber, locktype, ignoreIncon);
+    SLog(9, "Entering VGetVnode(vol %08x, vnode %x, lock %d)",
+         V_id(vp), vnodeNumber, locktype);
     *ec = 0;
 
     if (vnodeNumber == 0) {
@@ -572,11 +572,6 @@ Vnode *VGetVnode(Error *ec, Volume *vp, VnodeId vnodeNumber, Unique_t unq,
         vnp->cacheCheck  = vp->cacheCheck;
     }
 
-    /* Check for inconsistency */
-    if (IsIncon(vnp->disk.versionvector) && !ignoreIncon) {
-        *ec = EINCONS;
-        return NULL;
-    }
     /* Check for barren flag */
     if (IsBarren(vnp->disk.versionvector) && !ignoreBarren) {
         *ec = EIO;
