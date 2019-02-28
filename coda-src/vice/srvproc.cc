@@ -974,9 +974,6 @@ int ValidateParms(RPC2_Handle RPCid, ClientEntry **client, int *voltype,
                   VolumeId *Vidp, RPC2_CountedBS *PiggyBS, int *Nservers)
 {
     int errorCode = 0;
-    VolumeId GroupVid;
-    int count, pos;
-    int voltype_tmp;
 
     /* 2. Map RPC handle to client structure. */
     errorCode = (int)RPC2_GetPrivatePointer(RPCid, (char **)client);

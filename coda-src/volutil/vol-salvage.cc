@@ -111,6 +111,7 @@ extern "C" {
 #include <volhash.h>
 #include <bitmap.h>
 #include <vice_file.h>
+#include <srv.h>
 
 #include "volutil.private.h"
 #include "vol-salvage.private.h"

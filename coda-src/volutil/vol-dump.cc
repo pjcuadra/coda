@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -584,13 +584,6 @@ long S_VolNewDump(RPC2_Handle rpcid, RPC2_Unsigned formal_volumeNumber,
     int ix;
 
     volnum = V_parentId(vp);
-    if (ReverseXlateVid(&volnum, &ix)) {
-        unique = (&V_versionvector(vp).Versions.Site0)[ix];
-    } else {
-        volnum = 0; /* parent volume, nonexistent in the case... */
-        /* Uniquely identify incrementals of non-rep volumes by updateDate */
-        unique = V_updateDate(vp);
-    }
     oldunique = unique;
 
     char VVlistfile[PATH_MAX];
@@ -744,8 +737,6 @@ long S_VolDumpEstimate(RPC2_Handle rpcid, RPC2_Unsigned formal_volumeNumber,
 
     /* Find the replicated id and index for the parent volume */
     volnum = V_parentId(vp);
-    if (!ReverseXlateVid(&volnum))
-        volnum = 0; /* non-replicated volume */
 
     char listfile[PATH_MAX];
     int oldUnique;

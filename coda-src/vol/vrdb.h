@@ -101,7 +101,6 @@ public
 extern vrtab VRDB;
 extern void CheckVRDB();
 extern int DumpVRDB(int outfd);
-int XlateVid(VolumeId *, int * = NULL, int * = NULL, int *voltype = NULL);
-extern int ReverseXlateVid(VolumeId *, int * = NULL);
+bool IsReplicatedVolID(VolumeId *vidp);
 
 #endif /* _VICE_VRDB_H_ */

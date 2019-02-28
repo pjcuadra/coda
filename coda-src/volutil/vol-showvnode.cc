@@ -99,9 +99,10 @@ long S_VolShowVnode(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     VLog(9, "Entering VolShowVnode(%d, 0x%x, 0x%x)", rpcid, volid, vnodeid);
 
     /* first check if it is replicated */
-    tmpvolid = volid;
-    if (!XlateVid(&volid))
-        volid = tmpvolid;
+    if (IsReplicatedVolID(&volid)) {
+        eprint("Trying to access %x replicated volume", volid);
+        return (EINVAL);
+    }
 
     rvmlib_begin_transaction(restore);
     VInitVolUtil(volumeUtility);

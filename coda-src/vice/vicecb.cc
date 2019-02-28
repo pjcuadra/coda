@@ -817,16 +817,10 @@ static void GetCallBacks(VolumeId vid, FILE *fp)
 // for the entire volume.
 void PrintCallBacks(ViceFid *fid, FILE *fp)
 {
-    // check for the replicated id also
-
-    ViceFid ofid = *fid;
-    int useofid  = 0;
-    if (!XlateVid(&ofid.Volume)) {
-        ofid.Volume = fid->Volume;
-        if (ReverseXlateVid(&ofid.Volume))
-            useofid = 1;
-    } else
-        useofid = 1;
+    if (IsReplicatedVolID(&fid->Volume)) {
+        eprint("Trying to access %x replicated volume", fid->Volume);
+        return;
+    }
 
     if (fid->Vnode && fid->Unique) {
         GetCallBacks(fid, fp);

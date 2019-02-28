@@ -239,11 +239,6 @@ long FS_ViceGetVolumeInfo(RPC2_Handle RPCid, RPC2_String VolName,
             if (Info->Type == ROVOL) {
                 SLog(0, "GetVolumeInfo called for ROVOL");
                 Info->VSGAddr = 0;
-            } else if (Info->Type == RWVOL) {
-                /* Stuff the GroupId in the Info->Type[REPVOL] field. */
-                VolumeId Vid = Info->Vid;
-                if (ReverseXlateVid(&Vid))
-                    (&(Info->Type0))[replicatedVolume] = Vid;
             }
         }
     }
@@ -323,14 +318,10 @@ long FS_ViceGetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
         goto Final;
     }
 
-    if (XlateVid(&vid)) {
-        SLog(1, "XlateVid: %u --> %u", VSGVolnum, vid);
-    } else {
-        if (IsReplicated != 0) {
-            SLog(0, "Failed to translate VSG but IsReplicated != 0");
-            errorCode = EINVAL; /* ??? -JJK */
-            goto Final;
-        }
+    if (IsReplicatedVolID(&vid)) {
+        eprint("Trying to access %x replicated volume", vid);
+        errorCode = EINVAL;
+        goto Final;
     }
 
     if (name->MaxSeqLen < V_MAXVOLNAMELEN || offlineMsg->MaxSeqLen < VMSGSIZE ||

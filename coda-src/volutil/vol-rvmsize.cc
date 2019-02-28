@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -59,7 +59,10 @@ long S_VolRVMSize(RPC2_Handle rpcid, VolumeId VolID, RVMSize_data *data)
     LogMsg(9, VolDebugLevel, stdout, "Entering VolRVMSize()");
     VInitVolUtil(volumeUtility);
 
-    XlateVid(&VolID); /* Translate Volid into Replica Id if necessary */
+    if (IsReplicatedVolID(&VolID)) {
+        eprint("Trying to access %x replicated volume", VolID);
+        return (EINVAL);
+    }
 
     vp = VGetVolume(&error, VolID);
     if (error) {

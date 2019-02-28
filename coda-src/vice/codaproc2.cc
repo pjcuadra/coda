@@ -525,23 +525,15 @@ static int ValidateReintegrateParms(RPC2_Handle RPCid, VolumeId *Vid,
     unsigned char *OldName;
     unsigned char *NewName;
     int rlog_len = 0;
-    int count, ix;
 
     BUFFER buffer = {};
     buffer.who    = RP2_SERVER;
 
-    /* Translate the volume. */
-    VolumeId VSGVolnum = *Vid;
-
-    /* Translate the GroupVol into this host's RWVol. */
-    if (!XlateVid(Vid, &count, &ix, voltype)) {
-        SLog(0, "ValidateReintegrateParms: failed to translate VSG %x",
-             VSGVolnum);
+    if (IsReplicatedVolID(Vid)) {
+        eprint("Trying to access %x replicated volume", *Vid);
         errorCode = EINVAL;
         goto Exit;
     }
-
-    SLog(2, "ValidateReintegrateParms: %x --> %x", VSGVolnum, *Vid);
 
     /* Get the client entry. */
     errorCode = RPC2_GetPrivatePointer(RPCid, (char **)client);
@@ -763,7 +755,10 @@ static int ValidateReintegrateParms(RPC2_Handle RPCid, VolumeId *Vid,
         /* Translate the Vid for each Fid. */
         for (int i = 0; i < 3; i++) {
             if (!FID_EQ(&r->Fid[i], &NullFid)) {
-                if (!XlateVid(&r->Fid[i].Volume) || r->Fid[i].Volume != *Vid) {
+                if (IsReplicatedVolID(&r->Fid[i].Volume) ||
+                    r->Fid[i].Volume != *Vid) {
+                    eprint("Trying to access %x replicated volume",
+                           r->Fid[i].Volume);
                     errorCode = EINVAL;
                     goto Exit;
                 }
@@ -2052,12 +2047,12 @@ static int ValidateRHandle(VolumeId Vid, ViceReintHandle *RHandle)
     SLog(10, "ValidateRHandle: Vid = %x", Vid);
 
     /* get the volume and sanity check */
-    int error, count, ix;
+    int error;
     Volume *volptr;
     VolumeId rwVid = Vid;
 
-    if (!XlateVid(&rwVid, &count, &ix)) {
-        SLog(1, "ValidateRHandle: Couldn't translate VSG %x", Vid);
+    if (IsReplicatedVolID(&rwVid)) {
+        eprint("Trying to access %x replicated volume", rwVid);
         error = EINVAL;
         goto Exit;
     }

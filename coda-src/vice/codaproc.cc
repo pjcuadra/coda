@@ -102,7 +102,6 @@ long FS_ViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
                       ViceFidRange *Range)
 {
     long errorCode      = 0;
-    VolumeId VSGVolnum  = Vid;
     Volume *volptr      = 0;
     ClientEntry *client = 0;
     int stride, ix;
@@ -123,10 +122,8 @@ long FS_ViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
             goto FreeLocks;
         }
 
-        /* Translate the GroupVol into this host's RWVol. */
-        /* This host's {stride, ix} are returned as side effects; they will be needed in the Alloc below. */
-        if (!XlateVid(&Vid, &stride, &ix)) {
-            SLog(0, "ViceAllocFids: XlateVid (%x) failed", VSGVolnum);
+        if (IsReplicatedVolID(&Vid)) {
+            eprint("Trying to access %x replicated volume", Vid);
             errorCode = EINVAL;
             goto FreeLocks;
         }
@@ -229,8 +226,11 @@ long FS_ViceSetVV(RPC2_Handle cid, ViceFid *Fid, ViceVersionVector *VV,
 
     SLog(9, "Entering ViceSetVV(%s", FID_(Fid));
 
-    /* translate replicated fid to rw fid */
-    XlateVid(&Fid->Volume); /* dont bother checking for errors */
+    if (IsReplicatedVolID(&Fid->Volume)) {
+        eprint("Trying to access %x replicated volume", Fid->Volume);
+        return (EINVAL);
+    }
+
     if (RPC2_GetPrivatePointer(cid, &rock) != RPC2_SUCCESS)
         return (EINVAL);
     client = (ClientEntry *)rock;
@@ -635,7 +635,6 @@ long FS_ViceGetVolVS(RPC2_Handle cid, VolumeId Vid, RPC2_Integer *VS,
     VolumeId rwVid;
     ViceFid fid;
     ClientEntry *client = 0;
-    int ix, count;
     char *rock;
 
     SLog(1, "ViceGetVolVS for volume 0x%x", Vid);
@@ -649,11 +648,12 @@ long FS_ViceGetVolVS(RPC2_Handle cid, VolumeId Vid, RPC2_Integer *VS,
 
     /* now get the version stamp for Vid */
     rwVid = Vid;
-    if (!XlateVid(&rwVid, &count, &ix)) {
-        SLog(1, "GetVolVV: Couldn't translate VSG %u", Vid);
+    if (IsReplicatedVolID(&rwVid)) {
+        eprint("Trying to access %x replicated volume", rwVid);
         errorCode = EINVAL;
         goto Exit;
     }
+
 
     SLog(9, "GetVolVS: Going to get volume %u pointer", rwVid);
     volptr = VGetVolume((Error *)&errorCode, rwVid);
@@ -809,14 +809,14 @@ long FS_ViceValidateVols(RPC2_Handle cid, RPC2_Unsigned numVids,
     /* check the piggybacked volumes */
 
     for (unsigned int i = 0; i < numVids; i++) {
-        int error, index, ix, count;
+        int error;
         Volume *volptr;
         VolumeId rwVid;
         RPC2_Integer myVS;
 
         rwVid = Vids[i].Vid;
-        if (!XlateVid(&rwVid, &count, &ix)) {
-            SLog(1, "ValidateVolumes: Couldn't translate VSG %x", Vids[i].Vid);
+        if (IsReplicatedVolID(&rwVid)) {
+            eprint("Trying to access %x replicated volume", rwVid);
             goto InvalidVolume;
         }
 

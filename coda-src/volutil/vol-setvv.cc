@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -80,10 +80,9 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     ViceVersionVector UpdateSet;
 
     VLog(9, "Entering VolSetVV(%d, %u, %u)", rpcid, volid, vnodeid);
-    VolumeId tmpvolid = volid;
-    if (!XlateVid(&tmpvolid)) {
-        VLog(0, "S_VolSetVV Couldn't translate VSG ");
-        tmpvolid = volid;
+    if (IsReplicatedVolID(&volid)) {
+        eprint("Trying to access %x replicated volume", volid);
+        return (EINVAL);
     }
 
     rvmlib_begin_transaction(restore);
@@ -91,9 +90,9 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     /*    vp = VAttachVolume(&error, volid, V_READONLY); */
     /* Ignoring the volume lock for now - assume this will
        be used in bad situations only*/
-    vp = VGetVolume(&error, tmpvolid);
+    vp = VGetVolume(&error, volid);
     if (error) {
-        VLog(0, "S_VolSetVV: failure attaching volume %d", tmpvolid);
+        VLog(0, "S_VolSetVV: failure attaching volume %d", volid);
         if (error != VNOVOL) {
             VPutVolume(vp);
         }
