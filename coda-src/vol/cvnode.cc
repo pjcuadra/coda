@@ -225,16 +225,12 @@ static void GrowVnLRUCache(VnodeClass vclass, int nVnodes)
    Allocate range->Count "contiguous" fids, starting at <range->Vnode,
    range->Unique> and continuing with strides of <range->Stride, 1>.
 */
-int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *range, int stride,
-              int ix)
+int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *range)
 {
     Error ec  = 0;
     int count = range->Count;
 
-    SLog(
-        9,
-        "VAllocFid: volume = %08x, type = %d, count = %d, stride = %d, ix = %d",
-        V_id(vp), type, count, stride, ix);
+    SLog(9, "VAllocFid: volume = %08x, type = %d, count = %d", V_id(vp), type, count);
 
     /* Sanity checks. */
     {
@@ -274,7 +270,7 @@ int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *range, int stride,
     /* Find and set a suitable range in the bitmap. */
     VnodeClass vclass = vnodeTypeToClass(type);
     int BaseBitNumber =
-        VAllocBitmapEntry(&ec, vp, &vp->vnIndex[vclass], stride, ix, count);
+        VAllocBitmapEntry(&ec, vp, &vp->vnIndex[vclass], count);
     if (ec)
         return (ec);
     VnodeId BaseVnode = bitNumberToVnodeNumber(BaseBitNumber, vclass);
@@ -282,7 +278,7 @@ int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *range, int stride,
     /* Complete the range descriptor. */
     range->Vnode  = BaseVnode;
     range->Unique = BaseUnique;
-    range->Stride = stride * nVNODECLASSES;
+    range->Stride = nVNODECLASSES;
 
     return (0);
 }
@@ -332,17 +328,16 @@ int VAllocFid(Volume *vp, VnodeType type, VnodeId vnode, Unique_t unique)
     return ec;
 }
 
-Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type, int stride, int ix)
+Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type)
 {
     *ec = 0;
 
-    SLog(9, "VAllocVnode: volume = %08x, type = %d, stride = %d, ix = %d",
-         V_id(vp), type, stride, ix);
+    SLog(9, "VAllocVnode: volume = %08x, type = %d", V_id(vp), type);
 
     /* Allocate a fid with the specified characteristics. */
     ViceFidRange range;
     range.Count = 1;
-    *ec         = VAllocFid(vp, type, &range, stride, ix);
+    *ec         = VAllocFid(vp, type, &range);
     if (*ec)
         return (NULL);
     VnodeId vnode   = range.Vnode;

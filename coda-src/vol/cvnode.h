@@ -202,10 +202,10 @@ extern Vnode *VGetVnode(Error *, Volume *, VnodeId, Unique_t, int, int,
                         int = 0);
 extern void VPutVnode(Error *ec, Vnode *vnp);
 extern void VFlushVnode(Error *, Vnode *);
-int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *Range, int stride = 1,
-              int ix = 0);
-Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type, int stride = 1,
-                   int ix = 0);
+int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *Range);
+int VAllocFid(Volume *vp, VnodeType type, VnodeId vnode, Unique_t unique);
+Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type);
+Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type, VnodeId vnode, Unique_t unique);
 extern int ObjectExists(int, int, VnodeId, Unique_t, ViceFid * = NULL);
 
 int VN_DCommit(Vnode *vnp);

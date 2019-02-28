@@ -101,7 +101,6 @@ long FS_ViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
     long errorCode      = 0;
     Volume *volptr      = 0;
     ClientEntry *client = 0;
-    int stride, ix;
     char *rock;
 
     START_TIMING(AllocFids_Total);
@@ -153,7 +152,7 @@ long FS_ViceAllocFids(RPC2_Handle cid, VolumeId Vid, ViceDataType Type,
      * can potentially grow or shrink the replication group without
      * affecting previously issued fids which are being used by
      * disconnected clients --JH */
-    if ((errorCode = VAllocFid(volptr, Type, Range, stride, ix))) {
+    if ((errorCode = VAllocFid(volptr, Type, Range))) {
         SLog(0, "ViceAllocFids: VAllocVnodes error %s",
              ViceErrorMsg((int)errorCode));
         goto FreeLocks;

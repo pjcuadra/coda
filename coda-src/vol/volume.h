@@ -365,10 +365,8 @@ void VPutVolume(Volume *vp);
 Volume *VAttachVolume(Error *ec, VolumeId volumeId, int mode);
 void VDetachVolume(Error *ec, Volume *vp);
 void VUpdateVolume(Error *ec, Volume *vp);
-int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
-                      int stride, int ix, int count);
-int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
-                      VnodeId vnode);
+int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index, int count);
+int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index, VnodeId vnode);
 void VFreeBitMapEntry(Error *ec, struct vnodeIndex *index, int bitNumber);
 int VolumeNumber(char *name);
 char *VolumeExternalName(VolumeId volumeId);
