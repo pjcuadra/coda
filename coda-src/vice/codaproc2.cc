@@ -73,7 +73,6 @@ extern "C" {
 #define O_BINARY 0
 #endif /* O_BINARY */
 
-extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
 static int LookupChild(Volume *volptr, Vnode *vptr, char *Name, ViceFid *Fid);
 static int AddChild(Volume **volptr, dlist *vlist, ViceFid *Did, char *Name,
                     int IgnoreInc);
@@ -188,8 +187,6 @@ static int AllocReintegrateVnode(Volume **, dlist *, ViceFid *, ViceFid *,
 
 static int AddParent(Volume **, dlist *, ViceFid *);
 static int ReintNormalVCmp(int, VnodeType, void *, void *);
-static void ReintPrelimCOP(vle *, const ViceStoreId *oldSID,
-                           const ViceStoreId *newSID);
 static void ReintFinalCOP(vle *, Volume *, RPC2_Integer *, int voltype);
 static int ValidateRHandle(VolumeId, ViceReintHandle *);
 
@@ -1136,13 +1133,12 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                                           v->vptr->disk.uniquifier,
                                           v->vptr->disk.dataVersion + 1);
                 }
+
                 CODA_ASSERT(v->f_finode > 0);
                 /* Bulk transfer is deferred until all ops have been
                  * checked/performed. */
-                HandleWeakEquality(volptr, v->vptr, &r->VV[0]);
                 PerformStore(client, VSGVolnum, volptr, v->vptr, v->f_finode, 0,
                              r->u.u_store.Length, r->Mtime, &r->sid);
-                ReintPrelimCOP(v, &r->VV[0].StoreId, &r->sid);
 
                 /* Cancel previous StoreData. */
                 v->f_sid = r->sid;
@@ -1221,15 +1217,13 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 #endif
 
                     Inode c_inode = 0;
-                    HandleWeakEquality(volptr, v->vptr, &r->VV[0]);
                     /* The passed in arguments are a bit of a hack, because
 		     * only one of SET_TIME, SET_MODE, or SET_OWNER is set the
 		     * invalid attributes are ignored --JH */
-                    PerformSetAttr(client, VSGVolnum, volptr, v->vptr, 0,
+                    PerformSetAttr(client, volptr, v->vptr,
                                    0, // r->u.u_truncate.Length,
                                    r->u.u_utimes.Date, r->u.u_chown.Owner,
                                    r->u.u_chmod.Mode, Mask, &r->sid, &c_inode);
-                    ReintPrelimCOP(v, &r->VV[0].StoreId, &r->sid);
 
 #if 0
                     /* COW is only invoked by truncate, which we don't use
@@ -1291,16 +1285,12 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 SLog(9, "CML_Create %s/%s", FID_(&parent_v->fid),
                      FID_(&child_v->fid));
 
-                HandleWeakEquality(volptr, parent_v->vptr, &r->VV[0]);
                 errorCode = PerformCreate(client, VSGVolnum, volptr,
                                           parent_v->vptr, child_v->vptr,
                                           r->Name[0], r->Mtime,
                                           r->u.u_create.Mode, 0, &r->sid,
                                           &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
-
-                ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
-                ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
                 *blocks += deltablocks;
             } break;
@@ -1331,13 +1321,9 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                      FID_(&child_v->fid));
 
                 int tblocks = 0;
-                HandleWeakEquality(volptr, parent_v->vptr, &r->VV[0]);
-                HandleWeakEquality(volptr, child_v->vptr, &r->VV[1]);
                 PerformRemove(client, VSGVolnum, volptr, parent_v->vptr,
                               child_v->vptr, r->Name[0], r->Mtime, 0, &r->sid,
                               &parent_v->d_cinode, &tblocks);
-                ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
-                ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
                 *blocks += tblocks;
                 if (child_v->vptr->delete_me) {
@@ -1381,15 +1367,11 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 SLog(9, "CML_Link %s/%s", FID_(&parent_v->fid),
                      FID_(&child_v->fid));
 
-                HandleWeakEquality(volptr, parent_v->vptr, &r->VV[0]);
-                HandleWeakEquality(volptr, child_v->vptr, &r->VV[1]);
                 errorCode = PerformLink(client, VSGVolnum, volptr,
                                         parent_v->vptr, child_v->vptr,
                                         r->Name[0], r->Mtime, 0, &r->sid,
                                         &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
-                ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
-                ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
                 *blocks += deltablocks;
             } break;
@@ -1447,13 +1429,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                      FID_(&s_v->fid), FID_(&td_v->fid),
                      TargetExists ? FID_(&t_v->fid) : "-");
 
-                HandleWeakEquality(volptr, sd_v->vptr, &r->VV[0]);
-                if (!SameParent)
-                    HandleWeakEquality(volptr, td_v->vptr, &r->VV[1]);
-                HandleWeakEquality(volptr, s_v->vptr, &r->VV[2]);
-                if (TargetExists)
-                    HandleWeakEquality(volptr, t_v->vptr,
-                                       &NullVV); /* XXX wrong? */
                 PerformRename(
                     client, VSGVolnum, volptr, sd_v->vptr, td_v->vptr,
                     s_v->vptr, TargetExists ? t_v->vptr : 0, r->Name[0],
@@ -1461,12 +1436,6 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     &td_v->d_cinode,
                     (s_v->vptr->disk.type == vDirectory ? &s_v->d_cinode : 0),
                     NULL);
-                ReintPrelimCOP(sd_v, &r->VV[0].StoreId, &r->sid);
-                if (!SameParent)
-                    ReintPrelimCOP(td_v, &r->VV[1].StoreId, &r->sid);
-                ReintPrelimCOP(s_v, &r->VV[2].StoreId, &r->sid);
-                if (TargetExists)
-                    ReintPrelimCOP(t_v, &NullSid, &r->sid); /* XXX wrong? */
                 {
                     if (!SameParent) {
                         /* SpoolRenameLogRecord() only allows one opcode, so we must */
@@ -1512,15 +1481,12 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 SLog(9, "CML_MakeDir %s/%s", FID_(&parent_v->fid),
                      FID_(&child_v->fid));
 
-                HandleWeakEquality(volptr, parent_v->vptr, &r->VV[0]);
                 errorCode = PerformMkdir(client, VSGVolnum, volptr,
                                          parent_v->vptr, child_v->vptr,
                                          r->Name[0], r->Mtime,
                                          r->u.u_mkdir.Mode, 0, &r->sid,
                                          &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
-                ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
-                ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
                 *blocks += deltablocks;
             } break;
@@ -1551,13 +1517,9 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                      FID_(&child_v->fid));
 
                 int tblocks = 0;
-                HandleWeakEquality(volptr, parent_v->vptr, &r->VV[0]);
-                HandleWeakEquality(volptr, child_v->vptr, &r->VV[1]);
                 PerformRmdir(client, VSGVolnum, volptr, parent_v->vptr,
                              child_v->vptr, r->Name[0], r->Mtime, 0, &r->sid,
                              &parent_v->d_cinode, &tblocks);
-                ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
-                ReintPrelimCOP(child_v, &r->VV[1].StoreId, &r->sid);
 
                 *blocks += tblocks;
                 CODA_ASSERT(child_v->vptr->delete_me);
@@ -1598,15 +1560,12 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                                V_parentId(volptr), 0, r->Name[1], linklen);
                 CODA_ASSERT(n == linklen);
 
-                HandleWeakEquality(volptr, parent_v->vptr, &r->VV[0]);
                 errorCode =
                     PerformSymlink(client, VSGVolnum, volptr, parent_v->vptr,
                                    child_v->vptr, r->Name[0], child_v->f_finode,
                                    linklen, r->Mtime, r->u.u_symlink.Mode, 0,
                                    &r->sid, &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
-                ReintPrelimCOP(parent_v, &r->VV[0].StoreId, &r->sid);
-                ReintPrelimCOP(child_v, &NullSid, &r->sid);
 
                 *blocks += deltablocks;
             } break;
@@ -2012,23 +1971,6 @@ static int ReintNormalVCmp(int ReplicatedOp, VnodeType type, void *arg1,
     return 0;
 }
 
-/* This probably ought to be folded into the PerformXXX routines!  -JJK */
-static void ReintPrelimCOP(vle *v, const ViceStoreId *OldSid,
-                           const ViceStoreId *NewSid)
-{
-    ViceStoreId *current = &Vnode_vv(v->vptr).StoreId;
-
-    /* Directories which are not identical to "old" contents MUST be
-       stamped with unique Sid at end! */
-    if (v->vptr->disk.type == vDirectory && !SID_EQ(*current, *OldSid)) {
-        SLog(10, "ReintPrelimCOP: %s needsres (sid %x.%x != oldsid %x.%x)",
-             FID_(&v->fid), current->HostId, current->Uniquifier,
-             OldSid->HostId, OldSid->Uniquifier);
-        v->d_needsres = 1;
-    }
-
-    *current = *NewSid;
-}
 
 static void ReintFinalCOP(vle *v, Volume *volptr, RPC2_Integer *VS, int voltype)
 {
