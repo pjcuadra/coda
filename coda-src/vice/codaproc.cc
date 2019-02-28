@@ -554,7 +554,7 @@ void NewCOP1Update(Volume *volptr, Vnode *vptr)
          vptr->vnodeNumber, vptr->disk.uniquifier);
 
     /* Increment the volume and vnode version */
-    (&V_versionvector(volptr).Versions.Site0)[0]++;
+    V_dataversion(volptr)++;
 
     Vnode_dataversion(vptr)++;
 }
@@ -654,7 +654,7 @@ void SetVSStatus(ClientEntry *client, Volume *volptr, CallBackStatus *VCBStatus)
 {
     *VCBStatus = NoCallBack;
 
-    SLog(1, "SetVSStatus: 0x%x, server %d", V_id(volptr), 
+    SLog(1, "SetVSStatus: 0x%x, server %d", V_id(volptr),
          (&(V_versionvector(volptr).Versions.Site0))[0]);
 
     ViceFid fid;

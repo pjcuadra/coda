@@ -537,7 +537,7 @@ void *cmlent::operator new(size_t len)
 }
 
 /* MUST be called from within transaction! */
-cmlent::cmlent(ClientModifyLog *Log, time_t Mtime, uid_t Uid, int op,
+cmlent:: cmlent(ClientModifyLog *Log, time_t Mtime, uid_t Uid, int op,
                int prepend...)
 {
     LOG(1, ("cmlent::cmlent(...)\n"));
@@ -2767,6 +2767,10 @@ void cmlent::commit(ViceVersionVector *UpdateSet)
     while ((d = next())) {
         binding *b = strbase(binding, d, binder_handle);
         fsobj *f   = (fsobj *)b->bindee;
+        char buf[256];
+
+        SPrintVV(buf, 256, &f->stat.VV);
+        LOG(10, ("cmlent::TP Commiting opcode: %d, VV = %s, fsobj = %s\n", this->opcode, buf, f->GetComp()));
 
         /* better be an fso */
         CODA_ASSERT(f && (f->MagicNumber == FSO_MagicNumber));
@@ -2791,6 +2795,16 @@ void cmlent::commit(ViceVersionVector *UpdateSet)
 
             RVMLIB_REC_OBJECT(f->stat.VV);
             f->stat.VV.StoreId = sid;
+            AddVVs(&f->stat.VV, UpdateSet);
+
+            SPrintVV(buf, 256, UpdateSet);
+            LOG(10, ("cmlent::TP UpdateSet %s\n", UpdateSet));
+
+        }
+
+        /* No need for COP2 */
+        if (vol->IsNonReplicated()) {
+            RVMLIB_REC_OBJECT(f->stat.VV);
             AddVVs(&f->stat.VV, UpdateSet);
         }
     }

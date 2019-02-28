@@ -177,7 +177,7 @@ void print_VnodeDiskObject(VnodeDiskObject *vnode)
     printf("\ttype = %u\tcloned = %u\tmode = %o\tlinks = %u\n", vnode->type,
            vnode->cloned, vnode->modeBits, vnode->linkCount);
     printf("\tlength = %u\tunique = %x\tversion = %u\tinode = %p\n",
-           vnode->length, vnode->uniquifier, vnode->localDataVersion,
+           vnode->length, vnode->uniquifier, vnode->dataVersion,
            vnode->node.dirNode);
     printf("\t");
     FPrintVV(stdout, &vnode->versionvector);

@@ -257,7 +257,7 @@ static int ViceCreateRoot(Volume *vp)
     vnode->length       = DH_Length(dir);
     vnode->uniquifier   = 1;
     V_uniquifier(vp)    = vnode->uniquifier + 1;
-    vnode->localDataVersion  = 1;
+    vnode->dataVersion  = 1;
     vnode->node.dirNode = NULL;
     /* we need to simultaneously update vv in VolumeDiskData struct ***/
     InitVV(&vnode->versionvector);

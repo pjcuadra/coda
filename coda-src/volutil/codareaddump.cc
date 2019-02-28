@@ -398,7 +398,7 @@ static void skipVnodes(int largc, char **largv)
     printf("\ttype = %u\n\tcloned = %u\n\tmode = %o\n\tlinks = %u\n",
            vnode->type, vnode->cloned, vnode->modeBits, vnode->linkCount);
     printf("\tlength = %u\n\tunique = %08x\n\tversion = %u\n\tinode = %p\n",
-           vnode->length, vnode->uniquifier, vnode->localDataVersion,
+           vnode->length, vnode->uniquifier, vnode->dataVersion,
            vnode->node.dirNode);
     PrintVersionVector(&vnode->versionvector, "\t");
     printf(
@@ -440,7 +440,7 @@ static void showVnodeDiskObject(int largc, char **largv)
     printf("\ttype = %u\n\tcloned = %u\n\tmode = %o\n\tlinks = %u\n",
            vnode->type, vnode->cloned, vnode->modeBits, vnode->linkCount);
     printf("\tlength = %u\n\tunique = %08x\n\tversion = %u\n\tinode = %p\n",
-           vnode->length, vnode->uniquifier, vnode->localDataVersion,
+           vnode->length, vnode->uniquifier, vnode->dataVersion,
            vnode->node.dirNode);
     PrintVersionVector(&vnode->versionvector, "\t");
     printf(

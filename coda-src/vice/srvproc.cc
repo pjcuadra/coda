@@ -118,8 +118,6 @@ static int CheckReadMode(ClientEntry *, Vnode *);
 static int CheckWriteMode(ClientEntry *, Vnode *);
 static void CopyOnWrite(Vnode *, Volume *);
 extern int AdjustDiskUsage(Volume *, int);
-extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
-
 /* *****  Private routines  ***** */
 
 static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
@@ -654,7 +652,7 @@ void SetStatus(struct Vnode *vptr, ViceStatus *status, Rights rights,
 
     status->LinkCount   = vptr->disk.linkCount;
     status->Length      = vptr->disk.length;
-    status->DataVersion = vptr->disk.localDataVersion;
+    status->DataVersion = vptr->disk.dataVersion;
     status->VV          = vptr->disk.versionvector;
     status->Date        = vptr->disk.unixModifyTime;
     status->Author      = vptr->disk.author;
@@ -813,31 +811,6 @@ static int NormalVCmp(VnodeType type, void *arg1, void *arg2)
     return (errorCode);
 }
 
-/* This ought to be folded into the CheckSemantics or the Perform routines!  -JJK */
-void HandleWeakEquality(Volume *volptr, Vnode *vptr, ViceVersionVector *vv)
-{
-    // ViceVersionVector *vva = &Vnode_vv(vptr);
-    // ViceVersionVector *vvb = vv;
-
-    // if ((vva->StoreId.HostId == vvb->StoreId.HostId &&
-    //      vva->StoreId.Uniquifier == vvb->StoreId.Uniquifier) &&
-    //     (VV_Cmp(vva, vvb) != VV_EQ)) {
-    //     /* Derive "difference vector" and apply it to both vnode and volume vectors. */
-    //     ViceVersionVector DiffVV;
-    //     {
-    //         ViceVersionVector *vvs[VSG_MEMBERS];
-    //         memset((void *)vvs, 0,
-    //                (int)(VSG_MEMBERS * sizeof(ViceVersionVector *)));
-    //         vvs[0] = vva;
-    //         vvs[1] = vvb;
-    //         GetMaxVV(&DiffVV, vvs, -1);
-    //     }
-    //     SubVVs(&DiffVV, vva);
-    //     AddVVs(&Vnode_vv(vptr), &DiffVV);
-    //     AddVVs(&V_versionvector(volptr), &DiffVV);
-    // }
-}
-
 #define OWNERREAD 0400
 #define OWNERWRITE 0200
 #define ANYREAD 0004
@@ -878,7 +851,7 @@ static void CopyOnWrite(Vnode *vptr, Volume *volptr)
              vptr->vnodeNumber);
         size = (int)vptr->disk.length;
         ino  = icreate(V_device(volptr), V_id(volptr), vptr->vnodeNumber,
-                      vptr->disk.uniquifier, vptr->disk.localDataVersion);
+                      vptr->disk.uniquifier, vptr->disk.dataVersion);
         CODA_ASSERT(ino > 0);
         if (size > 0) {
             int infd, outfd, rc;
@@ -1002,8 +975,7 @@ int AllocVnode(Vnode **vptr, Volume *volptr, ViceDataType vtype, ViceFid *Fid,
 
     /* Initialize the new vnode. */
     (*vptr)->disk.node.dirNode = NEWVNODEINODE;
-    (*vptr)->disk.localDataVersion  = (vtype == vFile ? 0 : 1);
-    InitVV(&(*vptr)->disk.versionvector);
+    (*vptr)->disk.dataVersion  = (vtype == vFile ? 0 : 1);
     (*vptr)->disk.vparent        = pFid->Vnode;
     (*vptr)->disk.uparent        = pFid->Unique;
     (*vptr)->disk.length         = 0;
@@ -2291,7 +2263,6 @@ void PerformStore(ClientEntry *client, Volume *volptr,
     vptr->disk.length           = Length;
     vptr->disk.unixModifyTime   = Mtime;
     vptr->disk.author           = client->Id;
-    vptr->disk.localDataVersion++;
     NewCOP1Update(volptr, vptr);
 }
 
@@ -2621,14 +2592,12 @@ void PerformRename(ClientEntry *client, Volume *volptr,
     /* Update source parent vnode. */
     sd_vptr->disk.unixModifyTime = Mtime;
     sd_vptr->disk.author         = client ? client->Id : sd_vptr->disk.author;
-    sd_vptr->disk.localDataVersion++;
     NewCOP1Update(volptr, sd_vptr);
 
     /* Update target parent vnode. */
     if (!SameParent) {
         td_vptr->disk.unixModifyTime = Mtime;
         td_vptr->disk.author = client ? client->Id : td_vptr->disk.author;
-        td_vptr->disk.localDataVersion++;
         NewCOP1Update(volptr, td_vptr);
     }
     if (TargetExists && t_vptr->disk.type == vDirectory)
@@ -2735,8 +2704,10 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
     /* Update the parent vnode. */
     if (vptr->disk.type == vDirectory)
         dirvptr->disk.linkCount++;
+
     dirvptr->disk.length = newlength;
-    dirvptr->disk.localDataVersion++;
+    NewCOP1Update(volptr, dirvptr);
+
 
     /* If we are called from resolution (client == NULL), the mtime and author
      * fields are already set correctly */
@@ -2744,8 +2715,6 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         dirvptr->disk.unixModifyTime = Mtime;
         dirvptr->disk.author         = client->Id;
     }
-
-    NewCOP1Update(volptr, dirvptr);
 
     /* Initialize/Update the child vnode. */
     switch (opcode) {
@@ -2760,8 +2729,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         vptr->disk.modeBits    = Mode;
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
-        vptr->disk.localDataVersion = 0;
-        InitVV(&(vptr->disk.versionvector));
+        vptr->disk.dataVersion = 0;
         break;
 
     case CLMS_Link:
@@ -2791,8 +2759,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         vptr->disk.modeBits    = Mode;
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
-        vptr->disk.localDataVersion = 1;
-        InitVV(&(vptr->disk.versionvector));
+        vptr->disk.dataVersion = 1;
 
 
         /* Child inherits access list. */
@@ -2825,8 +2792,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         vptr->disk.modeBits    = SystemUser(client) ? Mode : 0777;
         vptr->disk.vparent     = Did.Vnode;
         vptr->disk.uparent     = Did.Unique;
-        vptr->disk.localDataVersion = 1;
-        InitVV(&(vptr->disk.versionvector));
+        vptr->disk.dataVersion = 1;
         break;
     }
 
@@ -2878,7 +2844,6 @@ static void Perform_RR(ClientEntry *client, Volume *volptr,
     dirvptr->disk.unixModifyTime = Mtime;
     if (vptr->disk.type == vDirectory)
         dirvptr->disk.linkCount--;
-    dirvptr->disk.localDataVersion++;
     NewCOP1Update(volptr, dirvptr);
 
     /* PARANOIA: Flush directory pages for deleted child. */

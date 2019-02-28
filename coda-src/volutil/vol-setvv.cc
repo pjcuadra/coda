@@ -126,10 +126,10 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
         /* Clear the cloned flag since we're changing the inodeNumber. */
         vnp->disk.cloned = 0;
 
-        vnp->disk.localDataVersion++;
+        vnp->disk.dataVersion++;
         vnp->disk.node.inodeNumber =
             icreate(V_device(vp), V_id(vp), vnp->vnodeNumber,
-                    vnp->disk.uniquifier, vnp->disk.localDataVersion);
+                    vnp->disk.uniquifier, vnp->disk.dataVersion);
     }
 
     /* update volume version vector,  break callbacks */

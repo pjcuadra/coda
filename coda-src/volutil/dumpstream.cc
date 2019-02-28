@@ -688,7 +688,7 @@ int dumpstream::getNextVnode(VnodeDiskObject *vdop, VnodeId *vnodeNumber,
             GetInt32(stream, (unsigned int *)&vdop->length);
             break;
         case 'v':
-            GetInt32(stream, (unsigned int *)&vdop->localDataVersion);
+            GetInt32(stream, (unsigned int *)&vdop->dataVersion);
             break;
         case 'V':
             GetVV(stream, &vdop->versionvector);

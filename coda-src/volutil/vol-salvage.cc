@@ -570,7 +570,7 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                 VLog(0, "SalvageIndex:  Vnode 0x%x has no inodeNumber",
                      vnodeNumber);
                 CODA_ASSERT(RW);
-                CODA_ASSERT(vnode->localDataVersion ==
+                CODA_ASSERT(vnode->dataVersion ==
                             0); // inodenumber == 0 only after create
                 VLog(0, "SalvageIndex: Creating an empty object for it");
                 vnode->node.inodeNumber = icreate(fileSysDevice, vsp->header.id,
@@ -614,7 +614,7 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                 FileVersion vd, id;
                 vu = vnode->uniquifier;
                 iu = lip->VnodeUniquifier;
-                vd = vnode->localDataVersion;
+                vd = vnode->dataVersion;
                 id = lip->InodeDataVersion;
                 if ((vu != iu) || (vd != id)) {
                     VLog(
@@ -652,7 +652,7 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                     vnodeNumber, vnode->uniquifier);
                 vnode->node.inodeNumber =
                     icreate(fileSysDevice, vsp->header.parent, vnodeNumber,
-                            vnode->uniquifier, vnode->localDataVersion);
+                            vnode->uniquifier, vnode->dataVersion);
                 CODA_ASSERT(vnode->node.inodeNumber > 0);
                 vnode->length = 0;
                 CODA_ASSERT(
@@ -673,7 +673,7 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                              vsp->header.id, vnodeNumber, vnode->uniquifier);
                         vnode->node.inodeNumber = icreate(
                             fileSysDevice, vsp->header.parent, vnodeNumber,
-                            vnode->uniquifier, vnode->localDataVersion);
+                            vnode->uniquifier, vnode->dataVersion);
                         CODA_ASSERT(vnode->node.inodeNumber > 0);
                         vnode->length = 0;
                         vnode->versionvector = NullVV;
@@ -687,7 +687,7 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                              vsp->header.id, vnodeNumber, vnode->uniquifier);
                         vnode->node.inodeNumber = icreate(
                             fileSysDevice, vsp->header.parent, vnodeNumber,
-                            vnode->uniquifier, vnode->localDataVersion);
+                            vnode->uniquifier, vnode->dataVersion);
                         CODA_ASSERT(vnode->node.inodeNumber > 0);
                         vnode->length = 0;
                         vnode->versionvector = NullVV;

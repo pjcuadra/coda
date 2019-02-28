@@ -379,7 +379,7 @@ static void WriteVnodeDiskObject(DumpBuffer_t *buf, VnodeDiskObject *v,
     DumpShort(buf, 'b', v->modeBits);
     DumpShort(buf, 'l', v->linkCount); /* May not need this */
     DumpInt32(buf, 'L', v->length);
-    DumpInt32(buf, 'v', v->localDataVersion);
+    DumpInt32(buf, 'v', v->dataVersion);
     DumpVV(buf, 'V', (ViceVersionVector *)(&(v->versionvector)));
     DumpInt32(buf, 'm', v->unixModifyTime);
     DumpInt32(buf, 'a', v->author);

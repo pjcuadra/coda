@@ -34,7 +34,7 @@ extern "C" {
 #include "volume.h"
 #include "al.h"
 
-/* Debugging routine in file separate from volume.cc to simplify 
+/* Debugging routine in file separate from volume.cc to simplify
 ease of use from other modules (e.g. codadump2tar.cc in volutil).
 Otherwise, a lot of baggage gets linked in (Satya, May 2004) */
 
@@ -75,7 +75,7 @@ void PrintVnodeDiskObject(FILE *outfile, VnodeDiskObject *vnode,
                           VnodeId vnodeNumber)
 {
     fprintf(outfile, "Vnode %x.%x %d, cloned = %d, length = %u, inode = %p\n",
-            vnodeNumber, vnode->uniquifier, vnode->localDataVersion, vnode->cloned,
+            vnodeNumber, vnode->uniquifier, vnode->dataVersion, vnode->cloned,
             vnode->length, vnode->node.dirNode);
     fprintf(outfile, "link count = %u, type = %u, volume index = %d\n",
             vnode->linkCount, vnode->type, vnode->vol_index);

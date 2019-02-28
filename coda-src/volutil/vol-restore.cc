@@ -452,7 +452,7 @@ static int ReadLargeVnodeIndex(DumpBuffer_t *buf, Volume *vp)
     rvmlib_modify_bytes(rlist, vmrlist, sizeof(rec_smolist) * list_size);
     free(vmrlist);
 
-    /* Update Volume structure to point to new vnode list. 
+    /* Update Volume structure to point to new vnode list.
      * Doing this here so that if an abort happens during the loop the
      * commited vnodes will be scavanged.
      */
@@ -550,7 +550,7 @@ static int ReadSmallVnodeIndex(DumpBuffer_t *buf, Volume *vp)
     rvmlib_modify_bytes(rlist, vmrlist, sizeof(rec_smolist) * list_size);
     free(vmrlist);
 
-    /* Update Volume structure to point to new vnode list. 
+    /* Update Volume structure to point to new vnode list.
      * Doing this here so that if an abort happens during the loop the
      * commited vnodes will be scavanged.
      */
@@ -640,7 +640,7 @@ static int ReadVnodeDiskObject(DumpBuffer_t *buf, VnodeDiskObject *vdop,
             ReadInt32(buf, (unsigned int *)&vdop->length);
             break;
         case 'v':
-            ReadInt32(buf, (unsigned int *)&vdop->localDataVersion);
+            ReadInt32(buf, (unsigned int *)&vdop->dataVersion);
             break;
         case 'V':
             ReadVV(buf, &vdop->versionvector);
@@ -708,7 +708,7 @@ static int ReadVnodeDiskObject(DumpBuffer_t *buf, VnodeDiskObject *vdop,
 
             vdop->node.inodeNumber = icreate(V_device(vp), V_parentId(vp),
                                              *vnodeNumber, vdop->uniquifier,
-                                             vdop->localDataVersion);
+                                             vdop->dataVersion);
             if (vdop->node.inodeNumber == (unsigned)-1) {
                 VLog(0, "Unable to allocate inode for vnode %#x: aborted",
                      *vnodeNumber);
@@ -739,7 +739,7 @@ static int ReadVnodeDiskObject(DumpBuffer_t *buf, VnodeDiskObject *vdop,
             /* Create a null inode. */
             vdop->node.inodeNumber = icreate(V_device(vp), V_parentId(vp),
                                              *vnodeNumber, vdop->uniquifier,
-                                             vdop->localDataVersion);
+                                             vdop->dataVersion);
             if (vdop->node.inodeNumber == (unsigned)-1) {
                 VLog(0, "Unable to allocate inode for vnode %d: aborted",
                      *vnodeNumber);
