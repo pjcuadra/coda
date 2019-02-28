@@ -181,6 +181,7 @@ typedef struct Vnode {
 } Vnode;
 
 #define Vnode_vv(vptr) ((vptr)->disk.versionvector)
+#define Vnode_dataversion(vptr) (vptr)->disk.dataVersion
 
 #define SIZEOF_LARGEVNODE \
     (sizeof(struct Vnode) - sizeof(VnodeDiskObject) + SIZEOF_LARGEDISKVNODE)

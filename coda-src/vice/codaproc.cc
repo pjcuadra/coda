@@ -88,9 +88,6 @@ static int GetSubTree(ViceFid *, Volume *, dlist *);
 
 static int PerformTreeRemoval(struct DirEntry *, void *);
 
-static void UpdateVVs(ViceVersionVector *, ViceVersionVector *,
-                      ViceVersionVector *);
-
 static int getFids(struct DirEntry *dirent, void *data);
 
 const int MaxFidAlloc = 32;
@@ -550,60 +547,16 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
 /*
   NewCOP1Update: Increment the version number and update the
   storeid of an object.
-
-  Only the version number of this replica is incremented.  The
-  other replicas's version numbers are incremented by COP2Update
 */
-void NewCOP1Update(Volume *volptr, Vnode *vptr, ViceStoreId *StoreId,
-                   RPC2_Integer *vsptr, bool isReplicated)
+void NewCOP1Update(Volume *volptr, Vnode *vptr)
 {
-    int ix     = 0;
-    vrent *vre = NULL;
+    SLog(2, "COP1Update: Fid = (%x.%x.%x)", V_id(volptr), vptr->vnodeNumber,
+         vptr->disk.uniquifier);
 
-    SLog(2, "COP1Update: Fid = (%x.%x.%x), StoreId = (%x.%x)", V_id(volptr),
-         vptr->vnodeNumber, vptr->disk.uniquifier, StoreId->HostId,
-         StoreId->Uniquifier);
+    /* Increment the volume and vnode version */
+    V_dataversion(volptr)++;
 
-    /* If a volume version stamp was sent in, and if it matches, update it. */
-    if (vsptr) {
-        SLog(2, "COP1Update: client VS %d", *vsptr);
-        if (*vsptr == (&(V_versionvector(volptr).Versions.Site0))[ix])
-            (*vsptr)++;
-        else
-            *vsptr = 0;
-    }
-
-    /* Fashion an UpdateSet using just ThisHost. */
-    ViceVersionVector UpdateSet       = NullVV;
-    (&(UpdateSet.Versions.Site0))[ix] = 1;
-
-    /* Install the new StoreId in the Vnode. */
-    Vnode_vv(vptr).StoreId = *StoreId;
-
-    /* Update the Volume and Vnode VVs. */
-    UpdateVVs(&V_versionvector(volptr), &Vnode_vv(vptr), &UpdateSet);
-}
-
-void UpdateVVs(ViceVersionVector *VVV, ViceVersionVector *VV,
-               ViceVersionVector *US)
-{
-    if (SrvDebugLevel >= 2) {
-        SLog(2, "\tVVV = [%d %d %d %d %d %d %d %d]", VVV->Versions.Site0,
-             VVV->Versions.Site1, VVV->Versions.Site2, VVV->Versions.Site3,
-             VVV->Versions.Site4, VVV->Versions.Site5, VVV->Versions.Site6,
-             VVV->Versions.Site7);
-        SLog(2, "\tVV = [%d %d %d %d %d %d %d %d]", VV->Versions.Site0,
-             VV->Versions.Site1, VV->Versions.Site2, VV->Versions.Site3,
-             VV->Versions.Site4, VV->Versions.Site5, VV->Versions.Site6,
-             VV->Versions.Site7);
-        SLog(2, "\tUS = [%d %d %d %d %d %d %d %d]", US->Versions.Site0,
-             US->Versions.Site1, US->Versions.Site2, US->Versions.Site3,
-             US->Versions.Site4, US->Versions.Site5, US->Versions.Site6,
-             US->Versions.Site7);
-    }
-
-    AddVVs(VVV, US);
-    AddVVs(VV, US);
+    Vnode_dataversion(vptr)++;
 }
 
 void PollAndYield()

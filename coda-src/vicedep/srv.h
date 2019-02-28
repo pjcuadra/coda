@@ -232,8 +232,7 @@ char *ViceErrorMsg(int);
 
 /* codaproc.c */
 const ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
-void NewCOP1Update(Volume *, Vnode *, ViceStoreId *, RPC2_Integer * = NULL,
-                   bool isReplicated = true);
+void NewCOP1Update(Volume *, Vnode *);
 void PollAndYield();
 void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *, int voltype);
 void SetVSStatus(ClientEntry *, Volume *, RPC2_Integer *, CallBackStatus *,
