@@ -80,8 +80,6 @@ class rmblk;
 
 /* *****  Exported variables  ***** */
 
-ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
-
 /* globals */
 int OngoingRepairs = 0;
 
