@@ -702,7 +702,7 @@ failure:
 }
 
 /*
- * S_VolDumpEstimate - estimate the size of a volume dump at various levels. 
+ * S_VolDumpEstimate - estimate the size of a volume dump at various levels.
  */
 long S_VolDumpEstimate(RPC2_Handle rpcid, RPC2_Unsigned formal_volumeNumber,
                        VolDumpEstimates *sizes)

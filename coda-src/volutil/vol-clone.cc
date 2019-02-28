@@ -101,7 +101,7 @@ int CloneVnode(Volume *rwVp, Volume *cloneVp, int vnodeIndex,
 /*
     S_VolClone: Create a new readonly clone of a volume.
 */
-/* ovolid: Volume Id of the volume to be cloned 
+/* ovolid: Volume Id of the volume to be cloned
  * cloneId: OUT Parameter; Id of cloned volume returned in that param.
  */
 long S_VolClone(RPC2_Handle rpcid, RPC2_Unsigned formal_ovolid,
