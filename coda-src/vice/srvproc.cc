@@ -608,6 +608,7 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
 
     /* Perform operation. */
     {
+        GetMyVS(volptr, OldVS, NewVS);
         PerformSetACL(client, volptr, v->vptr, newACL);
 
         SetStatus(v->vptr, Status, rights, anyrights);
@@ -803,8 +804,8 @@ static int NormalVCmp(VnodeType type, void *arg1, void *arg2)
 {
     int errorCode = 0;
 
-    uint64_t fva = *((uint64_t *)arg1);
-    uint64_t fvb = *((uint64_t *)arg2);
+    uint32_t fva = *((uint32_t *)arg1);
+    uint32_t fvb = *((uint32_t *)arg2);
 
     if (fva != fvb)
         errorCode = EINCOMPATIBLE;
@@ -2291,6 +2292,7 @@ void PerformStore(ClientEntry *client, Volume *volptr,
     vptr->disk.unixModifyTime   = Mtime;
     vptr->disk.author           = client->Id;
     vptr->disk.localDataVersion++;
+    NewCOP1Update(volptr, vptr);
 }
 
 int StoreBulkTransfer(RPC2_Handle RPCid, ClientEntry *client, Volume *volptr,
@@ -2413,6 +2415,8 @@ void PerformSetAttr(ClientEntry *client, Volume *volptr,
             *CowInode = vptr->disk.node.inodeNumber;
             CopyOnWrite(vptr, volptr);
         }
+
+    NewCOP1Update(volptr, vptr);
 }
 
 void PerformSetACL(ClientEntry *client, Volume *volptr,
@@ -2618,12 +2622,14 @@ void PerformRename(ClientEntry *client, Volume *volptr,
     sd_vptr->disk.unixModifyTime = Mtime;
     sd_vptr->disk.author         = client ? client->Id : sd_vptr->disk.author;
     sd_vptr->disk.localDataVersion++;
+    NewCOP1Update(volptr, sd_vptr);
 
     /* Update target parent vnode. */
     if (!SameParent) {
         td_vptr->disk.unixModifyTime = Mtime;
         td_vptr->disk.author = client ? client->Id : td_vptr->disk.author;
         td_vptr->disk.localDataVersion++;
+        NewCOP1Update(volptr, td_vptr);
     }
     if (TargetExists && t_vptr->disk.type == vDirectory)
         td_vptr->disk.linkCount--;
@@ -2634,11 +2640,15 @@ void PerformRename(ClientEntry *client, Volume *volptr,
         s_vptr->disk.uparent = td_vptr->disk.uniquifier;
     }
 
+    NewCOP1Update(volptr, s_vptr);
+
     /* Update target vnode. */
     if (TargetExists) {
         if (--t_vptr->disk.linkCount == 0 || t_vptr->disk.type == vDirectory) {
             t_vptr->delete_me = 1;
             DeleteFile(&TFid);
+        } else {
+            NewCOP1Update(volptr, t_vptr);
         }
     }
 }
@@ -2735,6 +2745,8 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         dirvptr->disk.author         = client->Id;
     }
 
+    NewCOP1Update(volptr, dirvptr);
+
     /* Initialize/Update the child vnode. */
     switch (opcode) {
     case CLMS_Create:
@@ -2781,7 +2793,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
         vptr->disk.uparent     = Did.Unique;
         vptr->disk.localDataVersion = 1;
         InitVV(&(vptr->disk.versionvector));
-        
+
 
         /* Child inherits access list. */
         {
@@ -2867,6 +2879,7 @@ static void Perform_RR(ClientEntry *client, Volume *volptr,
     if (vptr->disk.type == vDirectory)
         dirvptr->disk.linkCount--;
     dirvptr->disk.localDataVersion++;
+    NewCOP1Update(volptr, dirvptr);
 
     /* PARANOIA: Flush directory pages for deleted child. */
     if (vptr->disk.type == vDirectory) {
@@ -2884,6 +2897,8 @@ static void Perform_RR(ClientEntry *client, Volume *volptr,
     if (--vptr->disk.linkCount == 0 || vptr->disk.type == vDirectory) {
         vptr->delete_me = 1;
         DeleteFile(&Fid);
+    } else {
+        NewCOP1Update(volptr, vptr);
     }
 }
 

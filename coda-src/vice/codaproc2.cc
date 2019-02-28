@@ -1767,6 +1767,8 @@ static void PutReintegrateObjects(int errorCode, Volume *volptr,
         PollAndYield();
 
     if (errorCode == 0 && vlist && volptr) {
+        GetMyVS(volptr, OldVS, NewVS);
+
         dlist_iterator next(*vlist);
         vle *v;
         while ((v = (vle *)next())) {
@@ -1987,14 +1989,17 @@ static int ReintNormalVCmp(VnodeType type, void *arg1,
                            void *arg2)
 {
 
+    SLog(0, "ReintNormalVCmp: %x %x\n", arg1, arg2);
+    SLog(0, "ReintNormalVCmp: %x %x\n", *((uint32_t *)arg1), *((uint32_t *)arg2));
+
     switch (type) {
     case vDirectory:
         return (0);
 
     case vFile:
     case vSymlink: {
-        uint64_t *vva = (uint64_t *)arg1;
-        uint64_t *vvb = (uint64_t *)arg2;
+        uint32_t *vva = (uint32_t *)arg1;
+        uint32_t *vvb = (uint32_t *)arg2;
 
         SLog(0, "ReintNormalVCmp: %x %x\n", *vva, *vvb);
 
@@ -2028,7 +2033,7 @@ static int ReintNormalVCmp(VnodeType type, void *arg1,
 
 static void ReintFinalCOP(vle *v, Volume *volptr)
 {
-    NewCOP1Update(volptr, v->vptr);
+    // NewCOP1Update(volptr, v->vptr);
 }
 
 /*

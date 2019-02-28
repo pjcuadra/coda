@@ -380,6 +380,8 @@ void PerformSetQuota(ClientEntry *client, Volume *volptr,
     CodaBreakCallBack((client ? client->VenusId : 0), fid);
 
     V_maxquota(volptr) = NewQuota;
+
+    NewCOP1Update(volptr, vptr);
 }
 
 /*
