@@ -65,7 +65,6 @@ extern "C" {
 #include <codaproc.h>
 #include <codadir.h>
 #include <operations.h>
-#include <inconsist.h>
 #include <vice.private.h>
 #include <dllist.h>
 
@@ -266,8 +265,7 @@ long FS_ViceOpenReintHandle(RPC2_Handle RPCid, ViceFid *Fid,
         goto FreeLocks;
 
     v = AddVLE(*vlist, Fid);
-    if ((errorCode =
-             GetFsObj(Fid, &volptr, &v->vptr, READ_LOCK, NO_LOCK, 0, 0, 0)))
+    if ((errorCode = GetFsObj(Fid, &volptr, &v->vptr, READ_LOCK, NO_LOCK, 0)))
         goto FreeLocks;
 
     /* create a new inode */
@@ -1029,7 +1027,7 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
 
             SLog(10, "GetReintegrateObjects: acquiring %s", FID_(&v->fid));
             if ((errorCode = GetFsObj(&v->fid, &volptr, &v->vptr, WRITE_LOCK,
-                                      VOL_NO_LOCK, 0, 0, v->d_inodemod))) {
+                                      VOL_NO_LOCK, v->d_inodemod))) {
                 index = -1;
                 goto Exit;
             }
@@ -1868,8 +1866,7 @@ static int AddChild(Volume **volptr, dlist *vlist, ViceFid *Did, char *Name,
     /* Notice that the vlist->d_inodemod field must be 1 or we lose
        refcounts on this directory
     */
-    if ((errorCode = GetFsObj(Did, volptr, &vptr, READ_LOCK, VOL_NO_LOCK,
-                              IgnoreInc, 0, 1)))
+    if ((errorCode = GetFsObj(Did, volptr, &vptr, READ_LOCK, VOL_NO_LOCK, 1)))
         goto Exit;
 
     /* Look up the child, and add a vle if found. */
@@ -1928,8 +1925,7 @@ static int AddParent(Volume **volptr, dlist *vlist, ViceFid *Fid)
 
     /* We assume that volume has already been locked in exclusive mode! */
     /* Child must NOT have just been alloc'ed, else this will deadlock! */
-    if ((errorCode =
-             GetFsObj(Fid, volptr, &vptr, READ_LOCK, VOL_NO_LOCK, 0, 0, 0)))
+    if ((errorCode = GetFsObj(Fid, volptr, &vptr, READ_LOCK, VOL_NO_LOCK, 0)))
         goto Exit;
 
     /* Look up the parent, and add a vle. */

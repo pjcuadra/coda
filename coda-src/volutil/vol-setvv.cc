@@ -111,7 +111,7 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     } else {
         /* error == EIO */
         /* barren object - debarrenize it - setvv is overloaded here */
-        vnp = VGetVnode(&error, vp, vnodeid, unique, WRITE_LOCK, 1, 1);
+        vnp = VGetVnode(&error, vp, vnodeid, unique, WRITE_LOCK, 1);
         CODA_ASSERT(IsBarren(vnp->disk.versionvector));
 
         VLog(0, "%x.%x.%x is barren - Debarrenizing it", V_id(vp),

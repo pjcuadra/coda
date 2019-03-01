@@ -293,8 +293,7 @@ static int GetSubTree(ViceFid *fid, Volume *volptr, dlist *vlist)
 
     /* get root vnode */
     {
-        if ((errorCode =
-                 GetFsObj(fid, &volptr, &vptr, READ_LOCK, NO_LOCK, 1, 0, 1)))
+        if ((errorCode = GetFsObj(fid, &volptr, &vptr, READ_LOCK, NO_LOCK, 1)))
             goto Exit;
 
         CODA_ASSERT(vptr->disk.type == vDirectory);

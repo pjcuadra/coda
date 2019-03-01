@@ -124,7 +124,8 @@ extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
 
 static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
                            vle **av, int lock, int vollock, int ignoreIncon);
-static int GrabFsObj(ViceFid *, Volume **, Vnode **, int, int, int);
+static int GrabFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
+                     int VolumeLock);
 static int NormalVCmp(VnodeType, void *, void *);
 
 typedef enum
@@ -220,6 +221,7 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
     /* Validate parameters. */
     {
         if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume,
+                                       PiggyBS, NULL)))
             goto FreeLocks;
     }
 
@@ -526,8 +528,7 @@ long FS_ViceGetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_Unsigned InconOK,
     /* Get objects. */
     {
         v = AddVLE(*vlist, Fid);
-        if ((errorCode = GetFsObj(Fid, &volptr, &v->vptr, READ_LOCK, NO_LOCK,
-                                  InconOK, 0, 0)))
+        if ((errorCode = GetFsObj(Fid, &volptr, &v->vptr, READ_LOCK, NO_LOCK, 0)))
             goto FreeLocks;
     }
 
@@ -594,7 +595,7 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
     {
         v = AddVLE(*vlist, Fid);
         if ((errorCode = GetFsObj(Fid, &volptr, &v->vptr, WRITE_LOCK,
-                                  SHARED_LOCK, 0, 0, 0)))
+                                  SHARED_LOCK, 0)))
             goto FreeLocks;
     }
 
@@ -700,7 +701,7 @@ int GetRights(PRS_InternalCPS *CPS, AL_AccessList *ACL, int ACLSize,
 
 */
 static int GrabFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
-                     int ignoreIncon, int VolumeLock)
+                     int VolumeLock)
 {
     int GotVolume = 0;
     /* Get the volume. */
@@ -717,7 +718,7 @@ static int GrabFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
     if (*vptr == 0) {
         int errorCode = 0;
         *vptr = VGetVnode((Error *)&errorCode, *volptr, fid->Vnode, fid->Unique,
-                          lock, ignoreIncon, 0);
+                          lock, 0);
         if (errorCode) {
             SLog(1, "GrabFsObj: VGetVnode error %s", ViceErrorMsg(errorCode));
             if (GotVolume) {
@@ -751,7 +752,7 @@ static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
 
     *v = AddVLE(*vlist, Fid);
 
-    err = GetFsObj(Fid, volptr, &(*v)->vptr, lock, vollock, ignoreIncon, 0, 0);
+    err = GetFsObj(Fid, volptr, &(*v)->vptr, lock, vollock, 0);
     if (err)
         return err;
 
@@ -765,7 +766,7 @@ static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
     *av = AddVLE(*vlist, &pFid);
 
     // We only use the parent node for ACL checks, allow inconsistency
-    err = GetFsObj(&pFid, volptr, &(*av)->vptr, READ_LOCK, NO_LOCK, 1, 0, 0);
+    err = GetFsObj(&pFid, volptr, &(*av)->vptr, READ_LOCK, NO_LOCK, 0);
     if (err)
         return err;
 
@@ -773,12 +774,11 @@ static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
 }
 
 /* Formerly CheckVnode(). */
-/* ignoreBQ parameter is obsolete - not used any longer */
 /*
   GetFsObj: Get a filesystem object
 */
 int GetFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
-             int VolumeLock, int ignoreIncon, int ignoreBQ, int getdirhandle)
+             int VolumeLock, int getdirhandle)
 {
     int errorCode;
     PDirHandle pdh = NULL;
@@ -788,7 +788,7 @@ int GetFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
         return (EINVAL);
 
     /* Grab the volume and vnode with the appropriate lock. */
-    errorCode = GrabFsObj(fid, volptr, vptr, lock, ignoreIncon, VolumeLock);
+    errorCode = GrabFsObj(fid, volptr, vptr, lock, VolumeLock);
 
     if (errorCode)
         return errorCode;
@@ -1696,7 +1696,7 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
                     /* deadlock avoidance */
                     Vnode *testvptr = VGetVnode((Error *)&errorCode, *volptr,
                                                 TestFid.Vnode, TestFid.Unique,
-                                                TRY_READ_LOCK, 0, 0);
+                                                TRY_READ_LOCK, 0);
                     if (errorCode == 0) {
                         TestFid.Vnode  = testvptr->disk.vparent;
                         TestFid.Unique = testvptr->disk.uparent;

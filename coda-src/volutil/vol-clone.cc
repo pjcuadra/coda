@@ -491,7 +491,7 @@ int CloneVnode(Volume *rwVp, Volume *cloneVp, int vnodeIndex,
     /* Mark the RW vnode as cloned, !docreate ==> vnode was cloned. */
     if (VolumeWriteable(rwVp) && !docreate) {
         Vnode *tmp = VGetVnode(&error, rwVp, vnodeNum, vnode->uniquifier,
-                               WRITE_LOCK, 1, 1);
+                               WRITE_LOCK, 1);
         if (error) {
             VLog(0, "CloneVnode(%s): Error %d getting vnode index %d",
                  (vclass == vLarge) ? "Large" : "Small", error, vnodeIndex);

@@ -117,7 +117,7 @@ long S_VolShowVnode(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
         goto exit;
     }
     /* VGetVnode moved from after VOffline to here 11/88 ***/
-    vnp = VGetVnode(&error, vp, vnodeid, unique, READ_LOCK, 1, 1);
+    vnp = VGetVnode(&error, vp, vnodeid, unique, READ_LOCK, 1);
     if (error) {
         VLog(0, "S_VolShowVnode: VGetVnode failed with %d", error);
         VPutVolume(vp);

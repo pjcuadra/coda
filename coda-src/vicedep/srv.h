@@ -260,7 +260,7 @@ void Die(const char *);
 /* srv.c */
 void SetStatus(Vnode *, ViceStatus *, Rights, Rights);
 int GetRights(PRS_InternalCPS *, AL_AccessList *, int, Rights *, Rights *);
-int GetFsObj(ViceFid *, Volume **, Vnode **, int, int, int, int, int);
+int GetFsObj(ViceFid *, Volume **, Vnode **, int, int, int);
 int SystemUser(ClientEntry *);
 int AdjustDiskUsage(Volume *, int);
 int GetVolObj(VolumeId, Volume **, int, int = 0, unsigned = 0);
