@@ -963,8 +963,8 @@ int AllocVnode(Vnode **vptr, Volume *volptr, ViceDataType vtype, ViceFid *Fid,
         goto FreeLocks;
     *blocks = tblocks;
 
-    *vptr = VAllocVnode((Error *)&errorCode, volptr, vtype, (int)Fid->Vnode,
-                        (int)Fid->Unique);
+    *vptr = VAllocVnode((Error *)&errorCode, volptr, vtype, Fid->Vnode,
+                        Fid->Unique);
     if (errorCode != 0)
         goto FreeLocks;
 
