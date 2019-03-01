@@ -186,7 +186,6 @@ static int AllocReintegrateVnode(Volume **, dlist *, ViceFid *, ViceFid *,
                                  ViceDataType, UserId, int *);
 
 static int AddParent(Volume **, dlist *, ViceFid *);
-static void ReintFinalCOP(vle *, Volume *);
 static int ValidateRHandle(VolumeId, ViceReintHandle *);
 
 /*

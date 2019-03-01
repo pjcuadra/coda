@@ -118,8 +118,6 @@ static int CheckReadMode(ClientEntry *, Vnode *);
 static int CheckWriteMode(ClientEntry *, Vnode *);
 static void CopyOnWrite(Vnode *, Volume *);
 extern int AdjustDiskUsage(Volume *, int);
-extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
-
 /* *****  Private routines  ***** */
 
 static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
@@ -811,31 +809,6 @@ static int NormalVCmp(VnodeType type, void *arg1, void *arg2)
         errorCode = EINCOMPATIBLE;
 
     return (errorCode);
-}
-
-/* This ought to be folded into the CheckSemantics or the Perform routines!  -JJK */
-void HandleWeakEquality(Volume *volptr, Vnode *vptr, ViceVersionVector *vv)
-{
-    ViceVersionVector *vva = &Vnode_vv(vptr);
-    ViceVersionVector *vvb = vv;
-
-    if ((vva->StoreId.HostId == vvb->StoreId.HostId &&
-         vva->StoreId.Uniquifier == vvb->StoreId.Uniquifier) &&
-        (VV_Cmp(vva, vvb) != VV_EQ)) {
-        /* Derive "difference vector" and apply it to both vnode and volume vectors. */
-        ViceVersionVector DiffVV;
-        {
-            ViceVersionVector *vvs[VSG_MEMBERS];
-            memset((void *)vvs, 0,
-                   (int)(VSG_MEMBERS * sizeof(ViceVersionVector *)));
-            vvs[0] = vva;
-            vvs[1] = vvb;
-            GetMaxVV(&DiffVV, vvs, -1);
-        }
-        SubVVs(&DiffVV, vva);
-        AddVVs(&Vnode_vv(vptr), &DiffVV);
-        AddVVs(&V_versionvector(volptr), &DiffVV);
-    }
 }
 
 #define OWNERREAD 0400
