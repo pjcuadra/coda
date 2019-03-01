@@ -607,7 +607,7 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
     /* Perform operation. */
     {
         GetMyVS(volptr, OldVS, NewVS);
-        PerformSetACL(client, volptr, v->vptr, StoreId, newACL);
+        PerformSetACL(client, volptr, v->vptr, newACL);
 
         SetStatus(v->vptr, Status, rights, anyrights);
         SetVSStatus(client, volptr, VCBStatus);
@@ -2386,7 +2386,7 @@ void PerformSetAttr(ClientEntry *client, Volume *volptr,
 }
 
 void PerformSetACL(ClientEntry *client, Volume *volptr,
-                   Vnode *vptr, ViceStoreId *StoreId,
+                   Vnode *vptr,
                    AL_AccessList *newACL)
 {
     ViceFid Fid;

@@ -71,7 +71,7 @@ void PerformSetAttr(ClientEntry *, Volume *, Vnode *,
                     RPC2_Integer, Date_t, UserId, RPC2_Unsigned, RPC2_Integer,
                     ViceStoreId *, Inode *);
 void PerformSetACL(ClientEntry *, Volume *, Vnode *,
-                   ViceStoreId *, AL_AccessList *);
+                   AL_AccessList *);
 int PerformCreate(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                   Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *);
 void PerformRemove(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
