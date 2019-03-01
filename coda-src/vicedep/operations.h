@@ -64,38 +64,38 @@ int FetchBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *,
 void PerformGetAttr(ClientEntry *, Volume *, Vnode *);
 void PerformGetACL(ClientEntry *, Volume *, Vnode *, RPC2_BoundedBS *,
                    RPC2_String);
-void PerformStore(ClientEntry *, VolumeId, Volume *, Vnode *, Inode,
+void PerformStore(ClientEntry *, Volume *, Vnode *, Inode, 
                   RPC2_Integer, Date_t, ViceStoreId *, RPC2_Integer * = NULL);
 int StoreBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *, Inode,
                       RPC2_Integer);
-void PerformSetAttr(ClientEntry *, VolumeId, Volume *, Vnode *,
+void PerformSetAttr(ClientEntry *, Volume *, Vnode *, 
                     RPC2_Integer, Date_t, UserId, RPC2_Unsigned, RPC2_Integer,
                     ViceStoreId *, Inode *, RPC2_Integer * = NULL);
-void PerformSetACL(ClientEntry *, VolumeId, Volume *, Vnode *,
+void PerformSetACL(ClientEntry *, Volume *, Vnode *, 
                    ViceStoreId *, AL_AccessList *, RPC2_Integer * = NULL);
-int PerformCreate(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *, char *,
+int PerformCreate(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                   Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *,
                   RPC2_Integer * = NULL);
-void PerformRemove(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *, char *,
+void PerformRemove(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                    Date_t, ViceStoreId *, DirInode **, int *,
                    RPC2_Integer * = NULL);
-int PerformLink(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *, char *,
+int PerformLink(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                 Date_t, ViceStoreId *, DirInode **, int *,
                 RPC2_Integer * = NULL);
-void PerformRename(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *, Vnode *,
+void PerformRename(ClientEntry *, Volume *, Vnode *, Vnode *, Vnode *,
                    Vnode *, char *, char *, Date_t, ViceStoreId *,
                    DirInode **, DirInode **, DirInode **, int * = NULL,
                    RPC2_Integer * = NULL);
-int PerformMkdir(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *, char *,
+int PerformMkdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                  Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *,
                  RPC2_Integer * = NULL);
-void PerformRmdir(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *, char *,
+void PerformRmdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                   Date_t, ViceStoreId *, DirInode **, int *,
                   RPC2_Integer * = NULL);
-int PerformSymlink(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *, char *,
+int PerformSymlink(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
                    Inode, RPC2_Unsigned, Date_t, RPC2_Unsigned,
                    ViceStoreId *, DirInode **, int *, RPC2_Integer * = NULL);
-void PerformSetQuota(ClientEntry *, VolumeId, Volume *, Vnode *, ViceFid *, 
+void PerformSetQuota(ClientEntry *, Volume *, Vnode *, ViceFid *, 
                      int, ViceStoreId *);
 
 void PutObjects(int, Volume *, int, dlist *, int, int, int = 0);

@@ -141,11 +141,11 @@ static int Check_CLMS_Semantics(ClientEntry *, Vnode **, Vnode **, char *,
 static int Check_RR_Semantics(ClientEntry *, Vnode **, Vnode **, char *,
                               Volume **, VnodeType, VCP, void *, void *,
                               Rights *, Rights *, int);
-static int Perform_CLMS(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *,
+static int Perform_CLMS(ClientEntry *, Volume *, Vnode *, Vnode *,
                         CLMS_Op opcode, char *, Inode, RPC2_Unsigned, Date_t,
                         RPC2_Unsigned, ViceStoreId *, PDirInode *, int *,
                         RPC2_Integer *);
-static void Perform_RR(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *,
+static void Perform_RR(ClientEntry *, Volume *, Vnode *, Vnode *,
                        char *, Date_t, ViceStoreId *, PDirInode *, int *,
                        RPC2_Integer *);
 
@@ -204,7 +204,6 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
     ClientEntry *client = 0; /* pointer to the client data */
     Rights rights       = 0; /* rights for this user */
     Rights anyrights    = 0; /* rights for any user */
-    VolumeId VSGVolnum  = Fid->Volume;
     int voltype;
     dlist *vlist = new dlist((CFN)VLECmp);
     vle *v;
@@ -249,7 +248,7 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
         SetStatus(v->vptr, Status, rights, anyrights);
 
         if (VolumeWriteable(volptr))
-            Status->CallBack = CodaAddCallBack(client->VenusId, Fid, VSGVolnum);
+            Status->CallBack = CodaAddCallBack(client->VenusId, Fid);
     }
 
 FreeLocks:
@@ -280,7 +279,6 @@ long FS_ViceGetAttrPlusSHA(RPC2_Handle RPCid, ViceFid *Fid,
     ClientEntry *client = 0; /* pointer to the client data */
     Rights rights       = 0; /* rights for this user */
     Rights anyrights    = 0; /* rights for any user */
-    VolumeId VSGVolnum  = Fid->Volume;
     int voltype;
     dlist *vlist = new dlist((CFN)VLECmp);
     vle *v       = 0;
@@ -317,7 +315,7 @@ long FS_ViceGetAttrPlusSHA(RPC2_Handle RPCid, ViceFid *Fid,
         SetStatus(v->vptr, Status, rights, anyrights);
 
         if (VolumeWriteable(volptr))
-            Status->CallBack = CodaAddCallBack(client->VenusId, Fid, VSGVolnum);
+            Status->CallBack = CodaAddCallBack(client->VenusId, Fid);
     }
 
     /* Obtain SHA if requested.  For now, we simplify the code by
@@ -405,7 +403,7 @@ long FS_ViceValidateAttrsPlusSHA(
     ViceFidAndVV Piggies[], RPC2_BoundedBS *VFlagBS, RPC2_CountedBS *PiggyBS)
 {
     long errorCode      = 0; /* return code to caller */
-    VolumeId VSGVolnum  = PrimaryFid->Volume;
+    VolumeId Vid  = PrimaryFid->Volume;
     Volume *volptr      = 0; /* pointer to the volume */
     ClientEntry *client = 0; /* pointer to the client data */
     Rights rights       = 0; /* rights for this user */
@@ -443,7 +441,7 @@ long FS_ViceValidateAttrsPlusSHA(
 
     /* now check piggyback fids */
     for (i = 0; i < NumPiggyFids; i++) {
-        if (Piggies[i].Fid.Volume != VSGVolnum) {
+        if (Piggies[i].Fid.Volume != Vid) {
             strcpy(why_failed, "Wrong Volume Id");
             goto InvalidObj;
         }
@@ -482,7 +480,7 @@ long FS_ViceValidateAttrsPlusSHA(
              * because getting a callback is refetching.
              */
             VFlagBS->SeqBody[i] = (RPC2_Byte)CodaAddCallBack(
-                client->VenusId, &Piggies[i].Fid, VSGVolnum);
+                client->VenusId, &Piggies[i].Fid);
 
             SLog(8, "ViceValidateAttrs: %s ok", FID_(&Piggies[i].Fid));
             continue;
@@ -586,7 +584,6 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
     Rights rights         = 0; /* rights for this user */
     Rights anyrights      = 0; /* rights for any user */
     AL_AccessList *newACL = 0;
-    VolumeId VSGVolnum    = Fid->Volume;
     int voltype           = 0;
     dlist *vlist          = new dlist((CFN)VLECmp);
     vle *v                = 0;
@@ -620,11 +617,8 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
 
     /* Perform operation. */
     {
-        if (voltype == REPVOL || voltype == NONREPVOL) {
-            GetMyVS(volptr, OldVS, NewVS, voltype);
-        }
-
-        PerformSetACL(client, VSGVolnum, volptr, v->vptr, voltype, StoreId,
+        GetMyVS(volptr, OldVS, NewVS, voltype);
+        PerformSetACL(client, volptr, v->vptr, voltype, StoreId,
                       newACL, NewVS);
 
         SetStatus(v->vptr, Status, rights, anyrights);
@@ -2309,7 +2303,7 @@ void PerformGetACL(ClientEntry *client, Volume *volptr, Vnode *vptr,
     AccessList->SeqLen = strlen((char *)(AccessList->SeqBody)) + 1;
 }
 
-void PerformStore(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+void PerformStore(ClientEntry *client, Volume *volptr,
                   Vnode *vptr, Inode newinode,
                   RPC2_Integer Length, Date_t Mtime, ViceStoreId *StoreId,
                   RPC2_Integer *vsptr)
@@ -2319,7 +2313,7 @@ void PerformStore(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     Fid.Vnode  = vptr->vnodeNumber;
     Fid.Unique = vptr->disk.uniquifier;
 
-    CodaBreakCallBack(client->VenusId, &Fid, VSGVolnum);
+    CodaBreakCallBack(client->VenusId, &Fid);
 
     vptr->disk.cloned =
         0; /* installation of shadow copy here effectively does COW! */
@@ -2417,7 +2411,7 @@ Exit:
     return (errorCode);
 }
 
-void PerformSetAttr(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+void PerformSetAttr(ClientEntry *client, Volume *volptr,
                     Vnode *vptr, RPC2_Integer Length,
                     Date_t Mtime, UserId Owner, RPC2_Unsigned Mode,
                     RPC2_Integer Mask, ViceStoreId *StoreId, Inode *CowInode,
@@ -2428,7 +2422,7 @@ void PerformSetAttr(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     Fid.Vnode  = vptr->vnodeNumber;
     Fid.Unique = vptr->disk.uniquifier;
 
-    CodaBreakCallBack(client->VenusId, &Fid, VSGVolnum);
+    CodaBreakCallBack(client->VenusId, &Fid);
 
     if (Mask & SET_LENGTH)
         vptr->disk.length = Length;
@@ -2455,7 +2449,7 @@ void PerformSetAttr(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     NewCOP1Update(volptr, vptr);
 }
 
-void PerformSetACL(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+void PerformSetACL(ClientEntry *client, Volume *volptr,
                    Vnode *vptr, int voltype, ViceStoreId *StoreId,
                    AL_AccessList *newACL, RPC2_Integer *vsptr)
 {
@@ -2464,7 +2458,7 @@ void PerformSetACL(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     Fid.Vnode  = vptr->vnodeNumber;
     Fid.Unique = vptr->disk.uniquifier;
 
-    CodaBreakCallBack(client->VenusId, &Fid, VSGVolnum);
+    CodaBreakCallBack(client->VenusId, &Fid);
 
     vptr->disk.author  = client->Id;
     AL_AccessList *aCL = 0;
@@ -2477,36 +2471,36 @@ void PerformSetACL(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     NewCOP1Update(volptr, vptr, StoreId, vsptr, (voltype & REPVOL));
 }
 
-int PerformCreate(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+int PerformCreate(ClientEntry *client, Volume *volptr,
                   Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                   RPC2_Unsigned Mode, ViceStoreId *StoreId,
                   PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
 {
-    return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_Create,
+    return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_Create,
                         Name, 0, 0, Mtime, Mode, StoreId,
                         CowInode, blocks, vsptr);
 }
 
-void PerformRemove(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+void PerformRemove(ClientEntry *client, Volume *volptr,
                    Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                    ViceStoreId *StoreId, PDirInode *CowInode,
                    int *blocks, RPC2_Integer *vsptr)
 {
-    Perform_RR(client, VSGVolnum, volptr, dirvptr, vptr, Name, Mtime,
+    Perform_RR(client, volptr, dirvptr, vptr, Name, Mtime,
                StoreId, CowInode, blocks, vsptr);
 }
 
-int PerformLink(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+int PerformLink(ClientEntry *client, Volume *volptr,
                 Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                 ViceStoreId *StoreId, PDirInode *CowInode,
                 int *blocks, RPC2_Integer *vsptr)
 {
-    return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_Link,
+    return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_Link,
                         Name, 0, 0, Mtime, 0, StoreId, CowInode,
                         blocks, vsptr);
 }
 
-void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+void PerformRename(ClientEntry *client, Volume *volptr,
                    Vnode *sd_vptr, Vnode *td_vptr, Vnode *s_vptr, Vnode *t_vptr,
                    char *OldName, char *NewName, Date_t Mtime,
                    ViceStoreId *StoreId, PDirInode *sd_CowInode,
@@ -2541,12 +2535,12 @@ void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     if (nblocks)
         *nblocks = 0;
 
-    CodaBreakCallBack(client ? client->VenusId : 0, &SDid, VSGVolnum);
+    CodaBreakCallBack(client ? client->VenusId : 0, &SDid);
     if (!SameParent)
-        CodaBreakCallBack(client ? client->VenusId : 0, &TDid, VSGVolnum);
-    CodaBreakCallBack(client ? client->VenusId : 0, &SFid, VSGVolnum);
+        CodaBreakCallBack(client ? client->VenusId : 0, &TDid);
+    CodaBreakCallBack(client ? client->VenusId : 0, &SFid);
     if (TargetExists)
-        CodaBreakCallBack(client ? client->VenusId : 0, &TFid, VSGVolnum);
+        CodaBreakCallBack(client ? client->VenusId : 0, &TFid);
 
     /* Rename invokes COW! */
     PDirHandle sd_dh;
@@ -2688,32 +2682,32 @@ void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     }
 }
 
-int PerformMkdir(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+int PerformMkdir(ClientEntry *client, Volume *volptr,
                  Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                  RPC2_Unsigned Mode, ViceStoreId *StoreId,
                  PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
 {
-    return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_MakeDir,
+    return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_MakeDir,
                         Name, 0, 0, Mtime, Mode, StoreId,
                         CowInode, blocks, vsptr);
 }
 
-void PerformRmdir(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+void PerformRmdir(ClientEntry *client, Volume *volptr,
                   Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                   ViceStoreId *StoreId, PDirInode *CowInode,
                   int *blocks, RPC2_Integer *vsptr)
 {
-    Perform_RR(client, VSGVolnum, volptr, dirvptr, vptr, Name, Mtime,
+    Perform_RR(client, volptr, dirvptr, vptr, Name, Mtime,
                StoreId, CowInode, blocks, vsptr);
 }
 
-int PerformSymlink(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+int PerformSymlink(ClientEntry *client, Volume *volptr,
                    Vnode *dirvptr, Vnode *vptr, char *Name, Inode newinode,
                    RPC2_Unsigned Length, Date_t Mtime, RPC2_Unsigned Mode,
                    ViceStoreId *StoreId, PDirInode *CowInode,
                    int *blocks, RPC2_Integer *vsptr)
 {
-    return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_SymLink,
+    return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_SymLink,
                         Name, newinode, Length, Mtime, Mode,
                         StoreId, CowInode, blocks, vsptr);
 }
@@ -2723,7 +2717,7 @@ int PerformSymlink(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
   symlink operation on a VM copy of the object.
 */
 
-static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+static int Perform_CLMS(ClientEntry *client, Volume *volptr,
                         Vnode *dirvptr, Vnode *vptr, CLMS_Op opcode, char *Name,
                         Inode newinode, RPC2_Unsigned Length, Date_t Mtime,
                         RPC2_Unsigned Mode,
@@ -2738,12 +2732,12 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     VN_VN2Fid(dirvptr, volptr, &Did);
 
     /* Break callback promises. */
-    CodaBreakCallBack((client ? client->VenusId : 0), &Did, VSGVolnum);
+    CodaBreakCallBack((client ? client->VenusId : 0), &Did);
     /* XXX Is the following callback really needed? the contents of the object
      * do change, however it's only the linkcount in the metadata which isn't
      * really critical --JH */
     if (opcode == CLMS_Link)
-        CodaBreakCallBack((client ? client->VenusId : 0), &Fid, VSGVolnum);
+        CodaBreakCallBack((client ? client->VenusId : 0), &Fid);
 
     /* CLMS invokes COW! */
     PDirHandle dh;
@@ -2868,7 +2862,7 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     return 0;
 }
 
-static void Perform_RR(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+static void Perform_RR(ClientEntry *client, Volume *volptr,
                        Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                        ViceStoreId *StoreId,
                        PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
@@ -2883,8 +2877,8 @@ static void Perform_RR(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
     Fid.Vnode  = vptr->vnodeNumber;
     Fid.Unique = vptr->disk.uniquifier;
 
-    CodaBreakCallBack(client ? client->VenusId : 0, &Did, VSGVolnum);
-    CodaBreakCallBack(client ? client->VenusId : 0, &Fid, VSGVolnum);
+    CodaBreakCallBack(client ? client->VenusId : 0, &Did);
+    CodaBreakCallBack(client ? client->VenusId : 0, &Fid);
 
     /* RR invokes COW! */
     PDirHandle pDir;

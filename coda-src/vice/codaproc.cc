@@ -514,8 +514,8 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
     {
         int nblocks = 0;
         if (cv->vptr->disk.type == vDirectory) {
-            PerformRmdir(pkdparm->client, pkdparm->VSGVnum, pkdparm->volptr,
-                         pv->vptr, cv->vptr, name,
+            PerformRmdir(pkdparm->client, pkdparm->volptr, pv->vptr, cv->vptr,
+                         name,
                          pkdparm->status ? pkdparm->status->Date :
                                            pv->vptr->disk.unixModifyTime,
                          pkdparm->storeid, &pv->d_cinode, &nblocks);
@@ -526,8 +526,8 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
             *(pkdparm->blocks) += nblocks;
 
         } else {
-            PerformRemove(pkdparm->client, pkdparm->VSGVnum, pkdparm->volptr,
-                          pv->vptr, cv->vptr, name,
+            PerformRemove(pkdparm->client, pkdparm->volptr, pv->vptr, cv->vptr,
+                          name,
                           pkdparm->status ? pkdparm->status->Date :
                                             pv->vptr->disk.unixModifyTime,
                           pkdparm->storeid, &pv->d_cinode, &nblocks);

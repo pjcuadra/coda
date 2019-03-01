@@ -308,7 +308,6 @@ long FS_ViceGetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     errorCode = fileCode = 0;
     vptr                 = 0;
     volptr               = 0;
-    VolumeId VSGVolnum   = vid;
 
     SLog(1, "GetVolumeStatus for volume %u", vid);
 
@@ -377,11 +376,11 @@ Final:
     return (errorCode);
 }
 
-void PerformSetQuota(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
+void PerformSetQuota(ClientEntry *client, Volume *volptr,
                      Vnode *vptr, ViceFid *fid, int NewQuota,
                      ViceStoreId *StoreId)
 {
-    CodaBreakCallBack((client ? client->VenusId : 0), fid, VSGVolnum);
+    CodaBreakCallBack((client ? client->VenusId : 0), fid);
 
     V_maxquota(volptr) = NewQuota;
 
@@ -413,7 +412,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
 
     errorCode = fileCode = 0;
     volptr               = 0;
-    VolumeId VSGVolnum   = vid;
 
     SLog(1, "ViceSetVolumeStatus for volume %u", vid);
     SLog(
@@ -486,7 +484,7 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
         V_minquota(volptr) = (int)status->MinQuota;
 
     if (status->MaxQuota > -1) {
-        PerformSetQuota(client, VSGVolnum, volptr, v->vptr, &vfid,
+        PerformSetQuota(client, volptr, v->vptr, &vfid,
                         (int)status->MaxQuota, StoreId);
     }
 

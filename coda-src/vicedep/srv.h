@@ -289,8 +289,8 @@ void DeleteVenus(HostTable *);
 void DeleteFile(ViceFid *);
 void PrintCallBackState(FILE *);
 void PrintCallBacks(ViceFid *, FILE *);
-CallBackStatus CodaAddCallBack(HostTable *, ViceFid *, VolumeId);
-void CodaBreakCallBack(HostTable *, ViceFid *, VolumeId);
+CallBackStatus CodaAddCallBack(HostTable *, ViceFid *);
+void CodaBreakCallBack(HostTable *, ViceFid *);
 
 /* lookaside */
 extern int AllowSHA;

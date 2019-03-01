@@ -149,7 +149,7 @@ long S_VolSetVV(RPC2_Handle rpcid, RPC2_Unsigned formal_volid,
     fid.Volume = formal_volid;
     fid.Vnode  = vnodeid;
     fid.Unique = unique;
-    CodaBreakCallBack(0, &fid, formal_volid);
+    CodaBreakCallBack(0, &fid);
 
     VPutVnode((Error *)&error, vnp);
 
