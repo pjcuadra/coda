@@ -638,68 +638,22 @@ Exit:
     return (errorCode);
 }
 
-void GetMyVS(Volume *volptr, RPC2_CountedBS *VSList, RPC2_Integer *MyVS,
-             int voltype)
+void GetMyVS(Volume *volptr, RPC2_CountedBS *VSList, RPC2_Integer *MyVS)
 {
-    vrent *vre;
-    int ix = 0;
-
     *MyVS = 0;
     if (VSList->SeqLen == 0)
         return;
 
-    switch (voltype) {
-    case REPVOL:
-        /* Look up the VRDB entry. */
-        vre = VRDB.find(V_groupId(volptr));
-        if (!vre)
-            Die("GetMyVS: VSG not found!");
-
-        /* Look up the index of this host. */
-        ix = vre->index();
-        if (ix < 0)
-            Die("GetMyVS: this host not found!");
-        break;
-    case NONREPVOL:
-    case RWVOL:
-        break;
-    default:
-        return;
-    }
-
     /* get the version stamp from our slot in the vector */
-    *MyVS = ((RPC2_Unsigned *)VSList->SeqBody)[ix];
+    *MyVS = ((RPC2_Unsigned *)VSList->SeqBody)[0];
 
     SLog(1, "GetMyVS: 0x%x, incoming stamp %d", V_id(volptr), *MyVS);
-
-    return;
 }
 
 void SetVSStatus(ClientEntry *client, Volume *volptr, RPC2_Integer *NewVS,
-                 CallBackStatus *VCBStatus, int voltype)
+                 CallBackStatus *VCBStatus)
 {
     *VCBStatus = NoCallBack;
-    *NewVS     = 0;
-
-    int ix = 0;
-    switch (voltype) {
-    case REPVOL: {
-        /* Look up the VRDB entry. */
-        vrent *vre = VRDB.find(V_groupId(volptr));
-        if (!vre)
-            Die("SetVSStatus: VSG not found!");
-
-        /* Look up the index of this host. */
-        ix = vre->index();
-        if (ix < 0)
-            Die("SetVSStatus: this host not found!");
-    } break;
-    case NONREPVOL:
-    case RWVOL:
-        break;
-    default:
-        return;
-    }
 
     SLog(1, "SetVSStatus: 0x%x, client %d, server %d", V_id(volptr), *NewVS,
          (&(V_versionvector(volptr).Versions.Site0))[ix]);

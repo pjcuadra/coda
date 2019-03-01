@@ -171,7 +171,7 @@ struct rle {
 static int ValidateReintegrateParms(RPC2_Handle, VolumeId *, Volume **,
                                     ClientEntry **, unsigned int,
                                     struct dllist_head *, RPC2_Integer *,
-                                    ViceReintHandle *, int *);
+                                    ViceReintHandle *);
 static int GetReintegrateObjects(ClientEntry *, struct dllist_head *, dlist *,
                                  int *, RPC2_Integer *);
 static int CheckSemanticsAndPerform(ClientEntry *, VolumeId,
@@ -181,14 +181,14 @@ static void PutReintegrateObjects(int, Volume *, struct dllist_head *, dlist *,
                                   int, RPC2_Integer, ClientEntry *,
                                   RPC2_Unsigned, RPC2_Unsigned *, ViceFid *,
                                   RPC2_CountedBS *, RPC2_Integer *,
-                                  CallBackStatus *, int);
+                                  CallBackStatus *);
 
 static int AllocReintegrateVnode(Volume **, dlist *, ViceFid *, ViceFid *,
                                  ViceDataType, UserId, int *);
 
 static int AddParent(Volume **, dlist *, ViceFid *);
 static int ReintNormalVCmp(int, VnodeType, void *, void *);
-static void ReintFinalCOP(vle *, Volume *, RPC2_Integer *, int voltype);
+static void ReintFinalCOP(vle *, Volume *, RPC2_Integer *);
 static int ValidateRHandle(VolumeId, ViceReintHandle *);
 
 /*
@@ -210,15 +210,13 @@ long FS_ViceReintegrate(RPC2_Handle RPCid, VolumeId Vid, RPC2_Integer LogSize,
     INIT_LIST_HEAD(rlog);
     dlist *vlist = new dlist((CFN)VLECmp);
     int blocks   = 0;
-    int voltype  = 0;
 
     if (NumDirs)
         *NumDirs = 0; /* check for compatibility */
 
     /* Phase I. */
     if ((errorCode = ValidateReintegrateParms(RPCid, &Vid, &volptr, &client,
-                                              LogSize, &rlog, Index, 0,
-                                              &voltype)))
+                                              LogSize, &rlog, Index, 0)))
         goto FreeLocks;
 
     SLog(1, "Starting GetReintegrateObjects for %x", Vid);
@@ -242,7 +240,7 @@ FreeLocks:
 
     PutReintegrateObjects(errorCode, volptr, &rlog, vlist, blocks, OutOfOrder,
                           client, MaxDirs, NumDirs, StaleDirs, OldVS, NewVS,
-                          VCBStatus, voltype);
+                          VCBStatus);
 
     SLog(1, "ViceReintegrate returns %s", ViceErrorMsg(errorCode));
     END_TIMING(Reintegrate_Total);
@@ -264,8 +262,7 @@ long FS_ViceOpenReintHandle(RPC2_Handle RPCid, ViceFid *Fid,
 
     SLog(0 /*1*/, "ViceOpenReintHandle: Fid = %s", FID_(Fid));
 
-    if ((errorCode =
-             ValidateParms(RPCid, &client, NULL, &Fid->Volume, 0, NULL)))
+    if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume, 0, NULL)))
         goto FreeLocks;
 
     v = AddVLE(*vlist, Fid);
@@ -459,34 +456,32 @@ long FS_ViceCloseReintHandle(RPC2_Handle RPCid, VolumeId Vid,
 {
     int errorCode       = 0;
     ClientEntry *client = 0;
-    VolumeId VSGVolnum  = Vid;
     Volume *volptr      = 0;
     INIT_LIST_HEAD(rlog);
     dlist *vlist = new dlist((CFN)VLECmp);
     int blocks   = 0;
-    int voltype  = 0;
 
     SLog(0 /*1*/, "ViceCloseReintHandle for volume 0x%x", Vid);
 
     /* Phase I. */
     if ((errorCode = ValidateReintegrateParms(RPCid, &Vid, &volptr, &client,
-                                              LogSize, &rlog, 0, RHandle,
-                                              &voltype)))
+                                              LogSize, &rlog, NULL, RHandle)))
         goto FreeLocks;
 
     /* Phase II. */
-    if ((errorCode = GetReintegrateObjects(client, &rlog, vlist, &blocks, 0)))
+    if ((errorCode =
+             GetReintegrateObjects(client, &rlog, vlist, &blocks, NULL)))
         goto FreeLocks;
 
     /* Phase III. */
-    if ((errorCode = CheckSemanticsAndPerform(client, Vid, VSGVolnum, &rlog,
-                                              vlist, &blocks, 0)))
+    if ((errorCode = CheckSemanticsAndPerform(client, Vid, &rlog, vlist,
+                                              &blocks, NULL)))
         goto FreeLocks;
 
 FreeLocks:
     /* Phase IV. */
     PutReintegrateObjects(errorCode, volptr, &rlog, vlist, blocks, 0, client, 0,
-                          NULL, NULL, OldVS, NewVS, VCBStatus, voltype);
+                          NULL, NULL, OldVS, NewVS, VCBStatus);
 
     SLog(0 /*2*/, "ViceCloseReintHandle returns %s", ViceErrorMsg(errorCode));
 
@@ -509,7 +504,7 @@ static int ValidateReintegrateParms(RPC2_Handle RPCid, VolumeId *Vid,
                                     Volume **volptr, ClientEntry **client,
                                     unsigned int rlen, struct dllist_head *rlog,
                                     RPC2_Integer *Index,
-                                    ViceReintHandle *RHandle, int *voltype)
+                                    ViceReintHandle *RHandle)
 {
     START_TIMING(Reintegrate_ValidateParms);
     SLog(10, "ValidateReintegrateParms: RPCid = %d, *Vid = %x", RPCid, *Vid);
@@ -1703,7 +1698,7 @@ static void PutReintegrateObjects(int errorCode, Volume *volptr,
                                   ClientEntry *client, RPC2_Unsigned MaxDirs,
                                   RPC2_Unsigned *NumDirs, ViceFid *StaleDirs,
                                   RPC2_CountedBS *OldVS, RPC2_Integer *NewVS,
-                                  CallBackStatus *VCBStatus, int voltype)
+                                  CallBackStatus *VCBStatus)
 {
     START_TIMING(Reintegrate_PutObjects);
     SLog(10, "PutReintegrateObjects: Vid = %x, errorCode = %d",
@@ -1739,7 +1734,7 @@ static void PutReintegrateObjects(int errorCode, Volume *volptr,
         PollAndYield();
 
     if (errorCode == 0 && vlist && volptr) {
-        GetMyVS(volptr, OldVS, NewVS, voltype);
+        GetMyVS(volptr, OldVS, NewVS);
 
         dlist_iterator next(*vlist);
         vle *v;
@@ -1767,7 +1762,7 @@ static void PutReintegrateObjects(int errorCode, Volume *volptr,
                 }
             }
         }
-        SetVSStatus(client, volptr, NewVS, VCBStatus, voltype);
+        SetVSStatus(client, volptr, NewVS, VCBStatus);
     }
 
     /* Release the objects. */

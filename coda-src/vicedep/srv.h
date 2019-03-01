@@ -234,9 +234,8 @@ char *ViceErrorMsg(int);
 const ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
 void NewCOP1Update(Volume *, Vnode *);
 void PollAndYield();
-void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *, int voltype);
-void SetVSStatus(ClientEntry *, Volume *, RPC2_Integer *, CallBackStatus *,
-                 int voltype);
+void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *);
+void SetVSStatus(ClientEntry *, Volume *, RPC2_Integer *, CallBackStatus *);
 
 /* codasrv.c */
 extern int SystemId, AnyUserId;

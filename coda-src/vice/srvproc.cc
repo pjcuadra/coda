@@ -204,7 +204,6 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
     ClientEntry *client = 0; /* pointer to the client data */
     Rights rights       = 0; /* rights for this user */
     Rights anyrights    = 0; /* rights for any user */
-    int voltype;
     dlist *vlist = new dlist((CFN)VLECmp);
     vle *v;
     vle *av;
@@ -220,8 +219,7 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
 
     /* Validate parameters. */
     {
-        if ((errorCode = ValidateParms(RPCid, &client, &voltype, &Fid->Volume,
-                                       PiggyBS, NULL)))
+        if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume,
             goto FreeLocks;
     }
 
@@ -240,7 +238,7 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
 
     /* Perform operation. */
     {
-        if (!(voltype == REPVOL) || !PrimaryHost || PrimaryHost == ThisHostAddr)
+        if (!PrimaryHost || PrimaryHost == ThisHostAddr)
             if ((errorCode = FetchBulkTransfer(RPCid, client, volptr, v->vptr,
                                                Offset, Count, VV)))
                 goto FreeLocks;
@@ -279,7 +277,6 @@ long FS_ViceGetAttrPlusSHA(RPC2_Handle RPCid, ViceFid *Fid,
     ClientEntry *client = 0; /* pointer to the client data */
     Rights rights       = 0; /* rights for this user */
     Rights anyrights    = 0; /* rights for any user */
-    int voltype;
     dlist *vlist = new dlist((CFN)VLECmp);
     vle *v       = 0;
     vle *av      = 0;
@@ -290,7 +287,7 @@ long FS_ViceGetAttrPlusSHA(RPC2_Handle RPCid, ViceFid *Fid,
 
     /* Validate parameters. */
     {
-        if ((errorCode = ValidateParms(RPCid, &client, &voltype, &Fid->Volume,
+        if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume,
                                        PiggyBS, NULL)))
             goto FreeLocks;
     }
@@ -408,7 +405,6 @@ long FS_ViceValidateAttrsPlusSHA(
     ClientEntry *client = 0; /* pointer to the client data */
     Rights rights       = 0; /* rights for this user */
     Rights anyrights    = 0; /* rights for any user */
-    int voltype;
     dlist *vlist   = new dlist((CFN)VLECmp);
     vle *v         = 0;
     vle *av        = 0;
@@ -449,9 +445,7 @@ long FS_ViceValidateAttrsPlusSHA(
         /* Validate parameters. */
         {
             /* We've already dealt with the PiggyBS in the GetAttr above. */
-            if ((iErrorCode = ValidateParms(RPCid, &client, &voltype,
-                                            &Piggies[i].Fid.Volume, NULL,
-                                            NULL))) {
+            if ((iErrorCode = ValidateParms(RPCid, &client, &Piggies[i].Fid.Volume, NULL, NULL))) {
                 strcpy(why_failed, "ValidateParms");
                 goto InvalidObj;
             }
@@ -525,8 +519,7 @@ long FS_ViceGetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_Unsigned InconOK,
 
     /* Validate parameters. */
     {
-        if ((errorCode = ValidateParms(RPCid, &client, NULL, &Fid->Volume,
-                                       PiggyBS, NULL)))
+        if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume, PiggyBS, NULL)))
             goto FreeLocks;
     }
 
@@ -584,7 +577,6 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
     Rights rights         = 0; /* rights for this user */
     Rights anyrights      = 0; /* rights for any user */
     AL_AccessList *newACL = 0;
-    int voltype           = 0;
     dlist *vlist          = new dlist((CFN)VLECmp);
     vle *v                = 0;
 
@@ -593,7 +585,7 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
 
     /* Validate parameters. */
     {
-        if ((errorCode = ValidateParms(RPCid, &client, &voltype, &Fid->Volume,
+        if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume,
                                        PiggyBS, NULL)))
             goto FreeLocks;
     }
@@ -609,7 +601,7 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
     /* Check semantics. */
     {
         if ((errorCode = CheckSetACLSemantics(client, &v->vptr, &volptr,
-                                              voltype, NormalVCmp, &Status->VV,
+                                              NormalVCmp, &Status->VV,
                                               Status->DataVersion, &rights,
                                               &anyrights, AccessList, &newACL)))
             goto FreeLocks;
@@ -617,12 +609,11 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
 
     /* Perform operation. */
     {
-        GetMyVS(volptr, OldVS, NewVS, voltype);
-        PerformSetACL(client, volptr, v->vptr, voltype, StoreId,
-                      newACL, NewVS);
+        GetMyVS(volptr, OldVS, NewVS);
+        PerformSetACL(client, volptr, v->vptr, StoreId, newACL, NewVS);
 
         SetStatus(v->vptr, Status, rights, anyrights);
-        SetVSStatus(client, volptr, NewVS, VCBStatus, voltype);
+        SetVSStatus(client, volptr, NewVS, VCBStatus);
     }
 
 FreeLocks:
@@ -956,7 +947,7 @@ static void ChangeDiskUsage(Volume *volptr, int length)
 /*
   ValidateParms: Validate the parameters of the RPC
 */
-int ValidateParms(RPC2_Handle RPCid, ClientEntry **client, int *voltype,
+int ValidateParms(RPC2_Handle RPCid, ClientEntry **client,
                   VolumeId *Vidp, RPC2_CountedBS *PiggyBS, int *Nservers)
 {
     int errorCode = 0;
@@ -971,30 +962,6 @@ int ValidateParms(RPC2_Handle RPCid, ClientEntry **client, int *voltype,
         SLog(0, "ValidateParms: GetPrivatePointer --> Null client");
         return (EINVAL);
     }
-
-    /* 3. Translate group to read/write volume id. */
-    GroupVid  = *Vidp;
-    errorCode = XlateVid(Vidp, &count, &pos, &voltype_tmp);
-
-    switch (voltype_tmp) {
-    case REPVOL:
-        SLog(10, "ValidateParms: %x --> %x", GroupVid, *Vidp);
-        break;
-    case NONREPVOL:
-        SLog(10, "ValidateParms: using non-replicated vol --> %x", *Vidp);
-        break;
-    case RWVOL:
-        SLog(10, "ValidateParms: using replica %x", *Vidp);
-        break;
-    default:
-        break;
-    }
-
-    if (voltype)
-        *voltype = voltype_tmp;
-
-    if (Nservers)
-        *Nservers = count;
 
     return (0);
 }
@@ -2450,7 +2417,7 @@ void PerformSetAttr(ClientEntry *client, Volume *volptr,
 }
 
 void PerformSetACL(ClientEntry *client, Volume *volptr,
-                   Vnode *vptr, int voltype, ViceStoreId *StoreId,
+                   Vnode *vptr, ViceStoreId *StoreId,
                    AL_AccessList *newACL, RPC2_Integer *vsptr)
 {
     ViceFid Fid;
@@ -2468,7 +2435,7 @@ void PerformSetACL(ClientEntry *client, Volume *volptr,
     CODA_ASSERT(aCLSize >= newACL->MySize);
     memcpy(aCL, newACL, newACL->MySize);
 
-    NewCOP1Update(volptr, vptr, StoreId, vsptr, (voltype & REPVOL));
+    NewCOP1Update(volptr, vptr, StoreId, vsptr);
 }
 
 int PerformCreate(ClientEntry *client, Volume *volptr,
