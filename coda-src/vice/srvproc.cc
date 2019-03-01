@@ -125,7 +125,7 @@ extern void HandleWeakEquality(Volume *, Vnode *, ViceVersionVector *);
 static int GetFsoAndParent(ViceFid *Fid, dlist *vlist, Volume **volptr, vle **v,
                            vle **av, int lock, int vollock, int ignoreIncon);
 static int GrabFsObj(ViceFid *, Volume **, Vnode **, int, int, int);
-static int NormalVCmp(int, VnodeType, void *, void *);
+static int NormalVCmp(VnodeType, void *, void *);
 
 typedef enum
 {
@@ -135,18 +135,18 @@ typedef enum
     CLMS_SymLink
 } CLMS_Op;
 static int Check_CLMS_Semantics(ClientEntry *, Vnode **, Vnode **, char *,
-                                Volume **, CLMS_Op opcode, int, VCP,
+                                Volume **, CLMS_Op opcode, VCP,
                                 void *dirVersion, void *Version, Rights *,
                                 Rights *, int);
 static int Check_RR_Semantics(ClientEntry *, Vnode **, Vnode **, char *,
-                              Volume **, VnodeType, int, VCP, void *, void *,
+                              Volume **, VnodeType, VCP, void *, void *,
                               Rights *, Rights *, int);
 static int Perform_CLMS(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *,
                         CLMS_Op opcode, char *, Inode, RPC2_Unsigned, Date_t,
-                        RPC2_Unsigned, int, ViceStoreId *, PDirInode *, int *,
+                        RPC2_Unsigned, ViceStoreId *, PDirInode *, int *,
                         RPC2_Integer *);
 static void Perform_RR(ClientEntry *, VolumeId, Volume *, Vnode *, Vnode *,
-                       char *, Date_t, int, ViceStoreId *, PDirInode *, int *,
+                       char *, Date_t, ViceStoreId *, PDirInode *, int *,
                        RPC2_Integer *);
 
 /* Yield parameters (i.e., after how many loop iterations do I poll and yield). */
@@ -817,23 +817,15 @@ int GetFsObj(ViceFid *fid, Volume **volptr, Vnode **vptr, int lock,
 }
 
 /* Permits only Strong Equality. */
-static int NormalVCmp(int ReplicatedOp, VnodeType type, void *arg1, void *arg2)
+static int NormalVCmp(VnodeType type, void *arg1, void *arg2)
 {
     int errorCode = 0;
 
-    if (ReplicatedOp) {
-        ViceVersionVector *vva = (ViceVersionVector *)arg1;
-        ViceVersionVector *vvb = (ViceVersionVector *)arg2;
+    uint32_t fva = *((uint32_t *)arg1);
+    uint32_t fvb = *((uint32_t *)arg2);
 
-        if (VV_Cmp(vva, vvb) != VV_EQ)
-            errorCode = EINCOMPATIBLE;
-    } else {
-        FileVersion fva = *((FileVersion *)arg1);
-        FileVersion fvb = *((FileVersion *)arg2);
-
-        if (fva != fvb)
-            errorCode = EINCOMPATIBLE;
-    }
+    if (fva != fvb)
+        errorCode = EINCOMPATIBLE;
 
     return (errorCode);
 }
@@ -1246,7 +1238,7 @@ static int IsVirgin(Vnode *vptr)
 }
 
 int CheckStoreSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
-                        Volume **volptr, int ReplicatedOp, VCP VCmpProc,
+                        Volume **volptr, VCP VCmpProc,
                         ViceVersionVector *VV, FileVersion DataVersion,
                         Rights *rights, Rights *anyrights)
 {
@@ -1259,11 +1251,10 @@ int CheckStoreSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*vptr) :
-                                     (void *)&(*vptr)->disk.dataVersion);
-        void *arg2 = (ReplicatedOp ? (void *)VV : (void *)&DataVersion);
+        void *arg1 = (void *)&Vnode_dataversion(*vptr);
+        void *arg2 = (void *)&DataVersion;
         if ((errorCode =
-                 VCmpProc(ReplicatedOp, (*vptr)->disk.type, arg1, arg2))) {
+                 VCmpProc((*vptr)->disk.type, arg1, arg2))) {
             SLog(0, "CheckStoreSemantics: %s, VCP error (%d)", FID_(&Fid),
                  errorCode);
             return (errorCode);
@@ -1307,7 +1298,7 @@ int CheckStoreSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
 }
 
 int CheckSetAttrSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
-                          Volume **volptr, int ReplicatedOp, VCP VCmpProc,
+                          Volume **volptr, VCP VCmpProc,
                           RPC2_Integer Length, Date_t Mtime, UserId Owner,
                           RPC2_Unsigned Mode, RPC2_Integer Mask,
                           ViceVersionVector *VV, FileVersion DataVersion,
@@ -1326,11 +1317,10 @@ int CheckSetAttrSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*vptr) :
-                                     (void *)&(*vptr)->disk.dataVersion);
-        void *arg2 = (ReplicatedOp ? (void *)VV : (void *)&DataVersion);
+        void *arg1 = (void *)&Vnode_dataversion(*vptr);
+        void *arg2 = (void *)&DataVersion;
         if ((errorCode =
-                 VCmpProc(ReplicatedOp, (*vptr)->disk.type, arg1, arg2))) {
+                 VCmpProc((*vptr)->disk.type, arg1, arg2))) {
             SLog(0, "CheckSetAttrSemantics: %s, VCP error (%d)", FID_(&Fid),
                  errorCode);
             return (errorCode);
@@ -1438,7 +1428,7 @@ int CheckSetAttrSemantics(ClientEntry *client, Vnode **avptr, Vnode **vptr,
 }
 
 int CheckSetACLSemantics(ClientEntry *client, Vnode **vptr, Volume **volptr,
-                         int ReplicatedOp, VCP VCmpProc, ViceVersionVector *VV,
+                         VCP VCmpProc, ViceVersionVector *VV,
                          FileVersion DataVersion, Rights *rights,
                          Rights *anyrights, RPC2_CountedBS *AccessList,
                          AL_AccessList **newACL)
@@ -1452,10 +1442,9 @@ int CheckSetACLSemantics(ClientEntry *client, Vnode **vptr, Volume **volptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*vptr) :
-                                     (void *)&(*vptr)->disk.dataVersion);
-        void *arg2 = (ReplicatedOp ? (void *)VV : (void *)&DataVersion);
-        rc         = VCmpProc(ReplicatedOp, (*vptr)->disk.type, arg1, arg2);
+        void *arg1 = (void *)&Vnode_dataversion(*vptr);
+        void *arg2 = (void *)&DataVersion;
+        rc         = VCmpProc((*vptr)->disk.type, arg1, arg2);
         if (rc) {
             SLog(0, "CheckSetACLSemantics: %s, VCP error (%d)", FID_(&Fid), rc);
             return rc;
@@ -1512,39 +1501,39 @@ int CheckSetACLSemantics(ClientEntry *client, Vnode **vptr, Volume **volptr,
 }
 
 int CheckCreateSemantics(ClientEntry *client, Vnode **dirvptr, Vnode **vptr,
-                         char *Name, Volume **volptr, int ReplicatedOp,
+                         char *Name, Volume **volptr,
                          VCP VCmpProc, void *dirVersion, void *Version,
                          Rights *rights, Rights *anyrights, int MakeProtChecks)
 {
     return (Check_CLMS_Semantics(
-        client, dirvptr, vptr, Name, volptr, CLMS_Create, ReplicatedOp,
+        client, dirvptr, vptr, Name, volptr, CLMS_Create,
         VCmpProc, dirVersion, Version, rights, anyrights, MakeProtChecks));
 }
 
 int CheckRemoveSemantics(ClientEntry *client, Vnode **dirvptr, Vnode **vptr,
-                         char *Name, Volume **volptr, int ReplicatedOp,
+                         char *Name, Volume **volptr,
                          VCP VCmpProc, void *dirVersion, void *Version,
                          Rights *rights, Rights *anyrights, int MakeProtChecks)
 {
     return (Check_RR_Semantics(client, dirvptr, vptr, Name, volptr, vFile,
-                               ReplicatedOp, VCmpProc, dirVersion, Version,
+                               VCmpProc, dirVersion, Version,
                                rights, anyrights, MakeProtChecks));
 }
 
 int CheckLinkSemantics(ClientEntry *client, Vnode **dirvptr, Vnode **vptr,
-                       char *Name, Volume **volptr, int ReplicatedOp,
+                       char *Name, Volume **volptr,
                        VCP VCmpProc, void *dirVersion, void *Version,
                        Rights *rights, Rights *anyrights, int MakeProtChecks)
 {
     return (Check_CLMS_Semantics(client, dirvptr, vptr, Name, volptr, CLMS_Link,
-                                 ReplicatedOp, VCmpProc, dirVersion, Version,
+                                 VCmpProc, dirVersion, Version,
                                  rights, anyrights, MakeProtChecks));
 }
 
 int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
                          Vnode **t_dirvptr, Vnode **s_vptr, char *OldName,
                          Vnode **t_vptr, char *NewName, Volume **volptr,
-                         int ReplicatedOp, VCP VCmpProc, void *s_dirVersion,
+                         VCP VCmpProc, void *s_dirVersion,
                          void *t_dirVersion, void *s_Version, void *t_Version,
                          Rights *sd_rights, Rights *sd_anyrights,
                          Rights *td_rights, Rights *td_anyrights,
@@ -1585,9 +1574,8 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Source directory. */
         {
-            arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*s_dirvptr) :
-                                   (void *)&(*s_dirvptr)->disk.dataVersion);
-            if ((errorCode = VCmpProc(ReplicatedOp, (*s_dirvptr)->disk.type,
+            arg1 = (void *)&Vnode_dataversion(*s_dirvptr);
+            if ((errorCode = VCmpProc((*s_dirvptr)->disk.type,
                                       arg1, s_dirVersion))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&SDid),
                      errorCode);
@@ -1597,10 +1585,8 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Target directory. */
         {
-            arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*t_dirvptr) :
-                                   (void *)&(*t_dirvptr)->disk.dataVersion);
-            if ((errorCode = VCmpProc(ReplicatedOp, (*t_dirvptr)->disk.type,
-                                      arg1, t_dirVersion))) {
+            arg1 = (void *)&Vnode_dataversion(*t_dirvptr);
+            if ((errorCode = VCmpProc((*t_dirvptr)->disk.type, arg1, t_dirVersion))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&TDid),
                      errorCode);
                 return (errorCode);
@@ -1609,10 +1595,8 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Source object. */
         {
-            arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*s_vptr) :
-                                   (void *)&(*s_vptr)->disk.dataVersion);
-            if ((errorCode = VCmpProc(ReplicatedOp, (*s_vptr)->disk.type, arg1,
-                                      s_Version))) {
+            arg1 = (void *)&Vnode_dataversion(*s_vptr);
+            if ((errorCode = VCmpProc((*s_vptr)->disk.type, arg1, s_Version))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&SFid),
                      errorCode);
                 return (errorCode);
@@ -1621,9 +1605,8 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 
         /* Target object. */
         if (TargetExists) {
-            arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*t_vptr) :
-                                   (void *)&(*t_vptr)->disk.dataVersion);
-            if ((errorCode = VCmpProc(ReplicatedOp, (*t_vptr)->disk.type, arg1,
+            arg1 = (void *)&Vnode_dataversion(*t_vptr);
+            if ((errorCode = VCmpProc((*t_vptr)->disk.type, arg1,
                                       t_Version))) {
                 SLog(0, "CheckRenameSemantics: %s, VCP error (%d)", FID_(&TFid),
                      errorCode);
@@ -1867,32 +1850,32 @@ int CheckRenameSemantics(ClientEntry *client, Vnode **s_dirvptr,
 }
 
 int CheckMkdirSemantics(ClientEntry *client, Vnode **dirvptr, Vnode **vptr,
-                        char *Name, Volume **volptr, int ReplicatedOp,
+                        char *Name, Volume **volptr,
                         VCP VCmpProc, void *dirVersion, void *Version,
                         Rights *rights, Rights *anyrights, int MakeProtChecks)
 {
     return (Check_CLMS_Semantics(
-        client, dirvptr, vptr, Name, volptr, CLMS_MakeDir, ReplicatedOp,
+        client, dirvptr, vptr, Name, volptr, CLMS_MakeDir,
         VCmpProc, dirVersion, Version, rights, anyrights, MakeProtChecks));
 }
 
 int CheckRmdirSemantics(ClientEntry *client, Vnode **dirvptr, Vnode **vptr,
-                        char *Name, Volume **volptr, int ReplicatedOp,
+                        char *Name, Volume **volptr,
                         VCP VCmpProc, void *dirVersion, void *Version,
                         Rights *rights, Rights *anyrights, int MakeProtChecks)
 {
     return (Check_RR_Semantics(client, dirvptr, vptr, Name, volptr, vDirectory,
-                               ReplicatedOp, VCmpProc, dirVersion, Version,
+                               VCmpProc, dirVersion, Version,
                                rights, anyrights, MakeProtChecks));
 }
 
 int CheckSymlinkSemantics(ClientEntry *client, Vnode **dirvptr, Vnode **vptr,
-                          char *Name, Volume **volptr, int ReplicatedOp,
+                          char *Name, Volume **volptr,
                           VCP VCmpProc, void *dirVersion, void *Version,
                           Rights *rights, Rights *anyrights, int MakeProtChecks)
 {
     return (Check_CLMS_Semantics(
-        client, dirvptr, vptr, Name, volptr, CLMS_SymLink, ReplicatedOp,
+        client, dirvptr, vptr, Name, volptr, CLMS_SymLink,
         VCmpProc, dirVersion, Version, rights, anyrights, MakeProtChecks));
 }
 
@@ -1904,7 +1887,7 @@ int CheckSymlinkSemantics(ClientEntry *client, Vnode **dirvptr, Vnode **vptr,
 /* {vptr,status} may be Null for {Create,Mkdir,Symlink}. */
 static int Check_CLMS_Semantics(ClientEntry *client, Vnode **dirvptr,
                                 Vnode **vptr, char *Name, Volume **volptr,
-                                CLMS_Op opcode, int ReplicatedOp, VCP VCmpProc,
+                                CLMS_Op opcode, VCP VCmpProc,
                                 void *dirVersion, void *Version, Rights *rights,
                                 Rights *anyrights, int MakeProtChecks)
 {
@@ -1929,19 +1912,17 @@ static int Check_CLMS_Semantics(ClientEntry *client, Vnode **dirvptr,
 
     /* Concurrency-control checks. */
     if (VCmpProc) {
-        void *arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*dirvptr) :
-                                     (void *)&(*dirvptr)->disk.dataVersion);
-        if ((errorCode = VCmpProc(ReplicatedOp, (*dirvptr)->disk.type, arg1,
-                                  dirVersion))) {
+        void *arg1 = (void *)&Vnode_dataversion(*dirvptr);
+        if ((errorCode = VCmpProc((*dirvptr)->disk.type, arg1,
+                                  &dirVersion))) {
             SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Did), errorCode);
             return (errorCode);
         }
 
         if (vptr) {
-            arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*vptr) :
-                                   (void *)&(*vptr)->disk.dataVersion);
-            if ((errorCode = VCmpProc(ReplicatedOp, (*vptr)->disk.type, arg1,
-                                      Version))) {
+            arg1 = (void *)&Vnode_dataversion(*vptr);
+            if ((errorCode = VCmpProc((*vptr)->disk.type, arg1,
+                                      &Version))) {
                 SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Fid),
                      errorCode);
                 return (errorCode);
@@ -2039,7 +2020,7 @@ static int Check_CLMS_Semantics(ClientEntry *client, Vnode **dirvptr,
 
 static int Check_RR_Semantics(ClientEntry *client, Vnode **dirvptr,
                               Vnode **vptr, char *Name, Volume **volptr,
-                              VnodeType type, int ReplicatedOp, VCP VCmpProc,
+                              VnodeType type, VCP VCmpProc,
                               void *dirVersion, void *Version, Rights *rights,
                               Rights *anyrights, int MakeProtChecks)
 {
@@ -2056,18 +2037,16 @@ static int Check_RR_Semantics(ClientEntry *client, Vnode **dirvptr,
     if (VCmpProc) {
         void *arg1 = 0;
 
-        arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*dirvptr) :
-                               (void *)&(*dirvptr)->disk.dataVersion);
-        if ((errorCode = VCmpProc(ReplicatedOp, (*dirvptr)->disk.type, arg1,
+        arg1 = (void *)&Vnode_dataversion(*dirvptr);
+        if ((errorCode = VCmpProc((*dirvptr)->disk.type, arg1,
                                   dirVersion))) {
             SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Did), errorCode);
             return (errorCode);
         }
 
-        arg1 = (ReplicatedOp ? (void *)&Vnode_vv(*vptr) :
-                               (void *)&(*vptr)->disk.dataVersion);
+        arg1 = (void *)&Vnode_dataversion(*vptr);
         if ((errorCode =
-                 VCmpProc(ReplicatedOp, (*vptr)->disk.type, arg1, Version))) {
+                 VCmpProc((*vptr)->disk.type, arg1, Version))) {
             SLog(0, "%s: %s, VCP error (%d)", ProcName, FID_(&Fid), errorCode);
             return (errorCode);
         }
@@ -2332,7 +2311,7 @@ void PerformGetACL(ClientEntry *client, Volume *volptr, Vnode *vptr,
 }
 
 void PerformStore(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
-                  Vnode *vptr, Inode newinode, int ReplicatedOp,
+                  Vnode *vptr, Inode newinode,
                   RPC2_Integer Length, Date_t Mtime, ViceStoreId *StoreId,
                   RPC2_Integer *vsptr)
 {
@@ -2440,7 +2419,7 @@ Exit:
 }
 
 void PerformSetAttr(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
-                    Vnode *vptr, int ReplicatedOp, RPC2_Integer Length,
+                    Vnode *vptr, RPC2_Integer Length,
                     Date_t Mtime, UserId Owner, RPC2_Unsigned Mode,
                     RPC2_Integer Mask, ViceStoreId *StoreId, Inode *CowInode,
                     RPC2_Integer *vsptr)
@@ -2499,36 +2478,36 @@ void PerformSetACL(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
 
 int PerformCreate(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                   Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
-                  RPC2_Unsigned Mode, int ReplicatedOp, ViceStoreId *StoreId,
+                  RPC2_Unsigned Mode, ViceStoreId *StoreId,
                   PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
 {
     return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_Create,
-                        Name, 0, 0, Mtime, Mode, ReplicatedOp, StoreId,
+                        Name, 0, 0, Mtime, Mode, StoreId,
                         CowInode, blocks, vsptr);
 }
 
 void PerformRemove(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                    Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
-                   int ReplicatedOp, ViceStoreId *StoreId, PDirInode *CowInode,
+                   ViceStoreId *StoreId, PDirInode *CowInode,
                    int *blocks, RPC2_Integer *vsptr)
 {
     Perform_RR(client, VSGVolnum, volptr, dirvptr, vptr, Name, Mtime,
-               ReplicatedOp, StoreId, CowInode, blocks, vsptr);
+               StoreId, CowInode, blocks, vsptr);
 }
 
 int PerformLink(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                 Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
-                int ReplicatedOp, ViceStoreId *StoreId, PDirInode *CowInode,
+                ViceStoreId *StoreId, PDirInode *CowInode,
                 int *blocks, RPC2_Integer *vsptr)
 {
     return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_Link,
-                        Name, 0, 0, Mtime, 0, ReplicatedOp, StoreId, CowInode,
+                        Name, 0, 0, Mtime, 0, StoreId, CowInode,
                         blocks, vsptr);
 }
 
 void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                    Vnode *sd_vptr, Vnode *td_vptr, Vnode *s_vptr, Vnode *t_vptr,
-                   char *OldName, char *NewName, Date_t Mtime, int ReplicatedOp,
+                   char *OldName, char *NewName, Date_t Mtime,
                    ViceStoreId *StoreId, PDirInode *sd_CowInode,
                    PDirInode *td_CowInode, PDirInode *s_CowInode, int *nblocks,
                    RPC2_Integer *vsptr)
@@ -2706,31 +2685,31 @@ void PerformRename(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
 
 int PerformMkdir(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                  Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
-                 RPC2_Unsigned Mode, int ReplicatedOp, ViceStoreId *StoreId,
+                 RPC2_Unsigned Mode, ViceStoreId *StoreId,
                  PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
 {
     return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_MakeDir,
-                        Name, 0, 0, Mtime, Mode, ReplicatedOp, StoreId,
+                        Name, 0, 0, Mtime, Mode, StoreId,
                         CowInode, blocks, vsptr);
 }
 
 void PerformRmdir(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                   Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
-                  int ReplicatedOp, ViceStoreId *StoreId, PDirInode *CowInode,
+                  ViceStoreId *StoreId, PDirInode *CowInode,
                   int *blocks, RPC2_Integer *vsptr)
 {
     Perform_RR(client, VSGVolnum, volptr, dirvptr, vptr, Name, Mtime,
-               ReplicatedOp, StoreId, CowInode, blocks, vsptr);
+               StoreId, CowInode, blocks, vsptr);
 }
 
 int PerformSymlink(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                    Vnode *dirvptr, Vnode *vptr, char *Name, Inode newinode,
                    RPC2_Unsigned Length, Date_t Mtime, RPC2_Unsigned Mode,
-                   int ReplicatedOp, ViceStoreId *StoreId, PDirInode *CowInode,
+                   ViceStoreId *StoreId, PDirInode *CowInode,
                    int *blocks, RPC2_Integer *vsptr)
 {
     return Perform_CLMS(client, VSGVolnum, volptr, dirvptr, vptr, CLMS_SymLink,
-                        Name, newinode, Length, Mtime, Mode, ReplicatedOp,
+                        Name, newinode, Length, Mtime, Mode,
                         StoreId, CowInode, blocks, vsptr);
 }
 
@@ -2742,7 +2721,7 @@ int PerformSymlink(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
 static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                         Vnode *dirvptr, Vnode *vptr, CLMS_Op opcode, char *Name,
                         Inode newinode, RPC2_Unsigned Length, Date_t Mtime,
-                        RPC2_Unsigned Mode, int ReplicatedOp,
+                        RPC2_Unsigned Mode,
                         ViceStoreId *StoreId, PDirInode *CowInode, int *nblocks,
                         RPC2_Integer *vsptr)
 {
@@ -2886,7 +2865,7 @@ static int Perform_CLMS(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
 
 static void Perform_RR(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
                        Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
-                       int ReplicatedOp, ViceStoreId *StoreId,
+                       ViceStoreId *StoreId,
                        PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
 {
     *blocks = 0;

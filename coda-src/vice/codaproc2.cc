@@ -1107,7 +1107,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 int deltablocks = nBlocks(r->u.u_store.Length) -
                                   nBlocks(v->vptr->disk.length);
                 if ((errorCode = CheckStoreSemantics(
-                         client, &a_v->vptr, &v->vptr, &volptr, 1,
+                         client, &a_v->vptr, &v->vptr, &volptr,
                          ReintNormalVCmp, &r->VV[0], 0, 0, 0))) {
                     goto Exit;
                 }
@@ -1137,7 +1137,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 CODA_ASSERT(v->f_finode > 0);
                 /* Bulk transfer is deferred until all ops have been
                  * checked/performed. */
-                PerformStore(client, VSGVolnum, volptr, v->vptr, v->f_finode, 0,
+                PerformStore(client, VSGVolnum, volptr, v->vptr, v->f_finode, 
                              r->u.u_store.Length, r->Mtime, &r->sid);
 
                 /* Cancel previous StoreData. */
@@ -1200,7 +1200,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 		     * only one of SET_TIME, SET_MODE, or SET_OWNER is set the
 		     * invalid attributes are ignored --JH */
                     if ((errorCode = CheckSetAttrSemantics(
-                             client, &a_v->vptr, &v->vptr, &volptr, 1,
+                             client, &a_v->vptr, &v->vptr, &volptr,
                              ReintNormalVCmp, 0, // r->u.u_truncate.Length,
                              r->u.u_utimes.Date, r->u.u_chown.Owner,
                              r->u.u_chmod.Mode, Mask, &r->VV[0], 0, 0, 0))) {
@@ -1262,7 +1262,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 errorCode     = CheckCreateSemantics(client, &parent_v->vptr,
                                                  &child_v->vptr, r->Name[0],
-                                                 &volptr, 1, ReintNormalVCmp,
+                                                 &volptr, ReintNormalVCmp,
                                                  &r->VV[0], &NullVV, 0, 0);
 
 #if 0
@@ -1288,7 +1288,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 errorCode = PerformCreate(client, VSGVolnum, volptr,
                                           parent_v->vptr, child_v->vptr,
                                           r->Name[0], r->Mtime,
-                                          r->u.u_create.Mode, 0, &r->sid,
+                                          r->u.u_create.Mode, &r->sid,
                                           &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
 
@@ -1308,7 +1308,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 }
                 if ((errorCode = CheckRemoveSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, 1, ReintNormalVCmp, &r->VV[0], &r->VV[1], 0,
+                         &volptr, ReintNormalVCmp, &r->VV[0], &r->VV[1], 0,
                          0)))
                     goto Exit;
 
@@ -1322,7 +1322,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 
                 int tblocks = 0;
                 PerformRemove(client, VSGVolnum, volptr, parent_v->vptr,
-                              child_v->vptr, r->Name[0], r->Mtime, 0, &r->sid,
+                              child_v->vptr, r->Name[0], r->Mtime, &r->sid,
                               &parent_v->d_cinode, &tblocks);
 
                 *blocks += tblocks;
@@ -1355,7 +1355,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 if ((errorCode = CheckLinkSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, 1, ReintNormalVCmp, &r->VV[0], &r->VV[1], 0,
+                         &volptr, ReintNormalVCmp, &r->VV[0], &r->VV[1], 0,
                          0)))
                     goto Exit;
 
@@ -1369,7 +1369,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 
                 errorCode = PerformLink(client, VSGVolnum, volptr,
                                         parent_v->vptr, child_v->vptr,
-                                        r->Name[0], r->Mtime, 0, &r->sid,
+                                        r->Name[0], r->Mtime, &r->sid,
                                         &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
 
@@ -1411,7 +1411,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 if ((errorCode = CheckRenameSemantics(
                          client, &sd_v->vptr, &td_v->vptr, &s_v->vptr,
                          r->Name[0], TargetExists ? &t_v->vptr : 0, r->Name[1],
-                         &volptr, 1, ReintNormalVCmp, &r->VV[0], &r->VV[1],
+                         &volptr, ReintNormalVCmp, &r->VV[0], &r->VV[1],
                          &r->VV[2], &NullVV, /* XXX wrong? */
                          0, 0, 0, 0, 0, 0, 1, 0, vlist)))
                     goto Exit;
@@ -1432,7 +1432,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 PerformRename(
                     client, VSGVolnum, volptr, sd_v->vptr, td_v->vptr,
                     s_v->vptr, TargetExists ? t_v->vptr : 0, r->Name[0],
-                    r->Name[1], r->Mtime, 0, &r->sid, &sd_v->d_cinode,
+                    r->Name[1], r->Mtime, &r->sid, &sd_v->d_cinode,
                     &td_v->d_cinode,
                     (s_v->vptr->disk.type == vDirectory ? &s_v->d_cinode : 0),
                     NULL);
@@ -1469,7 +1469,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 if ((errorCode = CheckMkdirSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, 1, ReintNormalVCmp, &r->VV[0], &NullVV, 0,
+                         &volptr, ReintNormalVCmp, &r->VV[0], &NullVV, 0,
                          0)))
                     goto Exit;
 
@@ -1484,7 +1484,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 errorCode = PerformMkdir(client, VSGVolnum, volptr,
                                          parent_v->vptr, child_v->vptr,
                                          r->Name[0], r->Mtime,
-                                         r->u.u_mkdir.Mode, 0, &r->sid,
+                                         r->u.u_mkdir.Mode, &r->sid,
                                          &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
 
@@ -1504,7 +1504,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 }
                 if ((errorCode = CheckRmdirSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, 1, ReintNormalVCmp, &r->VV[0], &r->VV[1], 0,
+                         &volptr, ReintNormalVCmp, &r->VV[0], &r->VV[1], 0,
                          0)))
                     goto Exit;
 
@@ -1518,7 +1518,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 
                 int tblocks = 0;
                 PerformRmdir(client, VSGVolnum, volptr, parent_v->vptr,
-                             child_v->vptr, r->Name[0], r->Mtime, 0, &r->sid,
+                             child_v->vptr, r->Name[0], r->Mtime, &r->sid,
                              &parent_v->d_cinode, &tblocks);
 
                 *blocks += tblocks;
@@ -1537,7 +1537,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 if ((errorCode = CheckSymlinkSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, 1, ReintNormalVCmp, &r->VV[0], &NullVV, 0,
+                         &volptr, ReintNormalVCmp, &r->VV[0], &NullVV, 0,
                          0)))
                     goto Exit;
 
@@ -1563,7 +1563,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 errorCode =
                     PerformSymlink(client, VSGVolnum, volptr, parent_v->vptr,
                                    child_v->vptr, r->Name[0], child_v->f_finode,
-                                   linklen, r->Mtime, r->u.u_symlink.Mode, 0,
+                                   linklen, r->Mtime, r->u.u_symlink.Mode,
                                    &r->sid, &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
 
@@ -1946,10 +1946,9 @@ Exit:
 
 /* Makes no version check for directories. */
 /* Permits only Strong and Weak Equality for files. */
-static int ReintNormalVCmp(int ReplicatedOp, VnodeType type, void *arg1,
+static int ReintNormalVCmp(VnodeType type, void *arg1,
                            void *arg2)
 {
-    CODA_ASSERT(ReplicatedOp == 1);
 
     switch (type) {
     case vDirectory:
@@ -1971,14 +1970,6 @@ static int ReintNormalVCmp(int ReplicatedOp, VnodeType type, void *arg1,
     return 0;
 }
 
-
-static void ReintFinalCOP(vle *v, Volume *volptr, RPC2_Integer *VS, int voltype)
-{
-    ViceStoreId *FinalSid;
-    FinalSid = &Vnode_vv(v->vptr).StoreId;
-
-    NewCOP1Update(volptr, v->vptr, FinalSid, VS, (voltype & REPVOL));
-}
 
 /*
  * Extract and validate the reintegration handle.  Handle errors are

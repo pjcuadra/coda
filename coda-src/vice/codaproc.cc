@@ -517,7 +517,7 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
                          pv->vptr, cv->vptr, name,
                          pkdparm->status ? pkdparm->status->Date :
                                            pv->vptr->disk.unixModifyTime,
-                         0, pkdparm->storeid, &pv->d_cinode, &nblocks);
+                         pkdparm->storeid, &pv->d_cinode, &nblocks);
             *(pkdparm->blocks) += nblocks;
             CODA_ASSERT(cv->vptr->delete_me);
             nblocks = (int)-nBlocks(cv->vptr->disk.length);
@@ -529,7 +529,7 @@ static int PerformTreeRemoval(PDirEntry de, void *data)
                           pv->vptr, cv->vptr, name,
                           pkdparm->status ? pkdparm->status->Date :
                                             pv->vptr->disk.unixModifyTime,
-                          0, pkdparm->storeid, &pv->d_cinode, &nblocks);
+                          pkdparm->storeid, &pv->d_cinode, &nblocks);
             *(pkdparm->blocks) += nblocks;
             if (cv->vptr->delete_me) {
                 nblocks = (int)-nBlocks(cv->vptr->disk.length);

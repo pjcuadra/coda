@@ -100,8 +100,7 @@ unsigned int etherGoodReads    = 0;
 unsigned int etherBytesRead    = 0;
 unsigned int etherBytesWritten = 0;
 
-/* *****  External routines ***** */
-int ValidateParms(RPC2_Handle, ClientEntry **, int *ReplicatedOp, VolumeId *,
+int ValidateParms(RPC2_Handle, ClientEntry **, VolumeId *,
                   RPC2_CountedBS *, int *Nservers);
 /* *****  Private routines  ***** */
 
@@ -379,12 +378,14 @@ Final:
 }
 
 void PerformSetQuota(ClientEntry *client, VolumeId VSGVolnum, Volume *volptr,
-                     Vnode *vptr, ViceFid *fid, int NewQuota, int ReplicatedOp,
+                     Vnode *vptr, ViceFid *fid, int NewQuota,
                      ViceStoreId *StoreId)
 {
     CodaBreakCallBack((client ? client->VenusId : 0), fid, VSGVolnum);
 
     V_maxquota(volptr) = NewQuota;
+
+    NewCOP1Update(volptr, vptr);
 }
 
 /*
@@ -407,7 +408,6 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     int aCLSize;
     int rights;
     int anyrights;
-    int ReplicatedOp;
     vle *v       = 0;
     dlist *vlist = new dlist((CFN)VLECmp);
 
@@ -431,8 +431,7 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     }
 
     {
-        if ((errorCode = ValidateParms(RPCid, &client, &ReplicatedOp, &vid,
-                                       PiggyCOP2, NULL)))
+        if ((errorCode = ValidateParms(RPCid, &client, &vid, PiggyCOP2)))
             goto Final;
     }
 
@@ -488,7 +487,7 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
 
     if (status->MaxQuota > -1) {
         PerformSetQuota(client, VSGVolnum, volptr, v->vptr, &vfid,
-                        (int)status->MaxQuota, ReplicatedOp, StoreId);
+                        (int)status->MaxQuota, StoreId);
     }
 
     if (offlineMsg->SeqLen > 1)
