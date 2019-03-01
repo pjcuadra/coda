@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -490,8 +490,8 @@ int CloneVnode(Volume *rwVp, Volume *cloneVp, int vnodeIndex,
 
     /* Mark the RW vnode as cloned, !docreate ==> vnode was cloned. */
     if (VolumeWriteable(rwVp) && !docreate) {
-        Vnode *tmp = VGetVnode(&error, rwVp, vnodeNum, vnode->uniquifier,
-                               WRITE_LOCK, 1);
+        Vnode *tmp =
+            VGetVnode(&error, rwVp, vnodeNum, vnode->uniquifier, WRITE_LOCK, 1);
         if (error) {
             VLog(0, "CloneVnode(%s): Error %d getting vnode index %d",
                  (vclass == vLarge) ? "Large" : "Small", error, vnodeIndex);

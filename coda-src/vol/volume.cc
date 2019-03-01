@@ -1309,7 +1309,7 @@ int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
 
         /* Current bit may need to be incremented to satisfy <stride, ix>! */
         sbn = cbn;
-        for (; free < count && cbn < ebn; cbn ++) {
+        for (; free < count && cbn < ebn; cbn++) {
             byte *cbp = (index->bitmap + cbn / 8);
 
             if ((*cbp) & (1 << (cbn % 8))) {

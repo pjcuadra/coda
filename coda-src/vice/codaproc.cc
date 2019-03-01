@@ -606,7 +606,6 @@ long FS_ViceGetVolVS(RPC2_Handle cid, VolumeId Vid, RPC2_Integer *VS,
         goto Exit;
     }
 
-
     SLog(9, "GetVolVS: Going to get volume %u pointer", rwVid);
     volptr = VGetVolume((Error *)&errorCode, rwVid);
     SLog(1, "GetVolVS: Got volume %u: error = %d", rwVid, errorCode);

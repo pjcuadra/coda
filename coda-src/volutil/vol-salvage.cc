@@ -675,7 +675,7 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                             fileSysDevice, vsp->header.parent, vnodeNumber,
                             vnode->uniquifier, vnode->dataVersion);
                         CODA_ASSERT(vnode->node.inodeNumber > 0);
-                        vnode->length = 0;
+                        vnode->length        = 0;
                         vnode->versionvector = NullVV;
                     }
                     CODA_ASSERT(v_index.put(vnodeNumber, vnode->uniquifier,
@@ -689,7 +689,7 @@ static int VnodeInodeCheck(int RW, struct ViceInodeInfo *ip, int nInodes,
                             fileSysDevice, vsp->header.parent, vnodeNumber,
                             vnode->uniquifier, vnode->dataVersion);
                         CODA_ASSERT(vnode->node.inodeNumber > 0);
-                        vnode->length = 0;
+                        vnode->length        = 0;
                         vnode->versionvector = NullVV;
                         CODA_ASSERT(v_index.put(vnodeNumber, vnode->uniquifier,
                                                 vnode) == 0);

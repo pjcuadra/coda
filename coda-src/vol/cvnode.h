@@ -203,7 +203,8 @@ void VFlushVnode(Error *, Vnode *);
 int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *Range);
 int VAllocFid(Volume *vp, VnodeType type, VnodeId vnode, Unique_t unique);
 Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type);
-Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type, VnodeId vnode, Unique_t unique);
+Vnode *VAllocVnode(Error *ec, Volume *vp, VnodeType type, VnodeId vnode,
+                   Unique_t unique);
 int ObjectExists(int, int, VnodeId, Unique_t, ViceFid * = NULL);
 
 int VN_DCommit(Vnode *vnp);

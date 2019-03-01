@@ -583,7 +583,7 @@ long S_VolNewDump(RPC2_Handle rpcid, RPC2_Unsigned formal_volumeNumber,
     int oldunique, unique;
     int ix;
 
-    volnum = V_parentId(vp);
+    volnum    = V_parentId(vp);
     oldunique = unique;
 
     char VVlistfile[PATH_MAX];

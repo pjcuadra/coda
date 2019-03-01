@@ -331,7 +331,8 @@ long FS_ViceGetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     vfid.Unique = 1;
 
     // get the root vnode even if it is inconsistent
-    if ((errorCode = GetFsObj(&vfid, &volptr, &vptr, READ_LOCK, VOL_NO_LOCK, 0))) {
+    if ((errorCode =
+             GetFsObj(&vfid, &volptr, &vptr, READ_LOCK, VOL_NO_LOCK, 0))) {
         goto Final;
     }
 
@@ -373,9 +374,8 @@ Final:
     return (errorCode);
 }
 
-void PerformSetQuota(ClientEntry *client, Volume *volptr,
-                     Vnode *vptr, ViceFid *fid, int NewQuota,
-                     ViceStoreId *StoreId)
+void PerformSetQuota(ClientEntry *client, Volume *volptr, Vnode *vptr,
+                     ViceFid *fid, int NewQuota, ViceStoreId *StoreId)
 {
     CodaBreakCallBack((client ? client->VenusId : 0), fid);
 
@@ -456,7 +456,8 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
     }
 
     v = AddVLE(*vlist, &vfid);
-    if ((errorCode = GetFsObj(&vfid, &volptr, &v->vptr, READ_LOCK, VOL_NO_LOCK, 0))) {
+    if ((errorCode =
+             GetFsObj(&vfid, &volptr, &v->vptr, READ_LOCK, VOL_NO_LOCK, 0))) {
         goto Final;
     }
 
@@ -480,8 +481,8 @@ long FS_ViceSetVolumeStatus(RPC2_Handle RPCid, VolumeId vid,
         V_minquota(volptr) = (int)status->MinQuota;
 
     if (status->MaxQuota > -1) {
-        PerformSetQuota(client, volptr, v->vptr, &vfid,
-                        (int)status->MaxQuota, StoreId);
+        PerformSetQuota(client, volptr, v->vptr, &vfid, (int)status->MaxQuota,
+                        StoreId);
     }
 
     if (offlineMsg->SeqLen > 1)

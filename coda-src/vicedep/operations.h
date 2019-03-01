@@ -1,9 +1,9 @@
 /* BLURB lgpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2018 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -32,10 +32,9 @@ int CheckGetACLSemantics(ClientEntry *, Vnode **, Volume **, Rights *, Rights *,
                          RPC2_BoundedBS *, RPC2_String *);
 int CheckStoreSemantics(ClientEntry *, Vnode **, Vnode **, Volume **, VCP,
                         FileVersion, Rights *, Rights *);
-int CheckSetAttrSemantics(ClientEntry *, Vnode **, Vnode **, Volume **,
-                          VCP, RPC2_Integer, Date_t, UserId, RPC2_Unsigned,
-                          RPC2_Integer, FileVersion,
-                          Rights *, Rights *);
+int CheckSetAttrSemantics(ClientEntry *, Vnode **, Vnode **, Volume **, VCP,
+                          RPC2_Integer, Date_t, UserId, RPC2_Unsigned,
+                          RPC2_Integer, FileVersion, Rights *, Rights *);
 int CheckSetACLSemantics(ClientEntry *, Vnode **, Volume **, VCP,
                          ViceVersionVector *, FileVersion, Rights *, Rights *,
                          RPC2_CountedBS *, AL_AccessList **);
@@ -54,8 +53,7 @@ int CheckMkdirSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
 int CheckRmdirSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
                         VCP, void *, void *, Rights *, Rights *, int = 1);
 int CheckSymlinkSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
-                          VCP, void *, void *, Rights *, Rights *,
-                          int = 1);
+                          VCP, void *, void *, Rights *, Rights *, int = 1);
 void PerformFetch(ClientEntry *, Volume *, Vnode *);
 int FetchBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *,
                       RPC2_Unsigned Offset, RPC2_Integer Count,
@@ -63,32 +61,32 @@ int FetchBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *,
 void PerformGetAttr(ClientEntry *, Volume *, Vnode *);
 void PerformGetACL(ClientEntry *, Volume *, Vnode *, RPC2_BoundedBS *,
                    RPC2_String);
-void PerformStore(ClientEntry *, Volume *, Vnode *, Inode,
-                  RPC2_Integer, Date_t, ViceStoreId *);
+void PerformStore(ClientEntry *, Volume *, Vnode *, Inode, RPC2_Integer, Date_t,
+                  ViceStoreId *);
 int StoreBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *, Inode,
                       RPC2_Integer);
-void PerformSetAttr(ClientEntry *, Volume *, Vnode *, 
-                    RPC2_Integer, Date_t, UserId, RPC2_Unsigned, RPC2_Integer,
-                    ViceStoreId *, Inode *);
-void PerformSetACL(ClientEntry *, Volume *, Vnode *,
-                   AL_AccessList *);
-int PerformCreate(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                  Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *);
-void PerformRemove(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                   Date_t, ViceStoreId *, DirInode **, int *);
-int PerformLink(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                Date_t, ViceStoreId *, DirInode **, int *);
-void PerformRename(ClientEntry *, Volume *, Vnode *, Vnode *, Vnode *,
-                   Vnode *, char *, char *, Date_t, ViceStoreId *,
-                   DirInode **, DirInode **, DirInode **, int * = NULL);
-int PerformMkdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                 Date_t, RPC2_Unsigned, ViceStoreId *, DirInode **, int *);
-void PerformRmdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                  Date_t, ViceStoreId *, DirInode **, int *);
-int PerformSymlink(ClientEntry *, Volume *, Vnode *, Vnode *, char *,
-                   Inode, RPC2_Unsigned, Date_t, RPC2_Unsigned,
+void PerformSetAttr(ClientEntry *, Volume *, Vnode *, RPC2_Integer, Date_t,
+                    UserId, RPC2_Unsigned, RPC2_Integer, ViceStoreId *,
+                    Inode *);
+void PerformSetACL(ClientEntry *, Volume *, Vnode *, AL_AccessList *);
+int PerformCreate(ClientEntry *, Volume *, Vnode *, Vnode *, char *, Date_t,
+                  RPC2_Unsigned, ViceStoreId *, DirInode **, int *);
+void PerformRemove(ClientEntry *, Volume *, Vnode *, Vnode *, char *, Date_t,
                    ViceStoreId *, DirInode **, int *);
-void PerformSetQuota(ClientEntry *, Volume *, Vnode *, ViceFid *, int, ViceStoreId *);
+int PerformLink(ClientEntry *, Volume *, Vnode *, Vnode *, char *, Date_t,
+                ViceStoreId *, DirInode **, int *);
+void PerformRename(ClientEntry *, Volume *, Vnode *, Vnode *, Vnode *, Vnode *,
+                   char *, char *, Date_t, ViceStoreId *, DirInode **,
+                   DirInode **, DirInode **, int * = NULL);
+int PerformMkdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *, Date_t,
+                 RPC2_Unsigned, ViceStoreId *, DirInode **, int *);
+void PerformRmdir(ClientEntry *, Volume *, Vnode *, Vnode *, char *, Date_t,
+                  ViceStoreId *, DirInode **, int *);
+int PerformSymlink(ClientEntry *, Volume *, Vnode *, Vnode *, char *, Inode,
+                   RPC2_Unsigned, Date_t, RPC2_Unsigned, ViceStoreId *,
+                   DirInode **, int *);
+void PerformSetQuota(ClientEntry *, Volume *, Vnode *, ViceFid *, int,
+                     ViceStoreId *);
 
 void PutObjects(int, Volume *, int, dlist *, int, int, int = 0);
 

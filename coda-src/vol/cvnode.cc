@@ -230,7 +230,8 @@ int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *range)
     Error ec  = 0;
     int count = range->Count;
 
-    SLog(9, "VAllocFid: volume = %08x, type = %d, count = %d", V_id(vp), type, count);
+    SLog(9, "VAllocFid: volume = %08x, type = %d, count = %d", V_id(vp), type,
+         count);
 
     /* Sanity checks. */
     {
@@ -269,8 +270,7 @@ int VAllocFid(Volume *vp, VnodeType type, ViceFidRange *range)
 
     /* Find and set a suitable range in the bitmap. */
     VnodeClass vclass = vnodeTypeToClass(type);
-    int BaseBitNumber =
-        VAllocBitmapEntry(&ec, vp, &vp->vnIndex[vclass], count);
+    int BaseBitNumber = VAllocBitmapEntry(&ec, vp, &vp->vnIndex[vclass], count);
     if (ec)
         return (ec);
     VnodeId BaseVnode = bitNumberToVnodeNumber(BaseBitNumber, vclass);
@@ -472,8 +472,8 @@ Vnode *VGetVnode(Error *ec, Volume *vp, VnodeId vnodeNumber, Unique_t unq,
     ProgramType *pt;
     char *rock;
 
-    SLog(9, "Entering VGetVnode(vol %08x, vnode %x, lock %d)",
-         V_id(vp), vnodeNumber, locktype);
+    SLog(9, "Entering VGetVnode(vol %08x, vnode %x, lock %d)", V_id(vp),
+         vnodeNumber, locktype);
     *ec = 0;
 
     if (vnodeNumber == 0) {

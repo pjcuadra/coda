@@ -319,7 +319,8 @@ struct volHeader {
 #define V_needsCallback(vp) ((vp)->header->diskstuff.needsCallback)
 #define V_destroyMe(vp) ((vp)->header->diskstuff.destroyMe)
 #define V_versionvector(vp) ((vp)->header->diskstuff.versionvector)
-#define V_dataversion(vp) (&((vp)->header->diskstuff.versionvector.Versions.Site0))[0]
+#define V_dataversion(vp) \
+    (&((vp)->header->diskstuff.versionvector.Versions.Site0))[0]
 #define V_dontSalvage(vp) ((vp)->header->diskstuff.dontSalvage)
 #define V_maxquota(vp) ((vp)->header->diskstuff.maxquota)
 #define V_minquota(vp) ((vp)->header->diskstuff.minquota)
@@ -365,8 +366,10 @@ void VPutVolume(Volume *vp);
 Volume *VAttachVolume(Error *ec, VolumeId volumeId, int mode);
 void VDetachVolume(Error *ec, Volume *vp);
 void VUpdateVolume(Error *ec, Volume *vp);
-int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index, int count);
-int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index, VnodeId vnode);
+int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
+                      int count);
+int VAllocBitmapEntry(Error *ec, Volume *vp, struct vnodeIndex *index,
+                      VnodeId vnode);
 void VFreeBitMapEntry(Error *ec, struct vnodeIndex *index, int bitNumber);
 int VolumeNumber(char *name);
 char *VolumeExternalName(VolumeId volumeId);
