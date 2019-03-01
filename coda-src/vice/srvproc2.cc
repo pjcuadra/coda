@@ -100,8 +100,6 @@ unsigned int etherGoodReads    = 0;
 unsigned int etherBytesRead    = 0;
 unsigned int etherBytesWritten = 0;
 
-int ValidateParms(RPC2_Handle, ClientEntry **, VolumeId *,
-                  RPC2_CountedBS *, int *Nservers);
 /* *****  Private routines  ***** */
 
 static void SetVolumeStatus(VolumeStatus *, RPC2_BoundedBS *, RPC2_BoundedBS *,

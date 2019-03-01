@@ -946,7 +946,7 @@ static void ChangeDiskUsage(Volume *volptr, int length)
   ValidateParms: Validate the parameters of the RPC
 */
 int ValidateParms(RPC2_Handle RPCid, ClientEntry **client,
-                  VolumeId *Vidp, RPC2_CountedBS *PiggyBS, int *Nservers)
+                  VolumeId *Vidp, RPC2_CountedBS *PiggyBS)
 {
     int errorCode = 0;
 

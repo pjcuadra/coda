@@ -260,7 +260,7 @@ long FS_ViceOpenReintHandle(RPC2_Handle RPCid, ViceFid *Fid,
 
     SLog(0 /*1*/, "ViceOpenReintHandle: Fid = %s", FID_(Fid));
 
-    if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume, 0, NULL)))
+    if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume, NULL)))
         goto FreeLocks;
 
     v = AddVLE(*vlist, Fid);

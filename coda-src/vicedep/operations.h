@@ -21,8 +21,7 @@ Coda are listed in the file CREDITS.
 
 typedef int (*VCP)(VnodeType, void *, void *);
 
-int ValidateParms(RPC2_Handle, ClientEntry **, VolumeId *,
-                  RPC2_CountedBS *, int *Nservers);
+int ValidateParms(RPC2_Handle, ClientEntry **, VolumeId *, RPC2_CountedBS *);
 int AllocVnode(Vnode **, Volume *, ViceDataType, ViceFid *, ViceFid *, UserId,
                int *);
 int CheckFetchSemantics(ClientEntry *, Vnode **, Vnode **, Volume **, Rights *,
