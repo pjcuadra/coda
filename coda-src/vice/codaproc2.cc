@@ -186,7 +186,6 @@ static int AllocReintegrateVnode(Volume **, dlist *, ViceFid *, ViceFid *,
                                  ViceDataType, UserId, int *);
 
 static int AddParent(Volume **, dlist *, ViceFid *);
-static int ReintNormalVCmp(int, VnodeType, void *, void *);
 static void ReintFinalCOP(vle *, Volume *, RPC2_Integer *);
 static int ValidateRHandle(VolumeId, ViceReintHandle *);
 
@@ -1105,7 +1104,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 int deltablocks = nBlocks(r->u.u_store.Length) -
                                   nBlocks(v->vptr->disk.length);
                 if ((errorCode = CheckStoreSemantics(
-                         client, &a_v->vptr, &v->vptr, &volptr, ReintNormalVCmp,
+                         client, &a_v->vptr, &v->vptr, &volptr, NULL,
                          r->dataversion[0], 0, 0))) {
                     goto Exit;
                 }
@@ -1153,6 +1152,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                     goto Exit;
                 }
                 *blocks += deltablocks;
+
             } break;
 
             case CML_Utimes_OP:
@@ -1198,8 +1198,8 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 		     * only one of SET_TIME, SET_MODE, or SET_OWNER is set the
 		     * invalid attributes are ignored --JH */
                     if ((errorCode = CheckSetAttrSemantics(
-                             client, &a_v->vptr, &v->vptr, &volptr,
-                             ReintNormalVCmp, 0, // r->u.u_truncate.Length,
+                             client, &a_v->vptr, &v->vptr, &volptr, NULL,
+                             0, // r->u.u_truncate.Length,
                              r->u.u_utimes.Date, r->u.u_chown.Owner,
                              r->u.u_chmod.Mode, Mask, r->dataversion[0], 0,
                              0))) {
@@ -1261,7 +1261,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 errorCode     = CheckCreateSemantics(client, &parent_v->vptr,
                                                  &child_v->vptr, r->Name[0],
-                                                 &volptr, ReintNormalVCmp,
+                                                 &volptr, NULL,
                                                  &r->dataversion[0], 0, 0, 0);
 
 #if 0
@@ -1285,9 +1285,8 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 SLog(9, "CML_Create %s/%s", FID_(&parent_v->fid),
                      FID_(&child_v->fid));
 
-                errorCode = PerformCreate(client, volptr,
-                                          parent_v->vptr, child_v->vptr,
-                                          r->Name[0], r->Mtime,
+                errorCode = PerformCreate(client, volptr, parent_v->vptr,
+                                          child_v->vptr, r->Name[0], r->Mtime,
                                           r->u.u_create.Mode, &r->sid,
                                           &parent_v->d_cinode, &deltablocks);
                 CODA_ASSERT(errorCode == 0);
@@ -1308,8 +1307,8 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 }
                 if ((errorCode = CheckRemoveSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, ReintNormalVCmp, &r->dataversion[0],
-                         &r->dataversion[1], 0, 0)))
+                         &volptr, NULL, &r->dataversion[0], &r->dataversion[1],
+                         0, 0)))
                     goto Exit;
 
                 /* directory concurrency check */
@@ -1356,8 +1355,8 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 if ((errorCode = CheckLinkSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, ReintNormalVCmp, &r->dataversion[0],
-                         &r->dataversion[1], 0, 0)))
+                         &volptr, NULL, &r->dataversion[0], &r->dataversion[1],
+                         0, 0)))
                     goto Exit;
 
                 /* directory concurrency check */
@@ -1413,9 +1412,8 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 if ((errorCode = CheckRenameSemantics(
                          client, &sd_v->vptr, &td_v->vptr, &s_v->vptr,
                          r->Name[0], TargetExists ? &t_v->vptr : 0, r->Name[1],
-                         &volptr, ReintNormalVCmp, &r->dataversion[0],
-                         &r->dataversion[1], &r->dataversion[2],
-                         0, /* XXX wrong? */
+                         &volptr, NULL, &r->dataversion[0], &r->dataversion[1],
+                         &r->dataversion[2], 0, /* XXX wrong? */
                          0, 0, 0, 0, 0, 0, 1, 0, vlist)))
                     goto Exit;
 
@@ -1472,8 +1470,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 if ((errorCode = CheckMkdirSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, ReintNormalVCmp, &r->dataversion[0], 0, 0,
-                         0)))
+                         &volptr, NULL, &r->dataversion[0], 0, 0, 0)))
                     goto Exit;
 
                 /* directory concurrency check */
@@ -1507,8 +1504,8 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 }
                 if ((errorCode = CheckRmdirSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, ReintNormalVCmp, &r->dataversion[0],
-                         &r->dataversion[1], 0, 0)))
+                         &volptr, NULL, &r->dataversion[0], &r->dataversion[1],
+                         0, 0)))
                     goto Exit;
 
                 /* directory concurrency check */
@@ -1522,8 +1519,8 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
 
                 int tblocks = 0;
                 PerformRmdir(client, volptr, parent_v->vptr, child_v->vptr,
-                             r->Name[0], r->Mtime, &r->sid, 
-                             &parent_v->d_cinode, &tblocks);
+                             r->Name[0], r->Mtime, &r->sid, &parent_v->d_cinode,
+                             &tblocks);
 
                 *blocks += tblocks;
                 CODA_ASSERT(child_v->vptr->delete_me);
@@ -1541,8 +1538,7 @@ static int CheckSemanticsAndPerform(ClientEntry *client, VolumeId Vid,
                 vle *child_v  = FindVLE(*vlist, &r->Fid[1]);
                 if ((errorCode = CheckSymlinkSemantics(
                          client, &parent_v->vptr, &child_v->vptr, r->Name[0],
-                         &volptr, ReintNormalVCmp, &r->dataversion[0], 0, 0,
-                         0)))
+                         &volptr, NULL, &r->dataversion[0], 0, 0, 0)))
                     goto Exit;
 
                 /* directory concurrency check */
@@ -1944,30 +1940,6 @@ Exit:
 
     SLog(2, "AddParent returns %s", ViceErrorMsg(errorCode));
     return (errorCode);
-}
-
-/* Makes no version check for directories. */
-/* Permits only Strong and Weak Equality for files. */
-static int ReintNormalVCmp(VnodeType type, void *arg1, void *arg2)
-{
-    switch (type) {
-    case vDirectory:
-        return (0);
-
-    case vFile:
-    case vSymlink: {
-        ViceVersionVector *vva = (ViceVersionVector *)arg1;
-        ViceVersionVector *vvb = (ViceVersionVector *)arg2;
-
-        int SameSid = SID_EQ(vva->StoreId, vvb->StoreId);
-        return (SameSid ? 0 : EINCOMPATIBLE);
-    }
-
-    case vNull:
-    default:
-        CODA_ASSERT(0);
-    }
-    return 0;
 }
 
 /*
