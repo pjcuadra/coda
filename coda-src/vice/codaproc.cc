@@ -725,17 +725,16 @@ long FS_ViceValidateVols(RPC2_Handle cid, RPC2_Unsigned numVids,
             goto InvalidVolume;
         }
 
-        myVS = (&(V_versionvector(volptr).Versions.Site0))[ix];
+        myVS = (&(V_versionvector(volptr).Versions.Site0))[0];
         VPutVolume(volptr);
 
         /* check the version stamp in our slot in the vector */
-        index = i * count + ix;
-        if (VSBS->SeqLen < ((index + 1) * sizeof(RPC2_Unsigned))) {
+        if (VSBS->SeqLen < ((i + 1) * sizeof(RPC2_Unsigned))) {
             SLog(9, "ValidateVolumes: short input");
             goto InvalidVolume;
         }
 
-        if ((long)ntohl(((RPC2_Unsigned *)VSBS->SeqBody)[index]) == myVS) {
+        if ((long)ntohl(((RPC2_Unsigned *)VSBS->SeqBody)[i]) == myVS) {
             SLog(8, "ValidateVolumes: 0x%x ok, adding callback", Vids[i].Vid);
             /*
 	     * add a volume callback. don't need to use CodaAddCallBack because
