@@ -186,7 +186,7 @@ static int AllocReintegrateVnode(Volume **, dlist *, ViceFid *, ViceFid *,
                                  ViceDataType, UserId, int *);
 
 static int AddParent(Volume **, dlist *, ViceFid *);
-static void ReintFinalCOP(vle *, Volume *, RPC2_Integer *);
+static void ReintFinalCOP(vle *, Volume *);
 static int ValidateRHandle(VolumeId, ViceReintHandle *);
 
 /*
@@ -1756,7 +1756,7 @@ static void PutReintegrateObjects(int errorCode, Volume *volptr,
                 }
             }
         }
-        SetVSStatus(client, volptr, NewVS, VCBStatus);
+        SetVSStatus(client, volptr, VCBStatus);
     }
 
     /* Release the objects. */

@@ -235,7 +235,7 @@ const ViceVersionVector NullVV = { { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, 0 };
 void NewCOP1Update(Volume *, Vnode *);
 void PollAndYield();
 void GetMyVS(Volume *, RPC2_CountedBS *, RPC2_Integer *);
-void SetVSStatus(ClientEntry *, Volume *, RPC2_Integer *, CallBackStatus *);
+void SetVSStatus(ClientEntry *, Volume *, CallBackStatus *);
 
 /* codasrv.c */
 extern int SystemId, AnyUserId;

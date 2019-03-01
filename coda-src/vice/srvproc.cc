@@ -144,11 +144,9 @@ static int Check_RR_Semantics(ClientEntry *, Vnode **, Vnode **, char *,
                               Rights *, Rights *, int);
 static int Perform_CLMS(ClientEntry *, Volume *, Vnode *, Vnode *,
                         CLMS_Op opcode, char *, Inode, RPC2_Unsigned, Date_t,
-                        RPC2_Unsigned, ViceStoreId *, PDirInode *, int *,
-                        RPC2_Integer *);
+                        RPC2_Unsigned, ViceStoreId *, PDirInode *, int *);
 static void Perform_RR(ClientEntry *, Volume *, Vnode *, Vnode *,
-                       char *, Date_t, ViceStoreId *, PDirInode *, int *,
-                       RPC2_Integer *);
+                       char *, Date_t, ViceStoreId *, PDirInode *, int *);
 
 /* Yield parameters (i.e., after how many loop iterations do I poll and yield). */
 /* N.B.  Yield "periods" MUST all be power of two so that AND'ing can be used! */
@@ -221,7 +219,7 @@ long FS_ViceFetchPartial(RPC2_Handle RPCid, ViceFid *Fid, ViceVersionVector *VV,
     /* Validate parameters. */
     {
         if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume,
-                                       PiggyBS, NULL)))
+                                       PiggyBS)))
             goto FreeLocks;
     }
 
@@ -290,7 +288,7 @@ long FS_ViceGetAttrPlusSHA(RPC2_Handle RPCid, ViceFid *Fid,
     /* Validate parameters. */
     {
         if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume,
-                                       PiggyBS, NULL)))
+                                       PiggyBS)))
             goto FreeLocks;
     }
 
@@ -447,7 +445,7 @@ long FS_ViceValidateAttrsPlusSHA(
         /* Validate parameters. */
         {
             /* We've already dealt with the PiggyBS in the GetAttr above. */
-            if ((iErrorCode = ValidateParms(RPCid, &client, &Piggies[i].Fid.Volume, NULL, NULL))) {
+            if ((iErrorCode = ValidateParms(RPCid, &client, &Piggies[i].Fid.Volume, NULL))) {
                 strcpy(why_failed, "ValidateParms");
                 goto InvalidObj;
             }
@@ -521,7 +519,7 @@ long FS_ViceGetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_Unsigned InconOK,
 
     /* Validate parameters. */
     {
-        if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume, PiggyBS, NULL)))
+        if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume, PiggyBS)))
             goto FreeLocks;
     }
 
@@ -587,7 +585,7 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
     /* Validate parameters. */
     {
         if ((errorCode = ValidateParms(RPCid, &client, &Fid->Volume,
-                                       PiggyBS, NULL)))
+                                       PiggyBS)))
             goto FreeLocks;
     }
 
@@ -611,10 +609,10 @@ long FS_ViceSetACL(RPC2_Handle RPCid, ViceFid *Fid, RPC2_CountedBS *AccessList,
     /* Perform operation. */
     {
         GetMyVS(volptr, OldVS, NewVS);
-        PerformSetACL(client, volptr, v->vptr, StoreId, newACL, NewVS);
+        PerformSetACL(client, volptr, v->vptr, StoreId, newACL);
 
         SetStatus(v->vptr, Status, rights, anyrights);
-        SetVSStatus(client, volptr, NewVS, VCBStatus);
+        SetVSStatus(client, volptr, VCBStatus);
     }
 
 FreeLocks:
@@ -2272,8 +2270,7 @@ void PerformGetACL(ClientEntry *client, Volume *volptr, Vnode *vptr,
 
 void PerformStore(ClientEntry *client, Volume *volptr,
                   Vnode *vptr, Inode newinode,
-                  RPC2_Integer Length, Date_t Mtime, ViceStoreId *StoreId,
-                  RPC2_Integer *vsptr)
+                  RPC2_Integer Length, Date_t Mtime, ViceStoreId *StoreId)
 {
     ViceFid Fid;
     Fid.Volume = V_id(volptr);
@@ -2381,8 +2378,7 @@ Exit:
 void PerformSetAttr(ClientEntry *client, Volume *volptr,
                     Vnode *vptr, RPC2_Integer Length,
                     Date_t Mtime, UserId Owner, RPC2_Unsigned Mode,
-                    RPC2_Integer Mask, ViceStoreId *StoreId, Inode *CowInode,
-                    RPC2_Integer *vsptr)
+                    RPC2_Integer Mask, ViceStoreId *StoreId, Inode *CowInode)
 {
     ViceFid Fid;
     Fid.Volume = V_id(volptr);
@@ -2418,7 +2414,7 @@ void PerformSetAttr(ClientEntry *client, Volume *volptr,
 
 void PerformSetACL(ClientEntry *client, Volume *volptr,
                    Vnode *vptr, ViceStoreId *StoreId,
-                   AL_AccessList *newACL, RPC2_Integer *vsptr)
+                   AL_AccessList *newACL)
 {
     ViceFid Fid;
     Fid.Volume = V_id(volptr);
@@ -2435,44 +2431,43 @@ void PerformSetACL(ClientEntry *client, Volume *volptr,
     CODA_ASSERT(aCLSize >= newACL->MySize);
     memcpy(aCL, newACL, newACL->MySize);
 
-    NewCOP1Update(volptr, vptr, StoreId, vsptr);
+    NewCOP1Update(volptr, vptr);
 }
 
 int PerformCreate(ClientEntry *client, Volume *volptr,
                   Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                   RPC2_Unsigned Mode, ViceStoreId *StoreId,
-                  PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
+                  PDirInode *CowInode, int *blocks)
 {
     return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_Create,
                         Name, 0, 0, Mtime, Mode, StoreId,
-                        CowInode, blocks, vsptr);
+                        CowInode, blocks);
 }
 
 void PerformRemove(ClientEntry *client, Volume *volptr,
                    Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                    ViceStoreId *StoreId, PDirInode *CowInode,
-                   int *blocks, RPC2_Integer *vsptr)
+                   int *blocks)
 {
     Perform_RR(client, volptr, dirvptr, vptr, Name, Mtime,
-               StoreId, CowInode, blocks, vsptr);
+               StoreId, CowInode, blocks);
 }
 
 int PerformLink(ClientEntry *client, Volume *volptr,
                 Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                 ViceStoreId *StoreId, PDirInode *CowInode,
-                int *blocks, RPC2_Integer *vsptr)
+                int *blocks)
 {
     return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_Link,
                         Name, 0, 0, Mtime, 0, StoreId, CowInode,
-                        blocks, vsptr);
+                        blocks);
 }
 
 void PerformRename(ClientEntry *client, Volume *volptr,
                    Vnode *sd_vptr, Vnode *td_vptr, Vnode *s_vptr, Vnode *t_vptr,
                    char *OldName, char *NewName, Date_t Mtime,
                    ViceStoreId *StoreId, PDirInode *sd_CowInode,
-                   PDirInode *td_CowInode, PDirInode *s_CowInode, int *nblocks,
-                   RPC2_Integer *vsptr)
+                   PDirInode *td_CowInode, PDirInode *s_CowInode, int *nblocks)
 {
     ViceFid SDid; /* Source directory */
     SDid.Volume = V_id(volptr);
@@ -2652,31 +2647,31 @@ void PerformRename(ClientEntry *client, Volume *volptr,
 int PerformMkdir(ClientEntry *client, Volume *volptr,
                  Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                  RPC2_Unsigned Mode, ViceStoreId *StoreId,
-                 PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
+                 PDirInode *CowInode, int *blocks)
 {
     return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_MakeDir,
                         Name, 0, 0, Mtime, Mode, StoreId,
-                        CowInode, blocks, vsptr);
+                        CowInode, blocks);
 }
 
 void PerformRmdir(ClientEntry *client, Volume *volptr,
                   Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                   ViceStoreId *StoreId, PDirInode *CowInode,
-                  int *blocks, RPC2_Integer *vsptr)
+                  int *blocks)
 {
     Perform_RR(client, volptr, dirvptr, vptr, Name, Mtime,
-               StoreId, CowInode, blocks, vsptr);
+               StoreId, CowInode, blocks);
 }
 
 int PerformSymlink(ClientEntry *client, Volume *volptr,
                    Vnode *dirvptr, Vnode *vptr, char *Name, Inode newinode,
                    RPC2_Unsigned Length, Date_t Mtime, RPC2_Unsigned Mode,
                    ViceStoreId *StoreId, PDirInode *CowInode,
-                   int *blocks, RPC2_Integer *vsptr)
+                   int *blocks)
 {
     return Perform_CLMS(client, volptr, dirvptr, vptr, CLMS_SymLink,
                         Name, newinode, Length, Mtime, Mode,
-                        StoreId, CowInode, blocks, vsptr);
+                        StoreId, CowInode, blocks);
 }
 
 /*
@@ -2688,8 +2683,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
                         Vnode *dirvptr, Vnode *vptr, CLMS_Op opcode, char *Name,
                         Inode newinode, RPC2_Unsigned Length, Date_t Mtime,
                         RPC2_Unsigned Mode,
-                        ViceStoreId *StoreId, PDirInode *CowInode, int *nblocks,
-                        RPC2_Integer *vsptr)
+                        ViceStoreId *StoreId, PDirInode *CowInode, int *nblocks)
 {
     int error;
     *nblocks = 0;
@@ -2832,7 +2826,7 @@ static int Perform_CLMS(ClientEntry *client, Volume *volptr,
 static void Perform_RR(ClientEntry *client, Volume *volptr,
                        Vnode *dirvptr, Vnode *vptr, char *Name, Date_t Mtime,
                        ViceStoreId *StoreId,
-                       PDirInode *CowInode, int *blocks, RPC2_Integer *vsptr)
+                       PDirInode *CowInode, int *blocks)
 {
     *blocks = 0;
     ViceFid Did;
