@@ -91,7 +91,6 @@ extern int Fcon_Init();
 #include <al.h>
 
 #include <auth2.h>
-#include <res.h>
 #include <vice.h>
 #include <volutil.h>
 #include <codadir.h>
@@ -570,10 +569,6 @@ int main(int argc, char *argv[])
 
     /* Initialize the lock queue and the resolution comm package */
     InitLockQueue();
-    server.Tag            = RPC2_SUBSYSBYID;
-    server.Value.SubsysId = RESOLUTIONSUBSYSID;
-    CODA_ASSERT(RPC2_Export(&server) == RPC2_SUCCESS);
-
     server.Tag            = RPC2_SUBSYSBYID;
     server.Value.SubsysId = SUBSYS_SRV;
     CODA_ASSERT(RPC2_Export(&server) == RPC2_SUCCESS);

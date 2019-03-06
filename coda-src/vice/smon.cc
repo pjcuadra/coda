@@ -41,7 +41,6 @@ extern "C" {
 #include "mond.h"
 #include "vice.h"
 #include <callback.h>
-#include <res.h>
 
 #ifdef __cplusplus
 }
@@ -136,12 +135,12 @@ static void CheckCallStat()
     if ((long)(curr_time - last_time) > callReportInterval) {
         last_time = curr_time;
         GetRawStatistics(&stats);
-        long code = SmonReportCallEvent(
-            SmonHandle, &MyViceId, curr_time, cbOPARRAYSIZE, cb_CallCount,
-            resolutionOPARRAYSIZE, resolution_CallCount, mondOPARRAYSIZE,
-            mond_CallCount, volDumpOPARRAYSIZE, volDump_CallCount,
-            resolutionOPARRAYSIZE, resolution_MultiCall, &stats);
-        code = CheckSmonResult(code);
+        long code = SmonReportCallEvent(SmonHandle, &MyViceId, curr_time,
+                                        cbOPARRAYSIZE, cb_CallCount, 0, 0,
+                                        mondOPARRAYSIZE, mond_CallCount,
+                                        volDumpOPARRAYSIZE, volDump_CallCount,
+                                        NULL, 0, &stats);
+        code      = CheckSmonResult(code);
     }
 }
 
