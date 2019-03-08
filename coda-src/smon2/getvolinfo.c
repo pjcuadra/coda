@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2016 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -19,7 +19,7 @@ listed in the file CREDITS.
 /*
  * Very simple program query the volume databases on Coda servers, it sets up
  * an rpc2 connection and performs a ViceGetVolumeInfo query.
- * 
+ *
  *   Jan Harkes, July 2001
  */
 
@@ -157,6 +157,10 @@ int main(int argc, char *argv[])
 
     case Replicated:
         printf("\tReplicated volume (type %d)\n", volinfo.Type);
+        break;
+
+    case NonReplicated:
+        printf("\tnon-Replicated volume (type %d)\n", volinfo.Type);
         break;
 
     default:
