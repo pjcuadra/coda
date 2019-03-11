@@ -210,14 +210,16 @@ long S_VolMakeVLDB(RPC2_Handle rpcid, RPC2_String formal_infile)
 
 static int Pass(char type)
 {
-    char *name;
-    unsigned long volume;
-    int server;
-    unsigned long readwrite;
-    int copydate, backupdate, creationdate;
+    char *name              = NULL;
+    unsigned long volume    = 0;
+    int server              = 0;
+    unsigned long readwrite = 0;
+    int copydate            = 0;
+    int backupdate          = 0;
+    int creationdate        = 0;
     char line[500];
     char idname[20];
-    int nargs;
+    int nargs      = 0;
     int linenumber = 0;
     char **argp;
 
@@ -314,10 +316,11 @@ static void VolumeEntry(char type, int byname, char *name, unsigned long volume,
     haveEntry = 1;
     memset((char *)&vnew, 0, sizeof(vnew));
     strncpy(vnew.key, name, sizeof(vnew.key) - 1);
-    vnew.hashNext                  = 0;
-    vnew.volumeType                = char2Voltype(type);
-    vnew.nServers                  = 1;
-    vnew.volumeId[readwriteVolume] = htonl(readwrite);
+    vnew.hashNext   = 0;
+    vnew.volumeType = char2Voltype(type);
+    vnew.nServers   = 1;
+    vnew.volumeId[readwriteVolume] =
+        vnew.volumeType == replicatedVolume ? htonl(readwrite) : 0;
     vnew.volumeId[vnew.volumeType] = htonl(volume);
     vnew.serverNumber[0]           = server;
     (*AddEntry[vnew.volumeType])(&vnew, byname, name, volume, server, readwrite,
