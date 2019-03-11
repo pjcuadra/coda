@@ -46,8 +46,10 @@ Pittsburgh, PA.
 #include "voldefs.h"
 #include <cvnode.h>
 
-#define VolumeWriteable(vp) (V_type(vp) == readwriteVolume)
-#define VolumeWriteable2(vol) (vol.type == readwriteVolume)
+#define VolumeWriteable(vp) \
+    (V_type(vp) == readwriteVolume || V_type(vp) == nonReplicatedVolume)
+#define VolumeWriteable2(vol) \
+    (vol.type == readwriteVolume || vol.type == nonReplicatedVolume)
 
 #define FSTAG 84597 /* Unique tag for fileserver lwp rocks */
 
