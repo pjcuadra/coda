@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2018 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -1088,6 +1088,26 @@ void worker::AwaitRequest()
     VprocWait((char *)this);
 }
 
+static bool HasReturn(union inputArgs *inp)
+{
+    switch (inp->ih.opcode) {
+    case CODA_ACCESS_INTENT:
+        /* code */
+        switch (inp->coda_access_intent.mode) {
+        case CODA_ACCESS_TYPE_READ_FINISH:
+        case CODA_ACCESS_TYPE_WRITE_FINISH:
+            /* code */
+            return false;
+
+        default:
+            return true;
+        }
+
+    default:
+        return true;
+    }
+}
+
 /* Called by workers after completing a service request. */
 void worker::Resign(msgent *msg, int size)
 {
@@ -1111,7 +1131,9 @@ void worker::Resign(msgent *msg, int size)
             CHOKE("worker::Resign: result == EINCONS");
         }
 
-        Return(msg, size);
+        if (HasReturn((union inputArgs *)msg->msg_buf)) {
+            Return(msg, size);
+        }
     }
 
     ActiveMsgs.remove(msg);
