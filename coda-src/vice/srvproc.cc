@@ -462,7 +462,7 @@ long FS_ViceValidateAttrsPlusSHA(
         }
 
         /* Do it. */
-        if (VV_Cmp(&Piggies[i].VV, &v->vptr->disk.versionvector) == VV_EQ) {
+        if (VV_dataversion(&(Piggies[i].VV)) == Vnode_dataversion(v->vptr)) {
             /* this is a writeable volume, o.w. we wouldn't be in this call */
             /*
              * we really should differentiate between
@@ -652,7 +652,6 @@ void SetStatus(struct Vnode *vptr, ViceStatus *status, Rights rights,
     status->LinkCount   = vptr->disk.linkCount;
     status->Length      = vptr->disk.length;
     status->DataVersion = vptr->disk.dataVersion;
-    status->VV          = vptr->disk.versionvector;
     status->Date        = vptr->disk.unixModifyTime;
     status->Author      = vptr->disk.author;
     status->Owner       = vptr->disk.owner;
@@ -662,6 +661,9 @@ void SetStatus(struct Vnode *vptr, ViceStatus *status, Rights rights,
     status->CallBack    = NoCallBack;
     status->vparent     = vptr->disk.vparent;
     status->uparent     = vptr->disk.uparent;
+
+    memset(&(status->VV), 0, sizeof(ViceVersionVector));
+    VV_dataversion(&status->VV) = Vnode_dataversion(vptr);
 }
 
 int GetRights(PRS_InternalCPS *CPS, AL_AccessList *ACL, int ACLSize,
@@ -2069,8 +2071,8 @@ int FetchBulkTransfer(RPC2_Handle RPCid, ClientEntry *client, Volume *volptr,
 
     {
         /* When we are continueing a trickle/interrupted fetch, the version
-	 * vector must be the same */
-        if (Offset && VV && (VV_Cmp(VV, &vptr->disk.versionvector) != VV_EQ)) {
+	 * must be the same */
+        if (Offset && VV && (VV_dataversion(VV) == Vnode_dataversion(vptr))) {
             SLog(
                 1,
                 "FetchBulkTransfer: Attempting resumed fetch on updated object");

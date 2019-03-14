@@ -297,4 +297,6 @@ extern int AllowSHA;
 /* coppend.c */
 void AddToCopPendingTable(ViceStoreId *, ViceFid *);
 
+#define VV_dataversion(VV) (&((VV)->Versions.Site0))[0]
+
 #endif /* _VICE_SRV_H_ */

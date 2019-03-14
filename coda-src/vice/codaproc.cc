@@ -243,7 +243,7 @@ long FS_ViceSetVV(RPC2_Handle cid, ViceFid *Fid, ViceVersionVector *VV,
         }
     }
 
-    Vnode_dataversion(vptr) = (&(VV->Versions.Site0))[0];
+    Vnode_dataversion(vptr) = VV_dataversion(VV);
 
 FreeLocks:
     rvmlib_begin_transaction(restore);
