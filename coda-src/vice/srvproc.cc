@@ -662,7 +662,7 @@ void SetStatus(struct Vnode *vptr, ViceStatus *status, Rights rights,
     status->vparent     = vptr->disk.vparent;
     status->uparent     = vptr->disk.uparent;
 
-    memset(&(status->VV), 0, sizeof(ViceVersionVector));
+    memset(&(status->VV.Versions), 0, sizeof(ViceVersionArray));
     VV_dataversion(&status->VV) = Vnode_dataversion(vptr);
 }
 
