@@ -173,6 +173,7 @@ static int ValidateReintegrateParms(RPC2_Handle, VolumeId *, Volume **,
                                     ViceReintHandle *);
 static int GetReintegrateObjects(ClientEntry *, struct dllist_head *, dlist *,
                                  int *, RPC2_Integer *);
+static int CheckObjectsBaseVersion(struct dllist_head *rlog, dlist *vlist);
 static int CheckSemanticsAndPerform(ClientEntry *, VolumeId,
                                     struct dllist_head *, dlist *, int *,
                                     RPC2_Integer *);
@@ -221,6 +222,11 @@ long FS_ViceReintegrate(RPC2_Handle RPCid, VolumeId Vid, RPC2_Integer LogSize,
     /* Phase II. */
     if ((errorCode =
              GetReintegrateObjects(client, &rlog, vlist, &blocks, Index)))
+        goto FreeLocks;
+
+    SLog(1, "Starting CheckObjectsBaseVersion for %x", Vid);
+
+    if ((errorCode = CheckObjectsBaseVersion(&rlog, vlist)))
         goto FreeLocks;
 
     SLog(1, "Starting CheckSemanticsAndPerform for %x", Vid);
@@ -467,6 +473,9 @@ long FS_ViceCloseReintHandle(RPC2_Handle RPCid, VolumeId Vid,
     /* Phase II. */
     if ((errorCode =
              GetReintegrateObjects(client, &rlog, vlist, &blocks, NULL)))
+        goto FreeLocks;
+
+    if ((errorCode = CheckObjectsBaseVersion(&rlog, vlist)))
         goto FreeLocks;
 
     /* Phase III. */
@@ -833,6 +842,20 @@ Exit:
     return (errorCode);
 }
 
+static int CheckReintVersion(vle *v, rle *r, int version_ix = 0)
+{
+    if (!v)
+        return -EINVAL;
+
+    if (version_ix > 2)
+        return -EINVAL;
+
+    if (Vnode_dataversion(v->vptr) != r->dataversion[version_ix])
+        return -EINVAL;
+
+    return 0;
+}
+
 /*
  *
  *    Phase II consists of the following steps:
@@ -955,6 +978,7 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
                 if (!v->vptr && !ISDIR(r->Fid[0]))
                     if ((errorCode = AddParent(&volptr, vlist, &r->Fid[0])))
                         goto Exit;
+
             } break;
 
             case CML_Remove_OP:
@@ -970,6 +994,7 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
 
                 p_v->d_inodemod    = 1;
                 p_v->d_reintupdate = 1;
+
             } break;
 
             case CML_Rename_OP: {
@@ -1045,6 +1070,71 @@ Exit:
     PutVolObj(&volptr, VOL_NO_LOCK);
     SLog(10, "GetReintegrateObjects:	returning %s", ViceErrorMsg(errorCode));
     END_TIMING(Reintegrate_GetObjects);
+    return (errorCode);
+}
+
+static int CheckObjectsBaseVersion(struct dllist_head *rlog, dlist *vlist)
+{
+    START_TIMING(Reintegrate_CheckObjectsBaseVersion);
+
+    int errorCode         = 0;
+    struct dllist_head *p = NULL;
+    int count             = 0;
+    vle *v                = NULL;
+
+    list_for_each(p, *rlog)
+    {
+        struct rle *r = list_entry(p, struct rle, reint_log);
+        switch (r->opcode) {
+        case CML_Create_OP:
+        case CML_Link_OP:
+        case CML_MakeDir_OP:
+        case CML_SymLink_OP:
+            if (FID_EQ(&r->Fid[1], &NullFid))
+                break;
+
+            v = FindVLE(*vlist, &r->Fid[1]);
+
+            if ((errorCode = CheckReintVersion(v, r, 1)))
+                goto Exit;
+
+            break;
+
+        case CML_Rename_OP:
+            v = FindVLE(*vlist, &r->Fid[1]);
+
+            if ((errorCode = CheckReintVersion(v, r, 1)))
+                goto Exit;
+
+        case CML_Store_OP:
+        case CML_Utimes_OP:
+        case CML_Chmod_OP:
+        case CML_Chown_OP:
+        case CML_Remove_OP:
+        case CML_RemoveDir_OP:
+            v = FindVLE(*vlist, &r->Fid[0]);
+
+            if ((errorCode = CheckReintVersion(v, r)))
+                goto Exit;
+
+            break;
+
+        default:
+            CODA_ASSERT(FALSE);
+        }
+
+        /* Yield after every so many records. */
+        count++;
+        if ((count & Yield_GetFids_Mask) == 0)
+            PollAndYield();
+    }
+
+    if (count < Yield_GetFids_Period - 1)
+        PollAndYield();
+
+Exit:
+    SLog(10, "CheckObjectsBaseVersion:	returning %s", ViceErrorMsg(errorCode));
+    END_TIMING(Reintegrate_CheckObjectsBaseVersion);
     return (errorCode);
 }
 
