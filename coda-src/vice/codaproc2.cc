@@ -173,7 +173,8 @@ static int ValidateReintegrateParms(RPC2_Handle, VolumeId *, Volume **,
                                     ViceReintHandle *);
 static int GetReintegrateObjects(ClientEntry *, struct dllist_head *, dlist *,
                                  int *, RPC2_Integer *);
-static int CheckObjectsBaseVersion(struct dllist_head *rlog, dlist *vlist);
+static int CheckObjectsBaseVersion(VolumeId Vid, struct dllist_head *rlog,
+                                   dlist *vlist);
 static int CheckSemanticsAndPerform(ClientEntry *, VolumeId,
                                     struct dllist_head *, dlist *, int *,
                                     RPC2_Integer *);
@@ -226,7 +227,7 @@ long FS_ViceReintegrate(RPC2_Handle RPCid, VolumeId Vid, RPC2_Integer LogSize,
 
     SLog(1, "Starting CheckObjectsBaseVersion for %x", Vid);
 
-    if ((errorCode = CheckObjectsBaseVersion(&rlog, vlist)))
+    if ((errorCode = CheckObjectsBaseVersion(Vid, &rlog, vlist)))
         goto FreeLocks;
 
     SLog(1, "Starting CheckSemanticsAndPerform for %x", Vid);
@@ -475,7 +476,7 @@ long FS_ViceCloseReintHandle(RPC2_Handle RPCid, VolumeId Vid,
              GetReintegrateObjects(client, &rlog, vlist, &blocks, NULL)))
         goto FreeLocks;
 
-    if ((errorCode = CheckObjectsBaseVersion(&rlog, vlist)))
+    if ((errorCode = CheckObjectsBaseVersion(Vid, &rlog, vlist)))
         goto FreeLocks;
 
     /* Phase III. */
@@ -1073,7 +1074,8 @@ Exit:
     return (errorCode);
 }
 
-static int CheckObjectsBaseVersion(struct dllist_head *rlog, dlist *vlist)
+static int CheckObjectsBaseVersion(VolumeId Vid, struct dllist_head *rlog,
+                                   dlist *vlist)
 {
     START_TIMING(Reintegrate_CheckObjectsBaseVersion);
 
@@ -1081,6 +1083,13 @@ static int CheckObjectsBaseVersion(struct dllist_head *rlog, dlist *vlist)
     struct dllist_head *p = NULL;
     int count             = 0;
     vle *v                = NULL;
+    Volume *volptr        = NULL;
+    ViceFid Fid;
+
+    /* Get a no-lock reference to the volume for use in this routine (only). */
+    if ((errorCode = GetVolObj(Vid, &volptr, VOL_NO_LOCK))) {
+        goto Exit;
+    }
 
     list_for_each(p, *rlog)
     {
@@ -1134,6 +1143,7 @@ static int CheckObjectsBaseVersion(struct dllist_head *rlog, dlist *vlist)
 
 Exit:
     SLog(10, "CheckObjectsBaseVersion:	returning %s", ViceErrorMsg(errorCode));
+    PutVolObj(&volptr, VOL_NO_LOCK);
     END_TIMING(Reintegrate_CheckObjectsBaseVersion);
     return (errorCode);
 }
