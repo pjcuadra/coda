@@ -1099,33 +1099,114 @@ static int CheckObjectsBaseVersion(VolumeId Vid, struct dllist_head *rlog,
         switch (r->opcode) {
         case CML_Create_OP:
         case CML_Link_OP:
-        case CML_MakeDir_OP:
         case CML_SymLink_OP:
-            if (FID_EQ(&r->Fid[1], &NullFid))
+        case CML_MakeDir_OP:
+
+            /* If the parent directory was created during
+             * reintegration don't verify the version */
+            v = FindVLE(*vlist, &r->Fid[0]);
+            if (!v) {
+                errorCode = -EINVAL;
+                goto Exit;
+            }
+
+            if (v && v->vptr->disk.type == vDirectory && v->d_reintcreate) {
                 break;
+            }
 
-            v = FindVLE(*vlist, &r->Fid[1]);
-
-            if ((errorCode = CheckReintVersion(v, r, 1)))
+            if ((errorCode = CheckReintVersion(v, r)))
                 goto Exit;
 
             break;
 
-        case CML_Rename_OP:
-            v = FindVLE(*vlist, &r->Fid[1]);
+        case CML_Remove_OP:
+        case CML_RemoveDir_OP:
 
-            if ((errorCode = CheckReintVersion(v, r, 1)))
+            /* If the parent directory was updated or created during
+             * reintegration don't verify the version */
+            v = FindVLE(*vlist, &r->Fid[0]);
+            if (!v) {
+                errorCode = -EINVAL;
                 goto Exit;
+            }
+
+            if (v->vptr->disk.type == vDirectory && !v->d_reintcreate) {
+                errorCode = CheckReintVersion(v, r);
+                if (errorCode)
+                    goto Exit;
+            }
+
+            if ((errorCode = LookupChild(volptr, v->vptr, r->Name[0], &Fid))) {
+                errorCode = 0;
+                break;
+            }
+
+            v = FindVLE(*vlist, &Fid);
+            if (!v) {
+                errorCode = 0;
+                break;
+            }
+
+            if (v->vptr->disk.type == vDirectory && !v->d_reintcreate) {
+                errorCode = CheckReintVersion(v, r, 1);
+                if (errorCode)
+                    goto Exit;
+            } else if (v->vptr->disk.type != vDirectory) {
+                errorCode = CheckReintVersion(v, r, 1);
+                if (errorCode)
+                    goto Exit;
+            }
+
+            break;
+
+        case CML_Rename_OP:
+            /* If the parent directory was updated or created during
+             * reintegration don't verify the version */
+            v = FindVLE(*vlist, &r->Fid[0]);
+            if (!v) {
+                errorCode = EINVAL;
+                goto Exit;
+            }
+
+            if (v->vptr->disk.type == vDirectory && !v->d_reintcreate) {
+                errorCode = CheckReintVersion(v, r);
+                if (errorCode)
+                    goto Exit;
+            }
+
+            if ((errorCode = LookupChild(volptr, v->vptr, r->Name[0], &Fid))) {
+                errorCode = 0;
+                break;
+            }
+
+            v = FindVLE(*vlist, &Fid);
+            if (!v) {
+                errorCode = EINVAL;
+                goto Exit;
+            }
+
+            errorCode = CheckReintVersion(v, r, 2);
+            if (errorCode)
+                goto Exit;
+
+            /* If the parent directory was updated or created during
+             * reintegration don't verify the version */
+            v = FindVLE(*vlist, &r->Fid[1]);
+            if (v->vptr->disk.type == vDirectory && !v->d_reintcreate) {
+                errorCode = CheckReintVersion(v, r, 1);
+                if (errorCode)
+                    goto Exit;
+            }
+
+            break;
 
         case CML_Store_OP:
         case CML_Utimes_OP:
         case CML_Chmod_OP:
         case CML_Chown_OP:
-        case CML_Remove_OP:
-        case CML_RemoveDir_OP:
             v = FindVLE(*vlist, &r->Fid[0]);
 
-            if ((errorCode = CheckReintVersion(v, r)))
+            if (v && (errorCode = CheckReintVersion(v, r)))
                 goto Exit;
 
             break;
@@ -1839,11 +1920,10 @@ static void PutReintegrateObjects(int errorCode, Volume *volptr,
                 SLog(2, "PutReintegrateObjects: un-mutated or deleted fid %s",
                      FID_(&v->fid));
             }
-            NewCOP1Update(volptr, v->vptr);
 
             /* write down stale directory fids */
             if (StaleDirs && v->vptr->disk.type == vDirectory &&
-                (v->d_reintstale || v->d_needsres)) { /* compatibility check */
+                v->d_reintstale) { /* compatibility check */
                 ViceFid fid = v->fid;
                 fid.Volume  = V_groupId(volptr);
                 SLog(
