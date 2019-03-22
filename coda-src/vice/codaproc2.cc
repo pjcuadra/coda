@@ -963,8 +963,10 @@ static int GetReintegrateObjects(ClientEntry *client, struct dllist_head *rlog,
                 v->d_inodemod    = 1;
                 v->d_reintupdate = 1;
 
-                if (!FID_EQ(&r->Fid[1], &NullFid))
-                    (void)AddVLE(*vlist, &r->Fid[1]);
+                if (!FID_EQ(&r->Fid[1], &NullFid)) {
+                    v                = AddVLE(*vlist, &r->Fid[1]);
+                    v->d_reintcreate = 1;
+                }
             } break;
 
             case CML_Store_OP:

@@ -1,9 +1,9 @@
 /* BLURB gpl
 
                            Coda File System
-                              Release 6
+                              Release 7
 
-          Copyright (c) 1987-2003 Carnegie Mellon University
+          Copyright (c) 1987-2019 Carnegie Mellon University
                   Additional copyrights listed below
 
 This  code  is  distributed "AS IS" without warranty of any kind under
@@ -59,6 +59,7 @@ extern vle *AddVLE(dlist &, ViceFid *);
 #define d_needslogtrunc u.dir.trunclog
 #define d_reintupdate u.dir.rupdate
 #define d_reintstale u.dir.rstale
+#define d_reintcreate u.dir.rcreate
 
 /* The data structure we want here is a binary search tree, but we use a list instead. -JJK */
 struct vle : public dlink {
@@ -88,6 +89,8 @@ struct vle : public dlink {
 						  reintegration */
             unsigned rstale : 1; /* reintegration: is
 			client's directory version info stale? */
+            unsigned
+                rcreate : 1; /* was directory created during reintegration? */
         } dir;
     } u;
 
@@ -110,6 +113,7 @@ struct vle : public dlink {
             d_needslogtrunc = 0;
             d_reintupdate   = 0;
             d_reintstale    = 0;
+            d_reintcreate   = 0;
         }
     };
 
