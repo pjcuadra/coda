@@ -431,7 +431,7 @@ class fsobj {
     /* Eventually we might make cache-file allocation dynamic, in which case there would be */
     /* various of these pointed to by the VenusData descriptors! */
     int ix;
-    CacheFile cf;
+    CacheFile * cf;
 
     /* Local synchronization state. */
     /*T*/ char fso_sync; /* for waiting/signalling */
@@ -765,7 +765,7 @@ void FSOD_ReclaimFSOs(void);
 #define HAVESTATUS(f) ((f)->state != FsoRunt)
 #define STATUSVALID(f) ((f)->IsValid(RC_STATUS))
 #define HAVEDATA(f) ((f)->data.havedata != 0)
-#define PARTIALDATA(f) ((f)->IsFile() && !(f)->cf.IsComplete())
+#define PARTIALDATA(f) ((f)->IsFile() && !(f)->cf->IsComplete())
 #define HAVEALLDATA(f) (HAVEDATA(f) && !PARTIALDATA(f))
 #define DATAVALID(f) ((f)->IsValid(RC_DATA))
 #define EXECUTABLE(f) \

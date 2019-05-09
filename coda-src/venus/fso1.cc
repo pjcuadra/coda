@@ -117,22 +117,22 @@ void *fsobj::operator new(size_t len)
     abort(); /* should never be called */
 }
 
-fsobj::fsobj(int i)
-    : cf(i)
+fsobj::fsobj(int i) : cf(new WholeCacheFile(i))
 {
     RVMLIB_REC_OBJECT(*this);
     ix = i;
-
     /* Put ourselves on the free-list. */
     FSDB->FreeFso(this);
 }
 
 /* MUST be called from within transaction! */
 fsobj::fsobj(VenusFid *key, const char *name)
-    : cf()
 {
     LOG(10, ("fsobj::fsobj: fid = (%s), comp = %s\n", FID_(key),
              name == NULL ? "(no name)" : name));
+
+    CODA_ASSERT(cf != NULL);
+    cf->Recycle();
 
     RVMLIB_REC_OBJECT(*this);
     ResetPersistent();
@@ -503,10 +503,10 @@ void fsobj::Recover()
     /* Check the cache file. */
     switch (stat.VnodeType) {
     case File:
-        if (!HAVEDATA(this) && cf.Length() != 0) {
+        if (!HAVEDATA(this) && cf->Length() != 0) {
             eprint("\t(%s, %s) cache file validation failed", comp, FID_(&fid));
-            FSDB->FreeBlocks(NBLOCKS(cf.ValidData()));
-            cf.Reset();
+            FSDB->FreeBlocks(NBLOCKS(cf->ValidData()));
+            cf->Reset();
         }
         break;
 
@@ -519,9 +519,9 @@ void fsobj::Recover()
 	 * version of the object.  The stuff in RVM is the ``Vice format''
 	 * version.
 	 */
-        if (cf.ValidData() != 0) {
-            FSDB->FreeBlocks(NBLOCKS(cf.ValidData()));
-            cf.Reset();
+        if (cf->ValidData() != 0) {
+            FSDB->FreeBlocks(NBLOCKS(cf->ValidData()));
+            cf->Reset();
         }
         break;
 
@@ -564,10 +564,10 @@ Failure : {
             DiscardData();
             Recov_EndTrans(MAXFP);
         }
-        if (cf.ValidData()) {
+        if (cf->ValidData()) {
             /* Reclaim cache-file blocks. */
-            FSDB->FreeBlocks(NBLOCKS(cf.ValidData()));
-            cf.Reset();
+            FSDB->FreeBlocks(NBLOCKS(cf->ValidData()));
+            cf->Reset();
         }
     }
 
@@ -1903,16 +1903,16 @@ void fsobj::DetachMleBinding(binding *b)
     }
 }
 
-void ExtractSegmentCallback(uint64_t start, int64_t len, void *usr_data_cb)
+void BackupSegmentCallback(uint64_t start, int64_t len, void *usr_data_cb)
 {
-    SegmentedCacheFile *tmpcpy = (SegmentedCacheFile *)usr_data_cb;
-    tmpcpy->ExtractSegment(start, len);
+    CacheFileDiscarterDecorator *tmpcpy = (CacheFileDiscarterDecorator *)usr_data_cb;
+    tmpcpy->BackupSegment(start, len);
 }
 
-void InjectSegmentCallback(uint64_t start, int64_t len, void *usr_data_cb)
+void RestoreSegmentCallback(uint64_t start, int64_t len, void *usr_data_cb)
 {
-    SegmentedCacheFile *tmpcpy = (SegmentedCacheFile *)usr_data_cb;
-    tmpcpy->InjectSegment(start, len);
+    CacheFileDiscarterDecorator *tmpcpy = (CacheFileDiscarterDecorator *)usr_data_cb;
+    tmpcpy->RestoreSegment(start, len);
 }
 
 /*  *****  Data Contents  *****  */
@@ -1991,13 +1991,13 @@ void fsobj::DiscardPartialData()
     CODA_ASSERT(ISVASTRO(this) && ACTIVE(this));
     /* stat.Length() might have been changed, only data.file->Length()
     * can be trusted */
-    SegmentedCacheFile *tmpcpy = new SegmentedCacheFile(ix);
+    CacheFileDiscarterDecorator *tmpcpy = new CacheFileDiscarterDecorator(ix);
 
     len = data.file->Length();
-    tmpcpy->Associate(&cf);
+    tmpcpy->SetComponent((ChunkedCacheFile *)cf);
 
     active_segments.ReadLock();
-    active_segments.ForEach(ExtractSegmentCallback, tmpcpy);
+    active_segments.ForEach(BackupSegmentCallback, tmpcpy);
 
     free_blocks = FS_BLOCKS_ALIGN(data.file->ValidData());
     /* Remove the data that will be kept */
@@ -2008,7 +2008,7 @@ void fsobj::DiscardPartialData()
     data.file->Truncate(0);
     data.file->Truncate(len);
 
-    active_segments.ForEach(InjectSegmentCallback, tmpcpy);
+    active_segments.ForEach(RestoreSegmentCallback, tmpcpy);
     active_segments.ReadUnlock();
 
     delete tmpcpy;
@@ -2284,7 +2284,7 @@ void fsobj::GetVattr(struct coda_vattr *vap)
        stat it to get its size and time info. */
     if (WRITING(this)) {
         struct stat tstat;
-        cf.Stat(&tstat);
+        cf->Stat(&tstat);
 
         vap->va_size          = tstat.st_size;
         vap->va_mtime.tv_sec  = tstat.st_mtime;
@@ -2415,7 +2415,7 @@ int fsobj::MakeShadow()
      * be garbage collected at startup.
      */
     if (!shadow)
-        shadow = new CacheFile(-(ix + 1), 0, cf.IsPartial());
+        shadow = cf->CreateShadow();
     else
         shadow->IncRef();
 
@@ -2429,7 +2429,7 @@ int fsobj::MakeShadow()
      * might want to do this only when we just created the shadow file or when
      * there are no writers to the real container file... Maybe later. -JH */
     Lock(RD);
-    err = cf.Copy(shadow);
+    err = cf->Copy(shadow);
     UnLock(RD);
 
     return (err);
@@ -2466,7 +2466,7 @@ void fsobj::CacheReport(int fd, int level)
             fsobj *cf = strbase(fsobj, d, child_link);
 
             slots++;
-            blocks += NBLOCKS(cf->cf.ValidData());
+            blocks += NBLOCKS(cf->cf->ValidData());
         }
     }
     fdprint(fd, "[ %3d  %5d ]      ", slots, blocks);
@@ -2500,6 +2500,7 @@ void fsobj::UpdateVastroFlag(uid_t uid, int force, int state)
     volrep *vr               = NULL;
     unsigned long bw         = INIT_BW;
     unsigned long stall_time = 0;
+    bool old_flag_value = flags.vastro == 0x1;
 
     if (GetKernelModuleVersion() < 5) {
         flags.vastro = 0x0;
@@ -2608,7 +2609,16 @@ PutAll:
 
 ConfigCacheFile:
     Recov_BeginTrans();
-    cf.SetPartial(flags.vastro);
+
+    if (old_flag_value != flags.vastro) {
+        CacheFile * tmp = cf;
+        if (flags.vastro) {
+            cf = new ChunkedCacheFile(ix);
+        } else {
+            cf = new WholeCacheFile(ix);
+        }
+        delete tmp;
+    }
     Recov_EndTrans(MAXFP);
 }
 
@@ -2686,7 +2696,7 @@ void fsobj::print(int fdes)
 
     /* < cachefile, [directory | symlink] contents > */
     fdprint(fdes, "\tcachefile = ");
-    cf.print(fdes);
+    cf->print(fdes);
     if (IsDir() && !IsMtPt()) {
         if (data.dir == 0) {
             fdprint(fdes, "\tdirectory = 0\n");
@@ -2972,7 +2982,7 @@ int fsobj::LaunchASR(int conflict_type, int object_type)
 CacheChunkList *fsobj::GetHoles(uint64_t start, int64_t len)
 {
     FSO_ASSERT(this, IsFile());
-    return cf.GetHoles(start, len);
+    return ((ChunkedCacheFile *)cf)->GetHoles(start, len);
 }
 
 /* *****  Iterator  ***** */

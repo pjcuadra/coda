@@ -102,7 +102,7 @@ int fsobj::GetContainerFD(void)
     /* create a sparse file of the desired size */
     if (!HAVEDATA(this)) {
         RVMLIB_REC_OBJECT(cf);
-        data.file = &cf;
+        data.file = cf;
         data.file->Create(stat.Length);
     }
 
@@ -154,10 +154,10 @@ int fsobj::LookAside(void)
         data.file->Close(fd);
 
         if (emsg[0])
-            LOG(0, ("LookAsideAndFillContainer(%s): %s\n", cf.Name(), emsg));
+            LOG(0, ("LookAsideAndFillContainer(%s): %s\n", cf->Name(), emsg));
 
         if (lka_successful)
-            LOG(0, ("Lookaside of %s succeeded!\n", cf.Name()));
+            LOG(0, ("Lookaside of %s succeeded!\n", cf->Name()));
     }
 
     /* Note that the container file now has all the data we expected */
@@ -166,7 +166,7 @@ int fsobj::LookAside(void)
     flags.fetching = 0;
 
     if (lka_successful)
-        cf.SetValidData(cf.Length());
+        cf->SetValidData(cf->Length());
     Recov_EndTrans(CMFP);
 
     /* If we received any callbacks during the lookaside, the validity of the
@@ -320,7 +320,7 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
         if ((offset + len) > Size())
             len = -1;
     } else if (IsFile()) {
-        offset = cf.ConsecutiveValidData();
+        offset = cf->ConsecutiveValidData();
         len    = -1;
     }
 
@@ -450,7 +450,7 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
                 if (IsFile()) {
                     Recov_BeginTrans();
-                    cf.SetValidData(offset, bytes);
+                    cf->SetValidData(offset, bytes);
                     Recov_EndTrans(CMFP);
                 }
             }
@@ -521,7 +521,7 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
             if (IsFile()) {
                 Recov_BeginTrans();
-                cf.SetValidData(offset, bytes);
+                cf->SetValidData(offset, bytes);
                 Recov_EndTrans(CMFP);
             }
         }
@@ -1284,8 +1284,8 @@ void fsobj::LocalStore(Date_t Mtime, unsigned long NewLength)
     stat.DataVersion++;
     stat.Length = NewLength;
     stat.Date   = Mtime;
-    cf.SetLength(NewLength);
-    cf.SetValidData(NewLength);
+    cf->SetLength(NewLength);
+    cf->SetValidData(NewLength);
     memset(VenusSHA, 0, SHA_DIGEST_LENGTH);
 
     UpdateCacheStats((IsDir() ? &FSDB->DirAttrStats : &FSDB->FileAttrStats),
@@ -1456,7 +1456,7 @@ int fsobj::SetAttr(struct coda_vattr *vap, uid_t uid)
         Recov_BeginTrans();
         RVMLIB_REC_OBJECT(data.file);
         RVMLIB_REC_OBJECT(cf);
-        data.file = &cf;
+        data.file = cf;
         data.file->Create();
         Recov_EndTrans(MAXFP);
     }
@@ -1748,7 +1748,7 @@ void fsobj::LocalCreate(Date_t Mtime, fsobj *target_fso, char *name,
         target_fso->SetParent(fid.Vnode, fid.Unique);
 
         RVMLIB_REC_OBJECT(target_fso->cf);
-        target_fso->data.file = &target_fso->cf;
+        target_fso->data.file = target_fso->cf;
         target_fso->data.file->Create();
 
         /* We don't bother doing a ChangeDiskUsage() here since

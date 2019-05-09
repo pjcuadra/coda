@@ -161,8 +161,8 @@ void FSOInit()
                 fsobj *f;
                 while ((f = next())) {
                     /* Validate the cache-file, and record its blocks. */
-                    f->cf.Validate();
-                    FSDB->ChangeDiskUsage(NBLOCKS(f->cf.ValidData()));
+                    f->cf->Validate();
+                    FSDB->ChangeDiskUsage(NBLOCKS(f->cf->ValidData()));
 
                     /* Initialize transient members. */
                     f->ResetTransient();
@@ -183,7 +183,7 @@ void FSOInit()
                     fsobj *f = strbase(fsobj, o, primary_handle);
 
                     /* Reset the cache file. */
-                    f->cf.Reset();
+                    f->cf->Reset();
                 }
 
                 eprint("\t%d cache files on free-list",
@@ -768,7 +768,7 @@ RestartFind:
                              f->comp, f->stat.Length));
                         int fd = f->GetContainerFD();
                         CODA_ASSERT(fd != -1);
-                        f->cf.Close(fd);
+                        f->cf->Close(fd);
                         Recov_EndTrans(MAXFP);
                     } else {
                         /* Let fsobj::Fetch go ahead and fetch the object */
@@ -1315,7 +1315,7 @@ void fsdb::ReclaimFsos(int priority, int count)
         /* Reclaim fso and data. */
         MarinerLog("cache::Replace [%s] %s [%d, %d]\n",
                    (HAVEDATA(f) ? "status/data" : "status"), f->GetComp(),
-                   f->priority, NBLOCKS(f->cf.ValidData()));
+                   f->priority, NBLOCKS(f->cf->ValidData()));
         UpdateCacheStats((f->IsDir() ? &DirAttrStats : &FileAttrStats), REPLACE,
                          NBLOCKS(sizeof(fsobj)));
         if (HAVEDATA(f))
@@ -1354,7 +1354,7 @@ int fsdb::FreeBlockCount()
             }
 
             struct stat tstat;
-            f->cf.Stat(&tstat);
+            f->cf->Stat(&tstat);
             count -= (int)NBLOCKS(tstat.st_size);
         }
     }
@@ -1371,7 +1371,7 @@ int fsdb::DirtyBlockCount()
     fsobj *f;
     while ((f = next())) {
         if ((!REPLACEABLE(f) && !f->IsSymLink()) || ISVASTRO(f)) {
-            count += NBLOCKS(FS_BLOCKS_ALIGN(f->cf.ValidData()));
+            count += NBLOCKS(FS_BLOCKS_ALIGN(f->cf->ValidData()));
         }
     }
 
@@ -1446,7 +1446,7 @@ void fsdb::ReclaimBlocks(int priority, int nblocks)
             break;
 
         /* No point in reclaiming entries without data! */
-        int ufs_blocks = NBLOCKS(f->cf.ValidData());
+        int ufs_blocks = NBLOCKS(f->cf->ValidData());
         if (ufs_blocks == 0)
             continue;
 
@@ -1464,7 +1464,7 @@ void fsdb::ReclaimBlocks(int priority, int nblocks)
 
         f->DiscardData();
 
-        reclaimed += ufs_blocks - f->cf.ValidData();
+        reclaimed += ufs_blocks - f->cf->ValidData();
 
         UpdateCacheStats((f->IsDir() ? &DirDataStats : &FileDataStats), REPLACE,
                          reclaimed);
@@ -1530,20 +1530,20 @@ void fsdb::print(int fd, int SummaryOnly)
                 case File:
                     if (f->flags.owrite) {
                         struct stat tstat;
-                        f->cf.Stat(&tstat);
+                        f->cf->Stat(&tstat);
                         ow_blocks += (int)NBLOCKS(tstat.st_size);
                     } else {
-                        normal_blocks += NBLOCKS(f->cf.Length());
-                        got_blocks += NBLOCKS(f->cf.ValidData());
+                        normal_blocks += NBLOCKS(f->cf->Length());
+                        got_blocks += NBLOCKS(f->cf->ValidData());
                     }
                     break;
 
                 case Directory:
-                    udir_blocks += NBLOCKS(f->cf.Length());
+                    udir_blocks += NBLOCKS(f->cf->Length());
                     break;
 
                 case SymbolicLink:
-                    CODA_ASSERT(NBLOCKS(f->cf.Length()) == 0);
+                    CODA_ASSERT(NBLOCKS(f->cf->Length()) == 0);
                     break;
 
                 case Invalid:

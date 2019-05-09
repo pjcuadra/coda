@@ -174,7 +174,7 @@ static inline uint64_t ccblock_length(uint64_t b_pos, int64_t b_count)
 }
 
 /**
- * Align a file position in bytes to the start of the corresponding cache 
+ * Align a file position in bytes to the start of the corresponding cache
  * chunk block
  *
  * @param b_pos file position in bytes
@@ -187,7 +187,7 @@ static inline uint64_t pos_align_to_ccblock(uint64_t b_pos)
 }
 
 /**
- * Align a the end of a range in bytes to the end of the corresponding cache 
+ * Align a the end of a range in bytes to the end of the corresponding cache
  * chunk block
  *
  * @param b_pos   start of the range in bytes
@@ -342,16 +342,14 @@ public:
 };
 
 class CacheFile {
-    friend class SegmentedCacheFile;
+protected:
+    int ix;
     uint64_t length; /**< Length of the container file */
     uint64_t
         validdata; /**< Amount of actual and valid data in the container file */
     int refcnt; /**< Reference counter */
     int numopens; /**< Number of openers */
-    bitmap7 *cached_chunks; /**< Bitmap of actual cached data */
-    int recoverable; /**< Recoverable flag (RVM) */
-    Lock rw_lock; /**< Read/Write Lock */
-    bool isPartial; /**< File is being partially cached */
+    int recoverable;
 
     /**
      * Validate the container file
@@ -359,11 +357,6 @@ class CacheFile {
      * @return zero if file is invalid and different than zero otherwise
      */
     int ValidContainer();
-
-    /**
-     * Calculate the actual valid data based on the caching bitmap
-     */
-    void UpdateValidData();
 
     /**
      * Get the first cache chunk hole within a range
@@ -376,21 +369,7 @@ class CacheFile {
      */
     CacheChunk GetNextHole(uint64_t start_b, uint64_t end_b);
 
-protected:
     char name[CACHEFILENAMELEN]; /**< Container file path ("xx/xx/xx/xx") */
-
-    /**
-     * Copy the segment of a cache file to another
-     *
-     * @param from  source cache file pointer
-     * @param to    destination cache file pointer
-     * @param pos   offset within the file
-     * @param count amount of bytes to be copied
-     * 
-     * @return amount of bytes copied
-     */
-    static int64_t CopySegment(CacheFile *from, CacheFile *to, uint64_t pos,
-                               int64_t count);
 
 public:
     /**
@@ -398,22 +377,20 @@ public:
      *
      * @param i            CacheFile index
      * @param recoverable  set cachefile to be recoverable from RVM
-     * @param partial      set cachefile to be partially cached
      */
-    CacheFile(int i, int recoverable = 1, int partial = 0);
-
-    /**
-     * Constructor
-     */
-    CacheFile();
+    CacheFile(int i, int recoverable = 1);
 
     /**
      * Destructor
      */
     ~CacheFile();
 
+    CacheFile * CreateShadow() {return new CacheFile(ix, 0);}
+
+    void Recycle();
+
     /**
-     * Create and initialize a new cachefile (container file will be also 
+     * Create and initialize a new cachefile (container file will be also
      * created)
      *
      * @param newlength length of the container file in bytes
@@ -487,7 +464,7 @@ public:
     int Copy(char *destname, int recovering = 0);
 
     /**
-     * Increment reference counter. Creation already does an implicit IncRef() 
+     * Increment reference counter. Creation already does an implicit IncRef()
      */
     void IncRef() { refcnt++; }
 
@@ -508,7 +485,7 @@ public:
     /**
      * Change container file's last access and modification times
      *
-     * @param times time array of last access time and modification time, 
+     * @param times time array of last access time and modification time,
      *        respectively.
      */
     void Utimes(const struct timeval times[2]);
@@ -534,33 +511,13 @@ public:
      */
     void SetValidData(uint64_t len);
 
-    /**
+     /**
      * Set cache file's valid data (within a range)
      *
      * @param start start of the valid data's range
      * @param len   length of the valid data's range
      */
     void SetValidData(uint64_t start, int64_t len);
-
-    /**
-     * Get the holes of the file within a range
-     *
-     * @param start start of the search range
-     * @param len   length of the search range
-     * 
-     * @return holes list
-     */
-    CacheChunkList *GetHoles(uint64_t start, int64_t len);
-
-    /**
-     * Get the valid data of the file within a range
-     *
-     * @param start start of the search range
-     * @param len   length of the search range
-     * 
-     * @return valid ranges chunks list
-     */
-    CacheChunkList *GetValidChunks(uint64_t start, int64_t len);
 
     /**
      * Get the name of the container file
@@ -584,7 +541,7 @@ public:
     uint64_t ValidData() { return (validdata); }
 
     /**
-     * Get the amount of consecutive valid data starting from beginning of the 
+     * Get the amount of consecutive valid data starting from beginning of the
      * file
      *
      * @return amount of valid data of the cache file in bytes
@@ -597,20 +554,6 @@ public:
      * @return zero if file isn't fully cached or not zero otherwise
      */
     int IsComplete() { return (length == validdata); }
-
-    /**
-     * Check if file is partially cached
-     *
-     * @return true if file partially cached or false otherwise
-     */
-    bool IsPartial() { return isPartial; }
-
-    /**
-     * Set the cache file to be partially cached
-     *
-     * @param is_partial partial cache enable status
-     */
-    void SetPartial(bool is_partial);
 
     /**
      * Print the metadata to the standard output
@@ -636,11 +579,160 @@ public:
     void print(int fdes);
 };
 
+class WholeCacheFile : public CacheFile {
+
+public:
+    /**
+     * Constructor
+     *
+     * @param i            CacheFile index
+     * @param recoverable  set cachefile to be recoverable from RVM
+     */
+    WholeCacheFile(int i, int recoverable = 1) : CacheFile(i, recoverable) {}
+
+    CacheFile * CreateShadow() {return new WholeCacheFile(ix, 0);}
+
+    /**
+     * Truncate file to a new size
+     *
+     * @param newlen size to which the file will be truncated to
+     */
+    void Truncate(uint64_t newlen);
+
+};
+
+
+class ChunkedCacheFile : public CacheFile {
+    /**
+     * Get the first cache chunk hole within a range
+     *
+     * @param start_b start of the range in ccblocks
+     * @param end_b   end of the range in ccblocks
+     *
+     * @return cache chunk of the first hole. Might be invalid (check validity
+     *         by calling isValid())
+     */
+    CacheChunk GetNextHole(uint64_t start_b, uint64_t end_b);
+
+protected:
+    bitmap7 * cached_chunks; /**< Bitmap of actual cached data */
+    Lock rw_lock; /**< Read/Write Lock */
+
+    /**
+     * Calculate the actual valid data based on the caching bitmap
+     */
+    void UpdateValidData();
+
+    /**
+     * Copy the segment of a cache file to another
+     *
+     * @param from  source cache file pointer
+     * @param to    destination cache file pointer
+     * @param pos   offset within the file
+     * @param count amount of bytes to be copied
+     *
+     * @return amount of bytes copied
+     */
+    static int64_t CopySegment(ChunkedCacheFile *from, ChunkedCacheFile *to, uint64_t pos,
+                               int64_t count);
+
+public:
+    /**
+     * Constructor
+     *
+     * @param i            CacheFile index
+     * @param recoverable  set cachefile to be recoverable from RVM
+     * @param partial      set cachefile to be partially cached
+     */
+    ChunkedCacheFile(int i, int recoverable = 1);
+
+    /**
+     * Destructor
+     */
+    ~ChunkedCacheFile();
+
+    CacheFile * CreateShadow() {return new ChunkedCacheFile(ix, 0);}
+
+    /**
+     * Create and initialize a new cachefile (container file will be also
+     * created)
+     *
+     * @param newlength length of the container file in bytes
+     */
+    void Create(int newlength = 0);
+
+    /**
+     * Copy the container file and metadata to another object
+     *
+     * @param destination destination cache file object
+     *
+     * @return zero on success or -1 on error
+     */
+    int Copy(ChunkedCacheFile *destination);
+
+    /**
+     * Get the amount of consecutive valid data starting from beginning of the
+     * file
+     *
+     * @return amount of valid data of the cache file in bytes
+     */
+    uint64_t ConsecutiveValidData();
+
+    /**
+     * Decrements reference counter
+     *
+     * @return reference counter value (unlinks if it becomes 0)
+     */
+    int DecRef();
+
+    /**
+     * Truncate file to a new size
+     *
+     * @param newlen size to which the file will be truncated to
+     */
+    void Truncate(uint64_t newlen);
+
+    /**
+     * Set the cache file length without truncating the container file
+     *
+     * @param newlen new cache file metadata size
+     */
+    void SetLength(uint64_t newlen);
+
+    /**
+     * Set cache file's valid data (within a range)
+     *
+     * @param start start of the valid data's range
+     * @param len   length of the valid data's range
+     */
+    void SetValidData(uint64_t start, int64_t len);
+
+    /**
+     * Get the holes of the file within a range
+     *
+     * @param start start of the search range
+     * @param len   length of the search range
+     *
+     * @return holes list
+     */
+    CacheChunkList *GetHoles(uint64_t start, int64_t len);
+
+    /**
+     * Get the valid data of the file within a range
+     *
+     * @param start start of the search range
+     * @param len   length of the search range
+     *
+     * @return valid ranges chunks list
+     */
+    CacheChunkList *GetValidChunks(uint64_t start, int64_t len);
+};
+
 /**
- * Segmented cache file
+ * Cache file backup and restore decorator
  */
-class SegmentedCacheFile : public CacheFile {
-    CacheFile *cf; /**< Associated cache file */
+class CacheFileDiscarterDecorator : public ChunkedCacheFile {
+    ChunkedCacheFile *cf; /**< Associated cache file */
 
 public:
     /**
@@ -648,19 +740,19 @@ public:
      *
      * @param i cache file identifier
      */
-    SegmentedCacheFile(int i);
+    CacheFileDiscarterDecorator(int i);
 
     /**
      * Destructor
      */
-    ~SegmentedCacheFile();
+    ~CacheFileDiscarterDecorator();
 
     /**
-     * Associate the segmented cache file with it's original cache file
+     * SetComponent the segmented cache file with it's original cache file
      *
      * @param cf cache file pointer
      */
-    void Associate(CacheFile *cf);
+    void SetComponent(ChunkedCacheFile *cf);
 
     /**
      * Extract a segment from the associated cache file
@@ -668,7 +760,7 @@ public:
      * @param pos   offset within the file
      * @param count amount of bytes to be extracted
      */
-    int64_t ExtractSegment(uint64_t pos, int64_t count);
+    int64_t BackupSegment(uint64_t pos, int64_t count);
 
     /**
      * Inject a segment to the associated cache file
@@ -676,7 +768,7 @@ public:
      * @param pos   offset within the file
      * @param count amount of bytes to be injected
      */
-    int64_t InjectSegment(uint64_t pos, int64_t count);
+    int64_t RestoreSegment(uint64_t pos, int64_t count);
 };
 
 #endif /* _VENUS_FSO_CACHEFILE_H_ */
