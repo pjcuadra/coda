@@ -317,8 +317,8 @@ if [ "$isscm" = Y ]; then
 	echo "Now I'll try to create an initial root volume"
     fi
 
-    echo " @createvol@ / $hn$DP   - create initial root volume"
-    [ "$start" ] && "@sbindir@/@createvol@" / "$hn$DP"
+    echo " createvol / $hn$DP   - create initial root volume"
+    [ "$start" ] && "@sbindir@/createvol" / "$hn$DP"
 
     if [ "$start" ] ; then
 	echo
