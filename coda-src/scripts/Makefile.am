@@ -10,12 +10,12 @@ dist_man_MANS += coda-client-setup.8 volmunge.8
 endif
 if BUILD_SERVER
 sbin_SCRIPTS += bldvldb.sh startserver vice-setup vice-setup-rvm createvol \
-		     purgevol
+		purgevol
 dist_sbin_SCRIPTS += codastart coda-server-logrotate \
 		     partial-reinit.sh vice-killvolumes vice-setup-scm \
 		     vice-setup-srvdir vice-setup-user
 dist_man_MANS += bldvldb.sh.8 maxgroupid.5 startserver.8 vice-setup.8 \
-		     volumelist.5 createvol.8 purgevol.8
+		 volumelist.5 createvol.8 purgevol.8
 
 if BUILD_SERVER_VOL_REPLICATION
 sbin_SCRIPTS += createvol_rep purgevol_rep

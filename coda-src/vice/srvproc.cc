@@ -2072,7 +2072,7 @@ int FetchBulkTransfer(RPC2_Handle RPCid, ClientEntry *client, Volume *volptr,
     {
         /* When we are continueing a trickle/interrupted fetch, the version
 	 * must be the same */
-        if (Offset && VV && (VV_dataversion(VV) == Vnode_dataversion(vptr))) {
+        if (Offset && VV && (VV_dataversion(VV) != Vnode_dataversion(vptr))) {
             SLog(
                 1,
                 "FetchBulkTransfer: Attempting resumed fetch on updated object");

@@ -1105,10 +1105,10 @@ int volent::Enter(int mode, uid_t uid)
 		 * or volume state transition is pending.
 		 */
             int proc_key = vp->u.u_pgid;
-            while ((excl_count > 0 && proc_key != excl_pgid) || IsResolving() ||
-                   ((IsReadWrite()) &&
-                    WriteLocked(&((reintvol *)this)->CML_lock)) ||
-                   flags.transition_pending) {
+            while (
+                (excl_count > 0 && proc_key != excl_pgid) || IsResolving() ||
+                (IsReadWrite() && WriteLocked(&((reintvol *)this)->CML_lock)) ||
+                flags.transition_pending) {
                 if (mode & VM_NDELAY)
                     return (EWOULDBLOCK);
                 LOG(0,

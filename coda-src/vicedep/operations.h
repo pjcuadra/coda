@@ -54,7 +54,6 @@ int CheckRmdirSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
                         VCP, void *, void *, Rights *, Rights *, int = 1);
 int CheckSymlinkSemantics(ClientEntry *, Vnode **, Vnode **, char *, Volume **,
                           VCP, void *, void *, Rights *, Rights *, int = 1);
-void PerformFetch(ClientEntry *, Volume *, Vnode *);
 int FetchBulkTransfer(RPC2_Handle, ClientEntry *, Volume *, Vnode *,
                       RPC2_Unsigned Offset, RPC2_Integer Count,
                       ViceVersionVector *VV);
