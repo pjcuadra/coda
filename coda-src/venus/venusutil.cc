@@ -101,41 +101,6 @@ extern long int RPC2_Trace;
 
 /* *****  util.c  ***** */
 
-/* Print a debugging message to the log file. */
-void dprint(const char *fmt...)
-{
-    va_list ap;
-
-    if (!LogInited)
-        return;
-
-    char msg[240];
-    (VprocSelf())->GetStamp(msg);
-
-    /* Output a newline if we are starting a new block. */
-    static int last_vpid = -1;
-    static int last_seq  = -1;
-    int this_vpid;
-    int this_seq;
-    if (sscanf(msg, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid,
-               &this_seq) != 2) {
-        fprintf(stderr, "Choking in dprint\n");
-        exit(EXIT_FAILURE);
-    }
-    if ((this_vpid != last_vpid || this_seq != last_seq) && (this_vpid != -1)) {
-        fprintf(logFile, "\n");
-        last_vpid = this_vpid;
-        last_seq  = this_seq;
-    }
-
-    va_start(ap, fmt);
-    vsnprintf(msg + strlen(msg), 240 - strlen(msg), fmt, ap);
-    va_end(ap);
-
-    fwrite(msg, (int)sizeof(char), (int)strlen(msg), logFile);
-    fflush(logFile);
-}
-
 /* Print an error message and then exit. */
 void choke(const char *file, int line, const char *fmt...)
 {
@@ -528,40 +493,6 @@ int binaryfloor(int n)
     return (m);
 }
 
-void LogInit()
-{
-    logFile = fopen(GetVenusConf().get_value("logfile"), "a+");
-    if (logFile == NULL) {
-        eprint("LogInit failed");
-        exit(EXIT_FAILURE);
-    }
-    LogInited = 1;
-    LOG(0, ("Coda Venus, version " PACKAGE_VERSION "\n"));
-
-    LogLevel = GetVenusConf().get_int_value("loglevel");
-
-    struct timeval now;
-    gettimeofday(&now, 0);
-    LOG(0, ("Logfile initialized with LogLevel = %d at %s\n", LogLevel,
-            ctime((time_t *)&now.tv_sec)));
-
-    RPC2_Trace      = LogLevel ? 1 : 0;
-    RPC2_DebugLevel = GetVenusConf().get_int_value("rpc2loglevel");
-    lwp_debug       = GetVenusConf().get_int_value("lwploglevel");
-}
-
-void DebugOn()
-{
-    LogLevel = ((LogLevel == 0) ? 1 : LogLevel * 10);
-    LOG(0, ("LogLevel is now %d.\n", LogLevel));
-}
-
-void DebugOff()
-{
-    LogLevel = 0;
-    LOG(0, ("LogLevel is now %d.\n", LogLevel));
-}
-
 void Terminate()
 {
     CHOKE("terminate signal received");
@@ -853,19 +784,6 @@ void rds_printer(char *fmt...)
     LOG(0, (fmt));
 }
 
-void SwapLog()
-{
-    struct timeval now;
-    gettimeofday(&now, 0);
-
-    freopen(GetVenusConf().get_value("logfile"), "a+", logFile);
-    if (!GetVenusConf().get_bool_value(
-            "nofork")) /* only redirect stderr when daemonizing */
-        freopen(GetVenusConf().get_value("errorlog"), "a+", stderr);
-
-    LOG(0, ("New Logfile started at %s", ctime((time_t *)&now.tv_sec)));
-}
-
 const char *lvlstr(LockLevel level)
 {
     switch (level) {
@@ -909,20 +827,4 @@ int FAV_Compare(ViceFidAndVV *fav1, ViceFidAndVV *fav2)
         return (1);
 
     return (0); /* this shouldn't happen */
-}
-
-FILE *GetLogFile()
-{
-    return logFile;
-}
-
-int GetLogLevel()
-{
-    return LogLevel;
-}
-
-void SetLogLevel(int loglevel)
-{
-    LogLevel = loglevel;
-    GetVenusConf().set_int("loglevel", loglevel);
 }

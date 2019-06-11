@@ -80,6 +80,7 @@ extern int global_kernfd;
 #include "vproc.h"
 #include "fso_cachefile.h"
 #include "venus.private.h"
+#include <venus/logging.h>
 
 /* from coda include again, must appear AFTER venus.private.h */
 

@@ -225,11 +225,7 @@ public:
     void PostWalkStatus();
 
     /* Advice Related*/
-    void SetSolicitAdvice(int uid)
-    {
-        LOG(0, ("SetSolicitAdvice: uid=%d\n", uid));
-        SolicitAdvice = uid;
-    }
+    void SetSolicitAdvice(int uid);
 
     void SetDemandWalkTime();
     long GetDemandWalkTime();

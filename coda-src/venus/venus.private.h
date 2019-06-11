@@ -134,17 +134,6 @@ typedef void (*PROC_V_UL)(unsigned long);
 #define TRAVERSE_MTPTS 0x2 /* should lookup cross covered mount points? */
 #define REFERENCE 0x8 /* should cache references be noted? */
 
-/*  *****  Debugging macros.  *****  */
-#ifdef VENUSDEBUG
-#define LOG(level, stmt)              \
-    do {                              \
-        if (GetLogLevel() >= (level)) \
-            dprint stmt;              \
-    } while (0)
-#else
-#define LOG(level, stmt)
-#endif /* !VENUSDEBUG */
-
 /*  *****  Locking macros.  *****  */
 
 enum LockLevel
@@ -269,7 +258,6 @@ struct CacheStats {
 #define CHOKE(me...) choke(__FILE__, __LINE__, ##me)
 
 /*  *****  Declarations for source files without their own headers.  ***** */
-void dprint(const char *...);
 void choke(const char *file, int line, const char *...);
 void rds_printer(char *...);
 void VenusPrint(int argc, const char **argv);
@@ -280,9 +268,6 @@ const char *IoctlOpStr(unsigned char nr);
 const char *VenusRetStr(int);
 void VVPrint(FILE *, ViceVersionVector **);
 int binaryfloor(int);
-void LogInit();
-void DebugOn();
-void DebugOff();
 void Terminate();
 void DumpState();
 void RusagePrint(int);
@@ -292,7 +277,6 @@ void GetCSS(RPCPktStatistics *);
 void SubCSSs(RPCPktStatistics *, RPCPktStatistics *);
 void MallocPrint(int);
 void StatsInit();
-void SwapLog();
 void ToggleMallocTrace();
 const char *lvlstr(LockLevel);
 int GetTime(long *, long *);
@@ -339,9 +323,5 @@ struct MRPC_common_params {
     unsigned long ph;
     RPC2_Multicast *MIp;
 };
-
-FILE *GetLogFile();
-int GetLogLevel();
-void SetLogLevel(int loglevel);
 
 #endif /* _VENUS_PRIVATE_H_ */

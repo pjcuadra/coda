@@ -48,6 +48,7 @@ extern "C" {
 #include "venusrecov.h"
 #include "vproc.h"
 #include "worker.h"
+#include <venus/logging.h>
 
 /* *****  Private constants  ***** */
 

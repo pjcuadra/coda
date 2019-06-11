@@ -49,6 +49,7 @@ extern "C" {
 /* from venus */
 #include "fso_cachefile.h"
 #include "venusrecov.h"
+#include <venus/logging.h>
 
 #ifndef fdatasync
 #define fdatasync(fd) fsync(fd)

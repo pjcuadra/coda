@@ -674,6 +674,13 @@ void TallyAllHDBentries(dlist *hdb_bindings, int blocks, TallyStatus status)
     }
 }
 
+/* Advice Related*/
+void hdb::SetSolicitAdvice(int uid)
+{
+    LOG(0, ("SetSolicitAdvice: uid=%d\n", uid));
+    SolicitAdvice = uid;
+}
+
 void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
 {
     MarinerLog("cache::BeginDataWalk [%d]\n", FSDB->blocks);

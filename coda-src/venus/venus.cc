@@ -107,7 +107,6 @@ struct in_addr venus_relay_addr = { INADDR_LOOPBACK };
 
 /* *****  venus.c  ***** */
 
-
 /* test if we can open the kernel device and purge the cache,
    BSD systems like to purge that cache */
 void testKernDevice()
@@ -167,6 +166,7 @@ int main(int argc, char **argv)
     coda_assert_action  = CODA_ASSERT_SLEEP;
     coda_assert_cleanup = VFSUnmount;
     int ret_code        = 0;
+    int LogLevel        = 0;
 
     GetVenusConf().load_default_config();
     GetVenusConf().configure_cmdline_options();
@@ -246,6 +246,11 @@ int main(int argc, char **argv)
      */
     VprocInit(); /* init LWP/IOMGR support */
     LogInit(); /* move old Venus log and create a new one */
+
+    LogLevel        = GetVenusConf().get_int_value("loglevel");
+    RPC2_Trace      = LogLevel ? 1 : 0;
+    RPC2_DebugLevel = GetVenusConf().get_int_value("rpc2loglevel");
+    lwp_debug       = GetVenusConf().get_int_value("lwploglevel");
 
     LWP_SetLog(GetLogFile(), GetVenusConf().get_int_value("lwploglevel"));
     RPC2_SetLog(GetLogFile(), GetVenusConf().get_int_value("rpc2loglevel"));
