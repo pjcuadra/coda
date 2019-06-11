@@ -23,7 +23,7 @@ listed in the file CREDITS.
 #include <rvmlib.h>
 #include <coda_assert.h>
 #include <auth2.h>
-#include "venusfid.h"
+#include <venus/fid.h>
 
 class connent;
 class userent;

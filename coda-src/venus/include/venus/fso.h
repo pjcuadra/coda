@@ -54,7 +54,7 @@ extern int global_kernfd;
 #endif
 
 /* interfaces */
-#include <user.h>
+#include <venus/user.h>
 #include <vice.h>
 
 /* from util */
@@ -71,14 +71,14 @@ extern int global_kernfd;
 #include <lka.h>
 
 /* from venus */
-#include "binding.h"
-#include "comm.h"
-#include "hdb.h"
-#include "mariner.h"
-#include "realmdb.h"
-#include "venusrecov.h"
-#include "vproc.h"
-#include "fso_cachefile.h"
+#include <venus/binding.h>
+#include <venus/comm.h>
+#include <hdb.h>
+#include <venus/mariner.h>
+#include <venus/realmdb.h>
+#include <venus/recov.h>
+#include <venus/vproc.h>
+#include <venus/fso_cachefile.h>
 #include "venus.private.h"
 #include <venus/logging.h>
 

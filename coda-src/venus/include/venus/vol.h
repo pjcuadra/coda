@@ -58,11 +58,11 @@ extern "C" {
 #include <voldefs.h>
 
 /* from venus */
-#include "comm.h"
-#include "venusrecov.h"
-#include "realmdb.h"
+#include <venus/comm.h>
+#include <venus/recov.h>
+#include <venus/realmdb.h>
 #include "venus.private.h"
-#include "vsg.h"
+#include <venus/vsg.h>
 
 /* Forward declarations. */
 class ClientModifyLog;

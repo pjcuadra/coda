@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 /* from venus */
-#include "vproc.h"
+#include <venus/vproc.h>
 
 class callbackserver : public vproc {
     friend void CallBackInit();

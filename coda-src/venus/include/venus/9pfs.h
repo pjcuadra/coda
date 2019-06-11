@@ -336,7 +336,7 @@ struct plan9_statfs {
 #endif
 
 #include <dlist.h>
-#include <mariner.h>
+#include <venus/mariner.h>
 
 #define P9_BUFSIZE 8192
 

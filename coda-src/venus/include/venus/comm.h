@@ -53,9 +53,9 @@ extern "C" {
 #include <inconsist.h>
 
 #include "refcounted.h"
-#include "fso.h"
-#include "venusrecov.h"
-#include "vproc.h"
+#include <venus/fso.h>
+#include <venus/recov.h>
+#include <venus/vproc.h>
 
 /* Forward declarations. */
 class connent;
