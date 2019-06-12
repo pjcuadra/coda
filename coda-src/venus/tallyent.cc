@@ -157,8 +157,8 @@ void Tally(int priority, uid_t uid, int blocks, TallyStatus status)
     tallyent *te;
     dlink *d;
 
-    LOG(100, ("Tally: priority=%d, uid=%d, blocks=%d, status=%d\n", priority,
-              uid, blocks, (int)status));
+    LOG(100, "Tally: priority=%d, uid=%d, blocks=%d, status=%d\n", priority,
+        uid, blocks, (int)status);
 
     CODA_ASSERT(TallyList != NULL);
     d = Find(priority, uid);
@@ -183,19 +183,19 @@ void Tally(int priority, uid_t uid, int blocks, TallyStatus status)
             CODA_ASSERT(1 == 0);
             break;
         }
-        LOG(100, ("tallyent::tallyent: updated <priority=%d, uid=%d>\n",
-                  priority, uid));
+        LOG(100, "tallyent::tallyent: updated <priority=%d, uid=%d>\n",
+            priority, uid);
     } else {
         te = new tallyent(priority, uid, blocks, status);
         TallyList->insert(&(te->prioq_handle));
-        LOG(100, ("tallyent::tallyent: inserted <priority=%d, uid=%d>\n",
-                  priority, uid));
+        LOG(100, "tallyent::tallyent: inserted <priority=%d, uid=%d>\n",
+            priority, uid);
     }
 }
 
 void TallyPrint(uid_t uid)
 {
-    LOG(0, ("Tally for uid=%d:\n", uid));
+    LOG(0, "Tally for uid=%d:\n", uid);
     dlist_iterator next(*TallyList);
     dlink *d;
     while ((d = next())) {
@@ -207,15 +207,15 @@ void TallyPrint(uid_t uid)
 
         int total_blocks = te->available_blocks + te->unavailable_blocks;
         LOG(0,
-            ("\tPriority=%d: Available=%d Unavailable=%d TotalSize=%d Unknown=%d\n",
-             te->priority, te->available_blocks, te->unavailable_blocks,
-             total_blocks, te->incomplete));
+            "\tPriority=%d: Available=%d Unavailable=%d TotalSize=%d Unknown=%d\n",
+            te->priority, te->available_blocks, te->unavailable_blocks,
+            total_blocks, te->incomplete);
     }
 }
 
 void TallySum(int *total_blocks, int *total_files)
 {
-    LOG(0, ("TallySum\n"));
+    LOG(0, "TallySum\n");
     *total_blocks = 0;
     *total_files  = 0;
 
@@ -233,9 +233,9 @@ void TallySum(int *total_blocks, int *total_files)
             *total_files += (te->available_files + te->unavailable_files);
 
             LOG(0,
-                ("\tPriority=%d: Available=%d Unavailable=%d TotalSize=%d Unknown=%d\n",
-                 te->priority, te->available_blocks, te->unavailable_blocks,
-                 total_blocks, te->incomplete));
+                "\tPriority=%d: Available=%d Unavailable=%d TotalSize=%d Unknown=%d\n",
+                te->priority, te->available_blocks, te->unavailable_blocks,
+                total_blocks, te->incomplete);
         }
     }
 }

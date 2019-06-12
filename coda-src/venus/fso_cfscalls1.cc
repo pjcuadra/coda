@@ -115,7 +115,7 @@ int fsobj::DisconnectedRemove(Date_t Mtime, uid_t uid, char *name,
 /* local-repair modification */
 int fsobj::Remove(char *name, fsobj *target_fso, uid_t uid)
 {
-    LOG(10, ("fsobj::Remove: (%s, %s), uid = %d\n", GetComp(), name, uid));
+    LOG(10, "fsobj::Remove: (%s, %s), uid = %d\n", GetComp(), name, uid);
 
     int code     = 0;
     Date_t Mtime = Vtime();
@@ -185,8 +185,8 @@ int fsobj::DisconnectedLink(Date_t Mtime, uid_t uid, char *name,
 /* local-repair modification */
 int fsobj::Link(char *name, fsobj *source_fso, uid_t uid)
 {
-    LOG(10, ("fsobj::Link: (%s/%s, %s), uid = %d\n", GetComp(),
-             source_fso->comp, name, uid));
+    LOG(10, "fsobj::Link: (%s/%s, %s), uid = %d\n", GetComp(), source_fso->comp,
+        name, uid);
 
     int code     = 0;
     Date_t Mtime = Vtime();
@@ -315,9 +315,9 @@ int fsobj::DisconnectedRename(Date_t Mtime, uid_t uid, fsobj *s_parent_fso,
 int fsobj::Rename(fsobj *s_parent_fso, char *s_name, fsobj *s_fso, char *t_name,
                   fsobj *t_fso, uid_t uid)
 {
-    LOG(10, ("fsobj::Rename : (%s/%s, %s/%s), uid = %d\n",
-             (s_parent_fso ? s_parent_fso->GetComp() : GetComp()), s_name,
-             GetComp(), t_name, uid));
+    LOG(10, "fsobj::Rename : (%s/%s, %s/%s), uid = %d\n",
+        (s_parent_fso ? s_parent_fso->GetComp() : GetComp()), s_name, GetComp(),
+        t_name, uid);
 
     int code       = 0;
     Date_t Mtime   = Vtime();
@@ -453,8 +453,8 @@ Exit:
 int fsobj::Mkdir(char *name, fsobj **target_fso_addr, uid_t uid,
                  unsigned short Mode, int target_pri)
 {
-    LOG(10, ("fsobj::Mkdir: (%s, %s, %d), uid = %d\n", GetComp(), name,
-             target_pri, uid));
+    LOG(10, "fsobj::Mkdir: (%s, %s, %d), uid = %d\n", GetComp(), name,
+        target_pri, uid);
 
     int code         = 0;
     Date_t Mtime     = Vtime();
@@ -527,7 +527,7 @@ int fsobj::DisconnectedRmdir(Date_t Mtime, uid_t uid, char *name,
 /* local-repair modification */
 int fsobj::Rmdir(char *name, fsobj *target_fso, uid_t uid)
 {
-    LOG(10, ("fsobj::Rmdir: (%s, %s), uid = %d\n", GetComp(), name, uid));
+    LOG(10, "fsobj::Rmdir: (%s, %s), uid = %d\n", GetComp(), name, uid);
 
     int code     = 0;
     Date_t Mtime = Vtime();
@@ -654,8 +654,8 @@ Exit:
 int fsobj::Symlink(char *s_name, char *t_name, uid_t uid, unsigned short Mode,
                    int target_pri)
 {
-    LOG(10, ("fsobj::Symlink: (%s, %s, %s, %d), uid = %d\n", GetComp(), s_name,
-             t_name, target_pri, uid));
+    LOG(10, "fsobj::Symlink: (%s, %s, %s, %d), uid = %d\n", GetComp(), s_name,
+        t_name, target_pri, uid);
 
     int code          = 0;
     Date_t Mtime      = Vtime();
@@ -679,7 +679,7 @@ int fsobj::Symlink(char *s_name, char *t_name, uid_t uid, unsigned short Mode,
 /* Call with object write-locked. */
 int fsobj::SetVV(ViceVersionVector *newvv, uid_t uid)
 {
-    LOG(10, ("fsobj::SetVV: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::SetVV: (%s), uid = %d\n", GetComp(), uid);
 
     int code = 0;
 
@@ -784,7 +784,7 @@ int fsobj::SetVV(ViceVersionVector *newvv, uid_t uid)
     /* Replica control rights are invalid in any case. */
     Demote();
 
-    LOG(0, ("MARIA:  We just SetVV'd.\n"));
+    LOG(0, "MARIA:  We just SetVV'd.\n");
 
     return (code);
 }

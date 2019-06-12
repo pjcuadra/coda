@@ -79,7 +79,7 @@ inline void SkipSlashes(char **pptr_addr, int *plen_addr)
 /* Caller must set u_cred, u_priority, u.u_cdir and u_nc fields as appropriate. */
 int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
 {
-    LOG(1, ("vproc::namev: %s, %d\n", path, flags));
+    LOG(1, "vproc::namev: %s, %d\n", path, flags);
 
     /* Initialize some global variables. */
     u.u_error = 0;
@@ -127,7 +127,7 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
 
         /* Handle ".." out of venus here! */
         if (FID_EQ(&pvp.c_fid, &rootfid) && STREQ(comp, "..")) {
-            LOG(100, ("vproc::namev: .. out of this venus\n"));
+            LOG(100, "vproc::namev: .. out of this venus\n");
 
             u.u_error = ENOENT;
             goto Exit;
@@ -224,8 +224,8 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
                 STRNEQ(linkdata, venusRoot, venusRootLength) &&
                 (linklen == venusRootLength ||
                  linkdata[venusRootLength] == '/')) {
-                LOG(100, ("vproc::namev: abspath within this venus (%s)\n",
-                          linkdata));
+                LOG(100, "vproc::namev: abspath within this venus (%s)\n",
+                    linkdata);
 
                 /* Copy the part after the VenusRoot to workingpath. */
                 strcpy(workingpath, linkdata + venusRootLength);
@@ -238,13 +238,13 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
                 if (u.u_error)
                     goto Exit;
             } else if (linkdata[0] == '/') {
-                LOG(100, ("vproc::namev: abspath leaving this venus (%s)\n",
-                          linkdata));
+                LOG(100, "vproc::namev: abspath leaving this venus (%s)\n",
+                    linkdata);
 
                 u.u_error = ENOENT;
                 goto Exit;
             } else {
-                LOG(100, ("vproc::namev: relpath (%s)\n", linkdata));
+                LOG(100, "vproc::namev: relpath (%s)\n", linkdata);
 
                 /* Copy the whole path to workingpath. */
                 strcpy(workingpath, linkdata);
@@ -279,7 +279,7 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
     }
 
 Exit:
-    LOG(1, ("vproc::namev: returns %s\n", VenusRetStr(u.u_error)));
+    LOG(1, "vproc::namev: returns %s\n", VenusRetStr(u.u_error));
     return (u.u_error == 0);
 }
 
@@ -290,7 +290,7 @@ void vproc::GetPath(VenusFid *fid, char *out, int *outlen, int fullpath)
     char start[CODA_MAXPATHLEN], *end = start + sizeof(start) - 1, *p;
     int len, have_last = 0, done = 0;
     VenusFid current, last;
-    LOG(1, ("vproc::GetPath: %s, %d\n", FID_(fid), fullpath));
+    LOG(1, "vproc::GetPath: %s, %d\n", FID_(fid), fullpath);
 
     p  = end;
     *p = '\0';
@@ -382,7 +382,7 @@ Exit:
         *outlen   = 0;
         u.u_error = ENAMETOOLONG;
     }
-    LOG(1, ("vproc::GetPath: returns %s (%s)\n", VenusRetStr(u.u_error), out));
+    LOG(1, "vproc::GetPath: returns %s (%s)\n", VenusRetStr(u.u_error), out);
 }
 
 const char *vproc::expansion(const char *path)

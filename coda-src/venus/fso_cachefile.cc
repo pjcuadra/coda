@@ -87,12 +87,12 @@ CacheFile::CacheFile(int i, int recoverable, int partial)
 
     /* Container reset will be done by eventually by FSOInit()! */
 
-    LOG(100, ("CacheFile::CacheFile(%d): %s (this=0x%x)\n", i, name, this));
+    LOG(100, "CacheFile::CacheFile(%d): %s (this=0x%x)\n", i, name, this);
 }
 
 CacheFile::CacheFile()
 {
-    LOG(10, ("CacheFile::CacheFile: %s (this=0x%x)\n", name, this));
+    LOG(10, "CacheFile::CacheFile: %s (this=0x%x)\n", name, this);
 
     length = validdata = 0;
     refcnt             = 1;
@@ -103,7 +103,7 @@ CacheFile::CacheFile()
 
 CacheFile::~CacheFile()
 {
-    LOG(10, ("CacheFile::~CacheFile: %s (this=0x%x)\n", name, this));
+    LOG(10, "CacheFile::~CacheFile: %s (this=0x%x)\n", name, this);
     CODA_ASSERT(length == 0);
 
     if (isPartial)
@@ -186,7 +186,7 @@ int CacheFile::ValidContainer()
 
 void CacheFile::Create(int newlength)
 {
-    LOG(10, ("CacheFile::Create: %s, %d\n", name, newlength));
+    LOG(10, "CacheFile::Create: %s, %d\n", name, newlength);
 
     int tfd;
     struct stat tstat;
@@ -240,19 +240,19 @@ int CacheFile::Copy(CacheFile *destination)
 
 int CacheFile::Copy(char *destname, int recovering)
 {
-    LOG(10, ("CacheFile::Copy: from %s, %d/%d, to %s\n", name, validdata,
-             length, destname));
+    LOG(10, "CacheFile::Copy: from %s, %d/%d, to %s\n", name, validdata, length,
+        destname);
 
     int tfd, ffd;
     struct stat tstat;
 
     if (mkpath(destname, V_MODE | 0100) < 0) {
-        LOG(0, ("CacheFile::Copy: could not make path for %s\n", name));
+        LOG(0, "CacheFile::Copy: could not make path for %s\n", name);
         return -1;
     }
     if ((tfd = ::open(destname, O_RDWR | O_CREAT | O_TRUNC | O_BINARY,
                       V_MODE)) < 0) {
-        LOG(0, ("CacheFile::Copy: open failed (%d)\n", errno));
+        LOG(0, "CacheFile::Copy: open failed (%d)\n", errno);
         return -1;
     }
     ::fchmod(tfd, V_MODE);
@@ -265,7 +265,7 @@ int CacheFile::Copy(char *destname, int recovering)
         CHOKE("CacheFile::Copy: source open failed (%d)\n", errno);
 
     if (copyfile(ffd, tfd) < 0) {
-        LOG(0, ("CacheFile::Copy failed! (%d)\n", errno));
+        LOG(0, "CacheFile::Copy failed! (%d)\n", errno);
         ::close(ffd);
         ::close(tfd);
         return -1;
@@ -413,8 +413,8 @@ void CacheFile::SetLength(uint64_t newlen)
         }
     }
 
-    LOG(60, ("CacheFile::SetLength: New Length: %d, Validdata %d\n", newlen,
-             validdata));
+    LOG(60, "CacheFile::SetLength: New Length: %d, Validdata %d\n", newlen,
+        validdata);
 }
 
 /* MUST be called from within transaction! */
@@ -473,15 +473,15 @@ void CacheFile::SetValidData(uint64_t start, int64_t len)
         validdata += newvaliddata;
 
         LOG(60,
-            ("CacheFile::SetValidData: { cachedblocks: %d, totalblocks: %d }\n",
-             cached_chunks->Count(), length_cb));
+            "CacheFile::SetValidData: { cachedblocks: %d, totalblocks: %d }\n",
+            cached_chunks->Count(), length_cb);
 
         ReleaseWriteLock(&rw_lock);
     } else {
         validdata = len < 0 ? length : len;
     }
 
-    LOG(60, ("CacheFile::SetValidData: { validdata: %d }\n", validdata));
+    LOG(60, "CacheFile::SetValidData: { validdata: %d }\n", validdata);
 }
 
 void CacheFile::print(int fdes)
@@ -564,12 +564,12 @@ int64_t CacheFile::CopySegment(CacheFile *from, CacheFile *to, uint64_t pos,
     CODA_ASSERT(from->IsPartial());
     CODA_ASSERT(to->IsPartial());
 
-    LOG(300, ("CacheFile::CopySegment: from %s [%d, %d], to %s\n", from->name,
-              byte_start, byte_len, to->name));
+    LOG(300, "CacheFile::CopySegment: from %s [%d, %d], to %s\n", from->name,
+        byte_start, byte_len, to->name);
 
     if (mkpath(to->name, V_MODE | 0100) < 0) {
-        LOG(0,
-            ("CacheFile::CopySegment: could not make path for %s\n", to->name));
+        LOG(0, "CacheFile::CopySegment: could not make path for %s\n",
+            to->name);
         return -1;
     }
 
@@ -590,7 +590,7 @@ int64_t CacheFile::CopySegment(CacheFile *from, CacheFile *to, uint64_t pos,
 
     for (chunk = c_list->pop(); chunk.isValid(); chunk = c_list->pop()) {
         if (copyfile_seg(ffd, tfd, chunk.GetStart(), chunk.GetLength()) < 0) {
-            LOG(0, ("CacheFile::CopySegment failed! (%d)\n", errno));
+            LOG(0, "CacheFile::CopySegment failed! (%d)\n", errno);
             from->Close(ffd);
             to->Close(tfd);
             return -1;
@@ -711,9 +711,9 @@ CacheChunkList *CacheFile::GetHoles(uint64_t start, int64_t len)
         end_b = length_b;
     }
 
-    LOG(100, ("CacheFile::GetHoles Range [%lu - %lu]\n",
-              cachechunksutil::ccblocks_to_bytes(start_b),
-              cachechunksutil::ccblocks_to_bytes(end_b) - 1));
+    LOG(100, "CacheFile::GetHoles Range [%lu - %lu]\n",
+        cachechunksutil::ccblocks_to_bytes(start_b),
+        cachechunksutil::ccblocks_to_bytes(end_b) - 1);
 
     for (uint64_t i = start_b; i < end_b; i++) {
         currc = GetNextHole(i, end_b);
@@ -721,8 +721,8 @@ CacheChunkList *CacheFile::GetHoles(uint64_t start, int64_t len)
         if (!currc.isValid())
             break;
 
-        LOG(100, ("CacheFile::GetHoles Found [%d, %d]\n", currc.GetStart(),
-                  currc.GetLength()));
+        LOG(100, "CacheFile::GetHoles Found [%d, %d]\n", currc.GetStart(),
+            currc.GetLength());
 
         clist->AddChunk(currc.GetStart(), currc.GetLength());
         i = cachechunksutil::bytes_to_ccblocks(currc.GetStart() +
@@ -749,9 +749,9 @@ CacheChunkList *CacheFile::GetValidChunks(uint64_t start, int64_t len)
         end_b = length_b;
     }
 
-    LOG(100, ("CacheFile::GetValidChunks Range [%lu - %lu]\n",
-              cachechunksutil::ccblocks_to_bytes(start_b),
-              cachechunksutil::ccblocks_to_bytes(end_b) - 1));
+    LOG(100, "CacheFile::GetValidChunks Range [%lu - %lu]\n",
+        cachechunksutil::ccblocks_to_bytes(start_b),
+        cachechunksutil::ccblocks_to_bytes(end_b) - 1);
 
     for (i = start_b; i < end_b; i++) {
         currc = GetNextHole(i, end_b);
@@ -759,8 +759,8 @@ CacheChunkList *CacheFile::GetValidChunks(uint64_t start, int64_t len)
         if (!currc.isValid())
             break;
 
-        LOG(100, ("CacheFile::GetValidChunks Found [%d, %d]\n",
-                  currc.GetStart(), currc.GetLength()));
+        LOG(100, "CacheFile::GetValidChunks Found [%d, %d]\n", currc.GetStart(),
+            currc.GetLength());
 
         start_bytes = cachechunksutil::ccblocks_to_bytes(i);
 

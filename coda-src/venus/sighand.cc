@@ -170,14 +170,14 @@ static void SigControl(int sig)
 
     fp = fopen(VenusControlFile, "r+");
     if (fp == NULL) {
-        LOG(0, ("SigControl: open(%s) failed", VenusControlFile));
+        LOG(0, "SigControl: open(%s) failed", VenusControlFile);
         return;
     }
 
     (void)fscanf(fp, "%79s", command);
 
     if (STREQ(command, "COPMODES")) {
-        LOG(100, ("COPModes = %x\n", GetCOPModes()));
+        LOG(100, "COPModes = %x\n", GetCOPModes());
     }
 
     if (STREQ(command, "DEBUG")) {
@@ -196,9 +196,9 @@ static void SigControl(int sig)
         if (found > 2 && lwplevel >= 0)
             lwp_debug = lwplevel;
 
-        LOG(0, ("LogLevel is now %d.\n", GetLogLevel()));
-        LOG(0, ("RPC2_DebugLevel is now %d.\n", RPC2_DebugLevel));
-        LOG(0, ("lwp_debug is now %d.\n", lwp_debug));
+        LOG(0, "LogLevel is now %d.\n", GetLogLevel());
+        LOG(0, "RPC2_DebugLevel is now %d.\n", RPC2_DebugLevel);
+        LOG(0, "lwp_debug is now %d.\n", lwp_debug);
     }
 
     if (STREQ(command, "SWAPLOGS"))
@@ -211,9 +211,9 @@ static void SigControl(int sig)
         DumpState();
 
     if (fclose(fp) == EOF)
-        LOG(0, ("SigControl: fclose(%s) failed", VenusControlFile));
+        LOG(0, "SigControl: fclose(%s) failed", VenusControlFile);
     if (unlink(VenusControlFile) < 0)
-        LOG(0, ("SigControl: unlink(%s) failed", VenusControlFile));
+        LOG(0, "SigControl: unlink(%s) failed", VenusControlFile);
 }
 
 static void SigChoke(int sig)
@@ -221,7 +221,7 @@ static void SigChoke(int sig)
     sigset_t mask;
     int pid = getpid();
 
-    LOG(0, ("*****  FATAL SIGNAL (%d) *****\n", sig));
+    LOG(0, "*****  FATAL SIGNAL (%d) *****\n", sig);
 
     eprint("Fatal Signal (%d); pid %d becoming a zombie...", sig, pid);
     eprint("You may use gdb to attach to %d", pid);
@@ -243,7 +243,7 @@ static void SigChoke(int sig)
 
 static void SigExit(int sig)
 {
-    LOG(0, ("TERM: About to terminate venus\n"));
+    LOG(0, "TERM: About to terminate venus\n");
     MarinerLog("shutdown in progress\n");
 
     TerminateVenus = 1;
@@ -284,17 +284,17 @@ static void SigASR(int sig)
         perror("waitpid");
         exit(EXIT_FAILURE);
     } else if (child_pid == ASRpid)
-        LOG(0, ("Signal Handler(ASR): Caught ASRLauncher (%d) with status %d\n",
-                child_pid, status));
+        LOG(0, "Signal Handler(ASR): Caught ASRLauncher (%d) with status %d\n",
+            child_pid, status);
     else {
-        LOG(0, ("Signal Handler(ASR): Caught an unknown child!\n"));
+        LOG(0, "Signal Handler(ASR): Caught an unknown child!\n");
         return; /* If there are no documented ASR's running, this
 			   * could be the VFSMount double-fork middle child. */
     }
 
     v = (repvol *)VDB->Find(MakeVolid(&ASRfid));
     if (v == NULL) {
-        LOG(0, ("Signal Handler(ASR): Couldn't find volume!\n"));
+        LOG(0, "Signal Handler(ASR): Couldn't find volume!\n");
         return;
     }
 

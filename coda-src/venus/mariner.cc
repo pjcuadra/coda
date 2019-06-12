@@ -185,7 +185,7 @@ void MarinerMux(int fd, void *udata)
     socklen_t salen = sizeof(sa);
     char host[NI_MAXHOST], port[NI_MAXSERV];
 
-    LOG(100, ("MarinerMux: fd = %d\n", fd));
+    LOG(100, "MarinerMux: fd = %d\n", fd);
 
     newfd = ::accept(fd, (sockaddr *)&sa, &salen);
     if (newfd < 0) {
@@ -197,9 +197,8 @@ void MarinerMux(int fd, void *udata)
                      sizeof(port), NI_NUMERICHOST | NI_NUMERICSERV);
 
     int broken_port = sa.ss_family == AF_UNIX;
-    LOG(0,
-        ("MarinerMux: new client connection from [%s]:%s\n",
-         rc ? "resolve failed" : host, (rc || broken_port) ? "unknown" : port));
+    LOG(0, "MarinerMux: new client connection from [%s]:%s\n",
+        rc ? "resolve failed" : host, (rc || broken_port) ? "unknown" : port);
 
     if (mariner::nmariners >= MaxMariners) {
         eprint("MarinerMux: client connection limit exceeded");
@@ -317,8 +316,8 @@ void PrintMariners(int fd)
 mariner::mariner(int afd)
     : vproc("Mariner", NULL, VPT_Mariner, MarinerStackSize)
 {
-    LOG(100, ("mariner::mariner(%#x): %-16s : lwpid = %d, fd = %d\n", this,
-              name, lwpid, afd));
+    LOG(100, "mariner::mariner(%#x): %-16s : lwpid = %d, fd = %d\n", this, name,
+        lwpid, afd);
 
     nmariners++; /* Ought to be a lock protecting this! -JJK */
 
@@ -349,7 +348,7 @@ int mariner::operator=(mariner &m)
 
 mariner::~mariner()
 {
-    LOG(100, ("mariner::~mariner: %-16s : lwpid = %d\n", name, lwpid));
+    LOG(100, "mariner::~mariner: %-16s : lwpid = %d\n", name, lwpid);
 
     nmariners--; /* Ought to be a lock protecting this! -JJK */
     ::shutdown(fd, SHUT_RDWR);
@@ -475,7 +474,7 @@ int mariner::AwaitRequest()
                 /* make sure we no longer send any normal mariner output */
                 logging = reporting = want_volstate = 0;
 
-                LOG(0, ("Found 9pfs version magic\n"));
+                LOG(0, "Found 9pfs version magic\n");
 
                 p9srv = new plan9server(this);
                 p9srv->main_loop((unsigned char *)commbuf, idx);
@@ -514,7 +513,7 @@ void mariner::main(void)
         if (AwaitRequest())
             break;
 
-        LOG(100, ("mariner::main: cmd = \"%s\"\n", commbuf));
+        LOG(100, "mariner::main: cmd = \"%s\"\n", commbuf);
 
         /* Read a good command.  Parse and execute. */
         argc = sscanf(commbuf,

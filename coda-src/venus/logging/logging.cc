@@ -69,7 +69,7 @@ void dprint(const char *fmt...)
     fflush(logFile);
 }
 
-void LogginCallBackArgs(logging_args_callback_t log_cb, ...)
+static void LogginCallBackArgs(logging_args_callback_t log_cb, ...)
 {
     if (log_cb == NULL)
         return;
@@ -83,7 +83,7 @@ void LogginCallBackArgs(logging_args_callback_t log_cb, ...)
     va_end(args);
 }
 
-void LogginCallBack(logging_callback_t log_cb)
+static void LogginCallBack(logging_callback_t log_cb)
 {
     if (log_cb == NULL)
         return;
@@ -107,26 +107,26 @@ void LogInit()
         exit(EXIT_FAILURE);
     }
     LogInited = 1;
-    LOG(0, ("Coda Venus, version " PACKAGE_VERSION "\n"));
+    LOG(0, "Coda Venus, version " PACKAGE_VERSION "\n");
 
     LogLevel = GetVenusConf().get_int_value("loglevel");
 
     struct timeval now;
     gettimeofday(&now, 0);
-    LOG(0, ("Logfile initialized with LogLevel = %d at %s\n", LogLevel,
-            ctime((time_t *)&now.tv_sec)));
+    LOG(0, "Logfile initialized with LogLevel = %d at %s\n", LogLevel,
+        ctime((time_t *)&now.tv_sec));
 }
 
 void DebugOn()
 {
     LogLevel = ((LogLevel == 0) ? 1 : LogLevel * 10);
-    LOG(0, ("LogLevel is now %d.\n", LogLevel));
+    LOG(0, "LogLevel is now %d.\n", LogLevel);
 }
 
 void DebugOff()
 {
     LogLevel = 0;
-    LOG(0, ("LogLevel is now %d.\n", LogLevel));
+    LOG(0, "LogLevel is now %d.\n", LogLevel);
 }
 
 void SwapLog()
@@ -139,7 +139,7 @@ void SwapLog()
             "nofork")) /* only redirect stderr when daemonizing */
         freopen(GetVenusConf().get_value("errorlog"), "a+", stderr);
 
-    LOG(0, ("New Logfile started at %s", ctime((time_t *)&now.tv_sec)));
+    LOG(0, "New Logfile started at %s", ctime((time_t *)&now.tv_sec));
 }
 
 FILE *GetLogFile()
@@ -156,4 +156,36 @@ void SetLogLevel(int loglevel)
 {
     LogLevel = loglevel;
     GetVenusConf().set_int("loglevel", loglevel);
+}
+
+void LOG(int level, const char *fmt, ...)
+{
+    if (!LogInited)
+        return;
+
+    if (LogLevel < level)
+        return;
+    va_list args;
+
+    va_start(args, fmt);
+    dprint(fmt, args);
+    va_end(args);
+}
+
+void LOG(int level, logging_args_callback_t log_cb, ...)
+{
+    if (LogLevel < level)
+        return;
+    va_list args;
+
+    va_start(args, log_cb);
+    LogginCallBackArgs(log_cb, args);
+    va_end(args);
+}
+
+void LOG(int level, logging_callback_t log_cb)
+{
+    if (LogLevel < level)
+        return;
+    LogginCallBack(log_cb);
 }

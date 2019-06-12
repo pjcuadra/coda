@@ -350,37 +350,37 @@ extern struct CommQueueStruct CommQueue;
  * highest priority ones.
  */
 #define COMM_YIELD 1
-#define START_COMMSYNC()                                                       \
-    {                                                                          \
-        vproc *vp = VprocSelf();                                               \
-        if (COMM_YIELD) {                                                      \
-            int pri = LWP_MAX_PRIORITY;                                        \
-            while (pri > vp->lwpri) {                                          \
-                if (CommQueue.count[pri]) { /* anyone bigger than me? */       \
-                    LOG(0, ("WAITING(CommQueue) pri = %d, for %d at pri %d\n", \
-                            vp->lwpri, CommQueue.count[pri], pri));            \
-                    START_TIMING();                                            \
-                    VprocWait(&CommQueue.sync);                                \
-                    END_TIMING();                                              \
-                    LOG(0, ("WAIT OVER, elapsed = %3.1f\n", elapsed));         \
-                    pri = LWP_MAX_PRIORITY;                                    \
-                } else {                                                       \
-                    pri--;                                                     \
-                }                                                              \
-            }                                                                  \
-        }                                                                      \
-        CommQueue.count[vp->lwpri]++;                                          \
-        LOG(10, ("CommQueue: insert pri %d count = %d\n", vp->lwpri,           \
-                 CommQueue.count[vp->lwpri]));                                 \
+#define START_COMMSYNC()                                                      \
+    {                                                                         \
+        vproc *vp = VprocSelf();                                              \
+        if (COMM_YIELD) {                                                     \
+            int pri = LWP_MAX_PRIORITY;                                       \
+            while (pri > vp->lwpri) {                                         \
+                if (CommQueue.count[pri]) { /* anyone bigger than me? */      \
+                    LOG(0, "WAITING(CommQueue) pri = %d, for %d at pri %d\n", \
+                        vp->lwpri, CommQueue.count[pri], pri);                \
+                    START_TIMING();                                           \
+                    VprocWait(&CommQueue.sync);                               \
+                    END_TIMING();                                             \
+                    LOG(0, "WAIT OVER, elapsed = %3.1f\n", elapsed);          \
+                    pri = LWP_MAX_PRIORITY;                                   \
+                } else {                                                      \
+                    pri--;                                                    \
+                }                                                             \
+            }                                                                 \
+        }                                                                     \
+        CommQueue.count[vp->lwpri]++;                                         \
+        LOG(10, "CommQueue: insert pri %d count = %d\n", vp->lwpri,           \
+            CommQueue.count[vp->lwpri]);                                      \
     }
 
-#define END_COMMSYNC()                                               \
-    {                                                                \
-        vproc *vp = VprocSelf();                                     \
-        CommQueue.count[vp->lwpri]--;                                \
-        LOG(10, ("CommQueue: remove pri %d count = %d\n", vp->lwpri, \
-                 CommQueue.count[vp->lwpri]));                       \
-        VprocSignal(&CommQueue.sync);                                \
+#define END_COMMSYNC()                                              \
+    {                                                               \
+        vproc *vp = VprocSelf();                                    \
+        CommQueue.count[vp->lwpri]--;                               \
+        LOG(10, "CommQueue: remove pri %d count = %d\n", vp->lwpri, \
+            CommQueue.count[vp->lwpri]);                            \
+        VprocSignal(&CommQueue.sync);                               \
     }
 
 /* comm statistics (move to venus.private.h?) */
@@ -393,87 +393,86 @@ extern struct CommQueueStruct CommQueue;
         GetCSS(&endCS);            \
         SubCSSs(&endCS, &startCS); \
     }
-#define MULTI_START_MESSAGE(viceop)                                  \
-    START_COMMSYNC();                                                \
-    LOG(10, ("(Multi)%s: start\n", RPCOpStats.RPCOps[viceop].name)); \
-    START_TIMING();                                                  \
+#define MULTI_START_MESSAGE(viceop)                                \
+    START_COMMSYNC();                                              \
+    LOG(10, "(Multi)%s: start\n", RPCOpStats.RPCOps[viceop].name); \
+    START_TIMING();                                                \
     START_COMMSTATS();
-#define UNI_START_MESSAGE(viceop)                             \
-    START_COMMSYNC();                                         \
-    LOG(10, ("%s: start\n", RPCOpStats.RPCOps[viceop].name)); \
-    START_TIMING();                                           \
+#define UNI_START_MESSAGE(viceop)                           \
+    START_COMMSYNC();                                       \
+    LOG(10, "%s: start\n", RPCOpStats.RPCOps[viceop].name); \
+    START_TIMING();                                         \
     START_COMMSTATS();
 
 /* The LOG message at the end of this macro causes the sun4 to die.  This
  * is the quick hack.
  */
 #if defined(sun4) || defined(sparc)
-#define MULTI_END_MESSAGE(viceop)                                               \
-    END_TIMING();                                                               \
-    END_COMMSYNC();                                                             \
-    END_COMMSTATS();                                                            \
-    LOG(10, ("(Multi)%s: code = %d, elapsed = %3.1f\n",                         \
-             RPCOpStats.RPCOps[viceop].name, code, elapsed));                   \
-    LOG(1000,                                                                   \
-        ("RPC2_SStats: Total = %d\n", endCS.RPC2_SStats_Multi.Multicasts));     \
-    LOG(1000,                                                                   \
-        ("SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", \
-         endCS.SFTP_SStats_Multi.Starts, endCS.SFTP_SStats_Multi.Datas,         \
-         endCS.SFTP_SStats_Multi.DataRetries, endCS.SFTP_SStats_Multi.Acks));   \
-    LOG(1000,                                                                   \
-        ("RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n",     \
-         endCS.RPC2_RStats_Multi.Replies, endCS.RPC2_RStats_Multi.Busies,       \
-         endCS.RPC2_RStats_Multi.Naks, endCS.RPC2_RStats_Multi.Bogus));         \
-    LOG(1000, ("SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n",             \
-               endCS.SFTP_RStats_Multi.Datas, endCS.SFTP_RStats_Multi.Acks,     \
-               endCS.SFTP_RStats_Multi.Busies));
+#define MULTI_END_MESSAGE(viceop)                                              \
+    END_TIMING();                                                              \
+    END_COMMSYNC();                                                            \
+    END_COMMSTATS();                                                           \
+    LOG(10, "(Multi)%s: code = %d, elapsed = %3.1f\n",                         \
+        RPCOpStats.RPCOps[viceop].name, code, elapsed);                        \
+    LOG(1000, "RPC2_SStats: Total = %d\n",                                     \
+        endCS.RPC2_SStats_Multi.Multicasts);                                   \
+    LOG(1000,                                                                  \
+        "SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", \
+        endCS.SFTP_SStats_Multi.Starts, endCS.SFTP_SStats_Multi.Datas,         \
+        endCS.SFTP_SStats_Multi.DataRetries, endCS.SFTP_SStats_Multi.Acks);    \
+    LOG(1000,                                                                  \
+        "RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n",     \
+        endCS.RPC2_RStats_Multi.Replies, endCS.RPC2_RStats_Multi.Busies,       \
+        endCS.RPC2_RStats_Multi.Naks, endCS.RPC2_RStats_Multi.Bogus);          \
+    LOG(1000, "SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n",             \
+        endCS.SFTP_RStats_Multi.Datas, endCS.SFTP_RStats_Multi.Acks,           \
+        endCS.SFTP_RStats_Multi.Busies);
 #else
-#define MULTI_END_MESSAGE(viceop)                                               \
-    END_TIMING();                                                               \
-    END_COMMSYNC();                                                             \
-    END_COMMSTATS();                                                            \
-    LOG(10, ("(Multi)%s: code = %d, elapsed = %3.1f\n",                         \
-             RPCOpStats.RPCOps[viceop].name, code, elapsed));                   \
-    LOG(1000,                                                                   \
-        ("RPC2_SStats: Total = %d\n", endCS.RPC2_SStats_Multi.Multicasts));     \
-    LOG(1000,                                                                   \
-        ("SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", \
-         endCS.SFTP_SStats_Multi.Starts, endCS.SFTP_SStats_Multi.Datas,         \
-         endCS.SFTP_SStats_Multi.DataRetries, endCS.SFTP_SStats_Multi.Acks));   \
-    LOG(1000,                                                                   \
-        ("RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n",     \
-         endCS.RPC2_RStats_Multi.Replies, endCS.RPC2_RStats_Multi.Busies,       \
-         endCS.RPC2_RStats_Multi.Naks, endCS.RPC2_RStats_Multi.Bogus));         \
-    LOG(1000, ("SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n",             \
-               endCS.SFTP_RStats_Multi.Datas, endCS.SFTP_RStats_Multi.Acks,     \
-               endCS.SFTP_RStats_Multi.Busies));                                \
-    if (elapsed > 1000.0)                                                       \
-        LOG(0,                                                                  \
-            ("*** Long Running (Multi)%s: code = %d, elapsed = %3.1f ***\n",    \
-             RPCOpStats.RPCOps[viceop].name, code, elapsed));
+#define MULTI_END_MESSAGE(viceop)                                              \
+    END_TIMING();                                                              \
+    END_COMMSYNC();                                                            \
+    END_COMMSTATS();                                                           \
+    LOG(10, "(Multi)%s: code = %d, elapsed = %3.1f\n",                         \
+        RPCOpStats.RPCOps[viceop].name, code, elapsed);                        \
+    LOG(1000, "RPC2_SStats: Total = %d\n",                                     \
+        endCS.RPC2_SStats_Multi.Multicasts);                                   \
+    LOG(1000,                                                                  \
+        "SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", \
+        endCS.SFTP_SStats_Multi.Starts, endCS.SFTP_SStats_Multi.Datas,         \
+        endCS.SFTP_SStats_Multi.DataRetries, endCS.SFTP_SStats_Multi.Acks);    \
+    LOG(1000,                                                                  \
+        "RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n",     \
+        endCS.RPC2_RStats_Multi.Replies, endCS.RPC2_RStats_Multi.Busies,       \
+        endCS.RPC2_RStats_Multi.Naks, endCS.RPC2_RStats_Multi.Bogus);          \
+    LOG(1000, "SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n",             \
+        endCS.SFTP_RStats_Multi.Datas, endCS.SFTP_RStats_Multi.Acks,           \
+        endCS.SFTP_RStats_Multi.Busies);                                       \
+    if (elapsed > 1000.0)                                                      \
+        LOG(0, "*** Long Running (Multi)%s: code = %d, elapsed = %3.1f ***\n", \
+            RPCOpStats.RPCOps[viceop].name, code, elapsed);
 #endif
 
-#define UNI_END_MESSAGE(viceop)                                                 \
-    END_TIMING();                                                               \
-    END_COMMSYNC();                                                             \
-    END_COMMSTATS();                                                            \
-    LOG(10, ("%s: code = %d, elapsed = %3.1f\n",                                \
-             RPCOpStats.RPCOps[viceop].name, code, elapsed));                   \
-    LOG(1000, ("RPC2_SStats: Total = %d\n", endCS.RPC2_SStats_Uni.Total));      \
-    LOG(1000,                                                                   \
-        ("SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", \
-         endCS.SFTP_SStats_Uni.Starts, endCS.SFTP_SStats_Uni.Datas,             \
-         endCS.SFTP_SStats_Uni.DataRetries, endCS.SFTP_SStats_Uni.Acks));       \
-    LOG(1000,                                                                   \
-        ("RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n",     \
-         endCS.RPC2_RStats_Uni.Replies, endCS.RPC2_RStats_Uni.Busies,           \
-         endCS.RPC2_RStats_Uni.Naks, endCS.RPC2_RStats_Uni.Bogus));             \
-    LOG(1000, ("SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n",             \
-               endCS.SFTP_RStats_Uni.Datas, endCS.SFTP_RStats_Uni.Acks,         \
-               endCS.SFTP_RStats_Uni.Busies));                                  \
-    if (elapsed > 1000.0)                                                       \
-        LOG(0, ("*** Long Running %s: code = %d, elapsed = %3.1f ***\n",        \
-                RPCOpStats.RPCOps[viceop].name, code, elapsed));
+#define UNI_END_MESSAGE(viceop)                                                \
+    END_TIMING();                                                              \
+    END_COMMSYNC();                                                            \
+    END_COMMSTATS();                                                           \
+    LOG(10, "%s: code = %d, elapsed = %3.1f\n",                                \
+        RPCOpStats.RPCOps[viceop].name, code, elapsed);                        \
+    LOG(1000, "RPC2_SStats: Total = %d\n", endCS.RPC2_SStats_Uni.Total);       \
+    LOG(1000,                                                                  \
+        "SFTP_SStats: Starts = %d, Datas = %d, DataRetries = %d, Acks = %d\n", \
+        endCS.SFTP_SStats_Uni.Starts, endCS.SFTP_SStats_Uni.Datas,             \
+        endCS.SFTP_SStats_Uni.DataRetries, endCS.SFTP_SStats_Uni.Acks);        \
+    LOG(1000,                                                                  \
+        "RPC2_RStats: Replies = %d, Busies = %d, Naks = %d, Bogus = %d\n",     \
+        endCS.RPC2_RStats_Uni.Replies, endCS.RPC2_RStats_Uni.Busies,           \
+        endCS.RPC2_RStats_Uni.Naks, endCS.RPC2_RStats_Uni.Bogus);              \
+    LOG(1000, "SFTP_RStats: Datas = %d, Acks = %d, Busies = %d\n",             \
+        endCS.SFTP_RStats_Uni.Datas, endCS.SFTP_RStats_Uni.Acks,               \
+        endCS.SFTP_RStats_Uni.Busies);                                         \
+    if (elapsed > 1000.0)                                                      \
+        LOG(0, "*** Long Running %s: code = %d, elapsed = %3.1f ***\n",        \
+            RPCOpStats.RPCOps[viceop].name, code, elapsed);
 #define MULTI_RECORD_STATS(viceop)                  \
     if (code < 0)                                   \
         RPCOpStats.RPCOps[viceop].Mrpc_retries++;   \
@@ -495,16 +494,16 @@ extern struct CommQueueStruct CommQueue;
 #else
 #define MULTI_START_MESSAGE(viceop) \
     START_COMMSYNC();               \
-    LOG(10, ("(Multi)%s: start\n", RPCOpStats.RPCOps[viceop].name));
+    LOG(10, "(Multi)%s: start\n", RPCOpStats.RPCOps[viceop].name);
 #define UNI_START_MESSAGE(viceop) \
     START_COMMSYNC();             \
-    LOG(10, ("%s: start\n", RPCOpStats.RPCOps[viceop].name));
+    LOG(10, "%s: start\n", RPCOpStats.RPCOps[viceop].name);
 #define MULTI_END_MESSAGE(viceop) \
     END_COMMSYNC();               \
-    LOG(10, ("(Multi)%s: code = %d\n", RPCOpStats.RPCOps[viceop].name, code));
+    LOG(10, "(Multi)%s: code = %d\n", RPCOpStats.RPCOps[viceop].name, code);
 #define UNI_END_MESSAGE(viceop) \
     END_COMMSYNC();             \
-    LOG(10, ("%s: code = %d\n", RPCOpStats.RPCOps[viceop].name, code));
+    LOG(10, "%s: code = %d\n", RPCOpStats.RPCOps[viceop].name, code);
 #define MULTI_RECORD_STATS(viceop)                \
     if (code < 0)                                 \
         RPCOpStats.RPCOps[viceop].Mrpc_retries++; \

@@ -84,8 +84,8 @@ void HDBD_Init(void)
 long HDBD_GetNextHoardWalkTime()
 {
     time_t currTime = Vtime();
-    LOG(0, ("HDBD_GetNextHoardWalkTime() returns %ld + %ld - %ld\n",
-            LastHdbWalk, (long)HdbWalkInterval, currTime));
+    LOG(0, "HDBD_GetNextHoardWalkTime() returns %ld + %ld - %ld\n", LastHdbWalk,
+        (long)HdbWalkInterval, currTime);
     return (LastHdbWalk + (long)HdbWalkInterval - currTime);
 }
 
@@ -100,9 +100,9 @@ void HDBDaemon(void)
     LastHdbWalk = /*0*/ Vtime(); /* skip initial walk at startup! */
 
     for (;;) {
-        LOG(0, ("HDBDaemon about to sleep on hdbdaemon_sync\n"));
+        LOG(0, "HDBDaemon about to sleep on hdbdaemon_sync\n");
         VprocWait(&hdbdaemon_sync);
-        LOG(0, ("HDBDaemon just woke up\n"));
+        LOG(0, "HDBDaemon just woke up\n");
 
         START_TIMING();
         time_t curr_time = Vtime();
@@ -123,7 +123,7 @@ void HDBDaemon(void)
         HDBD_HandleRequests();
 
         END_TIMING();
-        LOG(10, ("HDBDaemon: elapsed = %3.1f\n", elapsed));
+        LOG(10, "HDBDaemon: elapsed = %3.1f\n", elapsed);
 
         /* Bump sequence number. */
         vp->seq++;
@@ -134,8 +134,8 @@ int HDBD_Request(hdbd_request type, void *request, struct uarea *u)
 {
     /* Ensure request was issued by "locally authoritative" entity. */
     if (!AuthorizedUser(u->u_uid)) {
-        LOG(0, ("HDBD_Request (%s): <%d> Not an authorized user\n",
-                PRINT_HDBDREQTYPE(type), u->u_uid));
+        LOG(0, "HDBD_Request (%s): <%d> Not an authorized user\n",
+            PRINT_HDBDREQTYPE(type), u->u_uid);
         return (EACCES);
     }
 
@@ -150,11 +150,11 @@ int HDBD_Request(hdbd_request type, void *request, struct uarea *u)
     /* Send it, and wait for reply. */
     hdbd_msgq.append(&m);
     VprocSignal(&hdbdaemon_sync);
-    LOG(0, ("WAITING(HDBD_Request): %s\n", PRINT_HDBDREQTYPE(type)));
+    LOG(0, "WAITING(HDBD_Request): %s\n", PRINT_HDBDREQTYPE(type));
     START_TIMING();
     VprocWait(&m.wait_blk);
     END_TIMING();
-    LOG(0, ("WAIT OVER, elapsed = %3.1f, returns %d\n", elapsed, m.result));
+    LOG(0, "WAIT OVER, elapsed = %3.1f, returns %d\n", elapsed, m.result);
 
     /* Return result. */
     return (m.result);

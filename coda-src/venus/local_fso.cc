@@ -84,7 +84,7 @@ void fsobj::UnsetLocalObj()
 cmlent *fsobj::FinalCmlent(int tid)
 {
     /* return the last cmlent done by iot tid */
-    LOG(100, ("fsobj::FinalCmlent: %s\n", FID_(&fid)));
+    LOG(100, "fsobj::FinalCmlent: %s\n", FID_(&fid));
     FSO_ASSERT(this, mle_bindings);
     dlist_iterator next(*mle_bindings);
     dlink *d;
@@ -186,7 +186,7 @@ int fsobj::RepairSymlink(fsobj **t_fso_addr, char *name, char *contents,
 /* Call with object write-locked? */
 int fsobj::SetLocalVV(ViceVersionVector *newvv)
 {
-    LOG(0, ("fsobj::SetLocalVV: (%s)\n", GetComp()));
+    LOG(0, "fsobj::SetLocalVV: (%s)\n", GetComp());
 
     FSO_ASSERT(this, newvv != NULL);
 

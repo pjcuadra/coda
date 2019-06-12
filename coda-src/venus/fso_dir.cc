@@ -66,7 +66,7 @@ void fsobj::dir_Rebuild()
     }
 
     if (!DH_DirOK(&data.dir->dh)) {
-        LOG(0, ("WARNING: Corrupt directory for %s\n", FID_(&fid)));
+        LOG(0, "WARNING: Corrupt directory for %s\n", FID_(&fid));
         DH_Print(&data.dir->dh, stdout);
     }
 
@@ -303,8 +303,8 @@ void fsobj::dir_Print()
     }
 
     if (GetLogLevel() >= 1000) {
-        LOG(1000, ("fsobj::dir_Print: %s, %d, %d\n", data.dir->udcf->Name(),
-                   data.dir->udcf->Length(), data.dir->udcfvalid));
+        LOG(1000, "fsobj::dir_Print: %s, %d, %d\n", data.dir->udcf->Name(),
+            data.dir->udcf->Length(), data.dir->udcfvalid);
 
         DH_Print(&data.dir->dh, stdout);
     }

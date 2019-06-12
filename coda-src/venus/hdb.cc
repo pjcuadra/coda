@@ -187,7 +187,7 @@ static void HoardWalkProgress(int fetched, int total)
         return;
     lastPercentage = thisPercentage;
 
-    LOG(0, ("HoardWalkProgress(%d)\n", thisPercentage));
+    LOG(0, "HoardWalkProgress(%d)\n", thisPercentage);
     MarinerLog("progress::hoarding %d%%\n", thisPercentage);
 }
 
@@ -261,22 +261,22 @@ hdbent *hdb::Create(VolumeId vid, char *realm, char *name, uid_t local_id,
     Recov_EndTrans(DMFP);
 
     if (h == 0)
-        LOG(0, ("hdb::Create: (%x@%s, %s) failed\n", vid, realm, name));
+        LOG(0, "hdb::Create: (%x@%s, %s) failed\n", vid, realm, name);
     return (h);
 }
 
 int hdb::Add(hdb_add_msg *m, uid_t local_id)
 {
-    LOG(10, ("hdb::Add: <%x@%s, %s, %d, %d, %d>\n", m->vid, m->realm, m->name,
-             m->priority, m->attributes, local_id));
+    LOG(10, "hdb::Add: <%x@%s, %s, %d, %d, %d>\n", m->vid, m->realm, m->name,
+        m->priority, m->attributes, local_id);
 
     /* See if an entry already exists.  If it does, try to delete it. */
     hdbent *h;
     h = Find(m->vid, m->realm, m->name);
 
     if (h) {
-        LOG(1, ("hdb::Add: (%x@%s, %s, %d) already exists (%d)\n", m->vid,
-                m->realm, m->name, local_id, h->uid));
+        LOG(1, "hdb::Add: (%x@%s, %s, %d) already exists (%d)\n", m->vid,
+            m->realm, m->name, local_id, h->uid);
 
         hdb_delete_msg dm;
         dm.vid = m->vid;
@@ -308,22 +308,22 @@ int hdb::Add(hdb_add_msg *m, uid_t local_id)
 
 int hdb::Delete(hdb_delete_msg *m, uid_t local_id)
 {
-    LOG(10, ("hdb::Delete: <%x@%s, %s, %d>\n", m->vid, m->realm, m->name,
-             local_id));
+    LOG(10, "hdb::Delete: <%x@%s, %s, %d>\n", m->vid, m->realm, m->name,
+        local_id);
 
     /* Look up the entry. */
     hdbent *h;
     h = Find(m->vid, m->realm, m->name);
     if (h == 0) {
-        LOG(1, ("hdb::Delete: (%x@%s, %s, %d) not found\n", m->vid, m->realm,
-                m->name, local_id));
+        LOG(1, "hdb::Delete: (%x@%s, %s, %d) not found\n", m->vid, m->realm,
+            m->name, local_id);
         return (ENOENT);
     }
 
     /* Can only delete one's own entries unless root or authorized user. */
     if (local_id != h->uid && local_id != V_UID && !AuthorizedUser(local_id)) {
-        LOG(1, ("hdb::Delete: (%x@%s, %s, %d) not authorized\n", m->vid,
-                m->realm, m->name, local_id));
+        LOG(1, "hdb::Delete: (%x@%s, %s, %d) not authorized\n", m->vid,
+            m->realm, m->name, local_id);
         return (EACCES);
     }
 
@@ -338,11 +338,11 @@ int hdb::Delete(hdb_delete_msg *m, uid_t local_id)
 extern FILE *GetLogFile();
 int hdb::Clear(hdb_clear_msg *m, uid_t local_id)
 {
-    LOG(10, ("hdb::Clear: <%d, %d>\n", m->cuid, local_id));
+    LOG(10, "hdb::Clear: <%d, %d>\n", m->cuid, local_id);
 
     /* Can only clear one's own entries unless root or authorized user. */
     if (local_id != m->cuid && local_id != V_UID && !AuthorizedUser(local_id)) {
-        LOG(1, ("hdb::Clear: (%d, %d) not authorized\n", m->cuid, local_id));
+        LOG(1, "hdb::Clear: (%d, %d) not authorized\n", m->cuid, local_id);
         return (EACCES);
     }
 
@@ -366,12 +366,12 @@ int hdb::Clear(hdb_clear_msg *m, uid_t local_id)
 /* luid = ANYUSER_UID is a wildcard meaning "list all entries." */
 int hdb::List(hdb_list_msg *m, uid_t local_id)
 {
-    LOG(10, ("hdb::List: <%s, %d, %d>\n", m->outfile, m->luid, local_id));
+    LOG(10, "hdb::List: <%s, %d, %d>\n", m->outfile, m->luid, local_id);
 
     /* Can only list one's own entries unless root. */
     if (local_id != m->luid && local_id != V_UID && !AuthorizedUser(local_id)) {
-        LOG(1, ("hdb::List: (%s, %d) not authorized\n", m->outfile, m->luid,
-                local_id));
+        LOG(1, "hdb::List: (%s, %d) not authorized\n", m->outfile, m->luid,
+            local_id);
         return (EACCES);
     }
 
@@ -379,8 +379,8 @@ int hdb::List(hdb_list_msg *m, uid_t local_id)
     int outfd =
         ::open(m->outfile, O_TRUNC | O_WRONLY | O_CREAT | O_BINARY, 0600);
     if (outfd < 0) {
-        LOG(1, ("hdb::List: (%s, %d, %d) open failed (%d)\n", m->outfile,
-                m->luid, local_id, errno));
+        LOG(1, "hdb::List: (%s, %d, %d) open failed (%d)\n", m->outfile,
+            m->luid, local_id, errno);
         return (errno);
     }
 
@@ -440,8 +440,8 @@ void hdb::ValidateCacheStatus(vproc *vp, int *interrupt_failures,
         vp->u.u_priority = f->priority;
 
         /* Perform a vget(). */
-        LOG(1, ("hdb::Walk: vget(%s, %d, %d, %d)\n", FID_(&f->fid), f->priority,
-                f->HoardVuid, f->stat.Length));
+        LOG(1, "hdb::Walk: vget(%s, %d, %d, %d)\n", FID_(&f->fid), f->priority,
+            f->HoardVuid, f->stat.Length);
         VenusFid tfid = f->fid;
         for (;;) {
             vp->Begin_VFS(&tfid, CODA_VGET);
@@ -464,7 +464,7 @@ void hdb::ValidateCacheStatus(vproc *vp, int *interrupt_failures,
 
         if (vp->u.u_error == EINCONS)
             k_Purge(&tfid, 1);
-        LOG(1, ("hdb::Walk: vget returns %s\n", VenusRetStr(vp->u.u_error)));
+        LOG(1, "hdb::Walk: vget returns %s\n", VenusRetStr(vp->u.u_error));
 
         /* Yield periodically. */
         validations++;
@@ -481,13 +481,13 @@ void hdb::ValidateCacheStatus(vproc *vp, int *interrupt_failures,
         /* Essentially, the else's of the above nested if's */
         (*interrupt_failures)++;
         if (g == NULL) {
-            LOG(0, ("Hoard Walk interrupted -- object missing! <%s>\n",
-                    FID_(&tfid)));
+            LOG(0, "Hoard Walk interrupted -- object missing! <%s>\n",
+                FID_(&tfid));
         } else {
-            LOG(0, ("Hoard Walk interrupted -- object different! <%s>\n",
-                    FID_(&g->fid)));
+            LOG(0, "Hoard Walk interrupted -- object different! <%s>\n",
+                FID_(&g->fid));
         }
-        LOG(0, ("Number of interrupt failures = %d\n", *interrupt_failures));
+        LOG(0, "Number of interrupt failures = %d\n", *interrupt_failures);
 
         /*
 	 * Find some interesting info.  My goal is to see if there
@@ -496,13 +496,13 @@ void hdb::ValidateCacheStatus(vproc *vp, int *interrupt_failures,
 	 */
         if (SearchForNOreFind) {
             if (!f)
-                LOG(0, ("HoardWalk f was NULL!"));
+                LOG(0, "HoardWalk f was NULL!");
             else {
                 if (f->state == FsoRunt)
-                    LOG(0, ("HoardWalk f is FsoRunt! tfid=<%s> f->fid=<%s>",
-                            FID_(&tfid), FID_(&f->fid)));
+                    LOG(0, "HoardWalk f is FsoRunt! tfid=<%s> f->fid=<%s>",
+                        FID_(&tfid), FID_(&f->fid));
                 if (f->fid.Volume == 0)
-                    LOG(0, ("HoardWalk vid=0, f->fid=<%s>", FID_(&f->fid)));
+                    LOG(0, "HoardWalk vid=0, f->fid=<%s>", FID_(&f->fid));
                 f->print();
             }
         }
@@ -579,7 +579,7 @@ int hdb::CalculateTotalBytesToFetch()
             continue;
         total += f->stat.Length;
     }
-    LOG(100, ("L hdb::CalculateTotalBytesToFetch() returning %d\n", total));
+    LOG(100, "L hdb::CalculateTotalBytesToFetch() returning %d\n", total);
     return (total);
 }
 
@@ -616,8 +616,8 @@ void hdb::StatusWalk(vproc *vp, int *TotalBytesToFetch, int *BytesFetched)
 
     END_TIMING();
     LOG(100,
-        ("hdb::StatusWalk: iters= %d, exps= %d, elapsed= %3.1f, intrpts= %d\n",
-         iterations, expansions, elapsed, interrupt_failures));
+        "hdb::StatusWalk: iters= %d, exps= %d, elapsed= %3.1f, intrpts= %d\n",
+        iterations, expansions, elapsed, interrupt_failures);
     int DeltaMetaExpansions = MetaExpansions - StartingMetaExpansions;
     int DeltaMetaContractions =
         StartingMetaNameCtxts + DeltaMetaExpansions - MetaNameCtxts;
@@ -677,7 +677,7 @@ void TallyAllHDBentries(dlist *hdb_bindings, int blocks, TallyStatus status)
 /* Advice Related*/
 void hdb::SetSolicitAdvice(int uid)
 {
-    LOG(0, ("SetSolicitAdvice: uid=%d\n", uid));
+    LOG(0, "SetSolicitAdvice: uid=%d\n", uid);
     SolicitAdvice = uid;
 }
 
@@ -712,16 +712,14 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
                 continue;
 
             if (ISVASTRO(f)) {
-                LOG(200,
-                    ("Warning (%s) flagged as VASTRO, not being hoarded.\n",
-                     f->comp));
+                LOG(200, "Warning (%s) flagged as VASTRO, not being hoarded.\n",
+                    f->comp);
                 continue;
             }
 
             if (DATAVALID(f)) {
-                LOG(200,
-                    ("AVAILABLE:  fid=<%s> comp=%s priority=%d blocks=%d\n",
-                     FID_(&f->fid), f->comp, f->priority, blocks));
+                LOG(200, "AVAILABLE:  fid=<%s> comp=%s priority=%d blocks=%d\n",
+                    FID_(&f->fid), f->comp, f->priority, blocks);
                 TallyAllHDBentries(f->hdb_bindings, blocks, TSavailable);
                 continue;
             }
@@ -732,8 +730,8 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
             vp->u.u_priority = f->priority;
 
             /* Prefetch the object.  This is like vproc::vget(), only we want the data. */
-            LOG(1, ("hdb::Walk: prefetch(%s, %d, %d, %d)\n", FID_(&f->fid),
-                    f->priority, f->HoardVuid, f->stat.Length));
+            LOG(1, "hdb::Walk: prefetch(%s, %d, %d, %d)\n", FID_(&f->fid),
+                f->priority, f->HoardVuid, f->stat.Length);
             VenusFid tfid = f->fid;
             for (;;) {
                 vp->Begin_VFS(&tfid, CODA_VGET);
@@ -750,8 +748,8 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
             }
             if (vp->u.u_error == EINCONS)
                 k_Purge(&tfid, 1);
-            LOG(1, ("hdb::Walk: prefetch returns %s\n",
-                    VenusRetStr(vp->u.u_error)));
+            LOG(1, "hdb::Walk: prefetch returns %s\n",
+                VenusRetStr(vp->u.u_error));
 
             /* Yield periodically. */
             prefetches++;
@@ -776,8 +774,8 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
             /* Object not on prioq --> iterator no longer valid */
             if (f == 0 || !REPLACEABLE(f)) {
                 LOG(0,
-                    ("hdb::Walk: (%s) !FOUND or !REPLACEABLE after prefetch\n",
-                     FID_(&tfid)));
+                    "hdb::Walk: (%s) !FOUND or !REPLACEABLE after prefetch\n",
+                    FID_(&tfid));
                 iterate = 1;
                 break;
             }
@@ -787,15 +785,15 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
             blocks = BLOCKS(f);
             if (DATAVALID(f)) {
                 LOG(100,
-                    ("AVAILABLE (fetched):  fid=<%s> comp=%s priority=%d blocks=%d\n",
-                     FID_(&f->fid), f->comp, f->priority, blocks));
+                    "AVAILABLE (fetched):  fid=<%s> comp=%s priority=%d blocks=%d\n",
+                    FID_(&f->fid), f->comp, f->priority, blocks);
                 TallyAllHDBentries(f->hdb_bindings, blocks, TSavailable);
                 BytesFetched += f->stat.Length;
                 HoardWalkProgress(BytesFetched, TotalBytesToFetch);
             } else {
                 LOG(100,
-                    ("UNAVAILABLE (fetch failed):  fid=<%s> comp=%s priority=%d blocks=%d\n",
-                     FID_(&f->fid), f->comp, f->priority, blocks));
+                    "UNAVAILABLE (fetch failed):  fid=<%s> comp=%s priority=%d blocks=%d\n",
+                    FID_(&f->fid), f->comp, f->priority, blocks);
                 TallyAllHDBentries(f->hdb_bindings, blocks, TSunavailable);
             }
         }
@@ -803,8 +801,8 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
 
     END_TIMING();
     LOG(100,
-        ("hdb::Walk(data): iterations = %d, prefetches = %d, elapsed = %3.1f\n",
-         iterations, prefetches, elapsed));
+        "hdb::Walk(data): iterations = %d, prefetches = %d, elapsed = %3.1f\n",
+        iterations, prefetches, elapsed);
     int indigent_fsobjs = 0;
     int indigent_blocks = 0;
     char ibuf[80 + MAXPATHLEN];
@@ -826,15 +824,14 @@ void hdb::DataWalk(vproc *vp, int TotalBytesToFetch, int BytesFetched)
                 continue;
 
             if (DATAVALID(f)) {
-                LOG(200,
-                    ("AVAILABLE:  fid=<%s> comp=%s priority=%d blocks=%d\n",
-                     FID_(&f->fid), f->comp, f->priority, blocks));
+                LOG(200, "AVAILABLE:  fid=<%s> comp=%s priority=%d blocks=%d\n",
+                    FID_(&f->fid), f->comp, f->priority, blocks);
                 TallyAllHDBentries(f->hdb_bindings, blocks, TSavailable);
                 continue;
             }
 
-            LOG(200, ("UNAVAILABLE:  fid=<%s> comp=%s priority=%d blocks=%d\n",
-                      FID_(&f->fid), f->comp, f->priority, blocks));
+            LOG(200, "UNAVAILABLE:  fid=<%s> comp=%s priority=%d blocks=%d\n",
+                FID_(&f->fid), f->comp, f->priority, blocks);
             TallyAllHDBentries(f->hdb_bindings, blocks, TSunavailable);
 
             if (indigent_fsobjs == 0) {
@@ -869,18 +866,17 @@ void hdb::PostWalkStatus()
 
         switch (n->state) {
         case PeValid:
-            LOG(200, ("Valid: uid=%d priority=d\n", n->uid, n->priority));
+            LOG(200, "Valid: uid=%d priority=d\n", n->uid, n->priority);
             break;
         case PeSuspect:
-            LOG(200, ("Suspect: uid=%d priority=d\n", n->uid, n->priority));
+            LOG(200, "Suspect: uid=%d priority=d\n", n->uid, n->priority);
             Tally(n->priority, n->uid, 0, TSunknown);
             break;
         case PeIndigent:
-            LOG(200, ("Indigent: uid=%d priority=d\n", n->uid, n->priority));
+            LOG(200, "Indigent: uid=%d priority=d\n", n->uid, n->priority);
             break;
         case PeInconsistent:
-            LOG(200,
-                ("Inconsistent: uid=%d priority=d\n", n->uid, n->priority));
+            LOG(200, "Inconsistent: uid=%d priority=d\n", n->uid, n->priority);
             Tally(n->priority, n->uid, 0, TSunknown);
             break;
         }
@@ -895,7 +891,7 @@ void hdb::PostWalkStatus()
 
 int hdb::Walk(hdb_walk_msg *m, uid_t local_id)
 {
-    LOG(10, ("hdb::Walk: <%d>\n", local_id));
+    LOG(10, "hdb::Walk: <%d>\n", local_id);
 
     int TotalBytesToFetch = 0, BytesFetched = 0;
 
@@ -936,13 +932,13 @@ int hdb::Walk(hdb_walk_msg *m, uid_t local_id)
 
 int hdb::Verify(hdb_verify_msg *m, uid_t local_id)
 {
-    LOG(0, ("hdb::Verify: <%s, %d, %d, %d>\n", m->outfile, m->verbosity,
-            m->luid, local_id));
+    LOG(0, "hdb::Verify: <%s, %d, %d, %d>\n", m->outfile, m->verbosity, m->luid,
+        local_id);
 
     /* Can only list one's own entries unless root. */
     if (local_id != m->luid && local_id != V_UID && !AuthorizedUser(local_id)) {
-        LOG(1, ("hdb::List: (%s, %d, %d) not authorized\n", m->outfile, m->luid,
-                local_id));
+        LOG(1, "hdb::List: (%s, %d, %d) not authorized\n", m->outfile, m->luid,
+            local_id);
         return (EACCES);
     }
 
@@ -950,8 +946,8 @@ int hdb::Verify(hdb_verify_msg *m, uid_t local_id)
     int outfd =
         ::open(m->outfile, O_TRUNC | O_WRONLY | O_CREAT | O_BINARY, 0600);
     if (outfd < 0) {
-        LOG(1, ("hdb::Verify: (%s, %d, %d, %d) open failed (%d)\n", m->outfile,
-                m->verbosity, m->luid, local_id, errno));
+        LOG(1, "hdb::Verify: (%s, %d, %d, %d) open failed (%d)\n", m->outfile,
+            m->verbosity, m->luid, local_id, errno);
         return (errno);
     }
 
@@ -963,8 +959,8 @@ int hdb::Verify(hdb_verify_msg *m, uid_t local_id)
 
 #endif
     if (err) {
-        LOG(1, ("hdb::Verify: (%s, %d) fchown failed (%d)\n", m->outfile,
-                local_id, errno));
+        LOG(1, "hdb::Verify: (%s, %d) fchown failed (%d)\n", m->outfile,
+            local_id, errno);
         return (errno);
     }
 
@@ -983,7 +979,7 @@ int hdb::Verify(hdb_verify_msg *m, uid_t local_id)
 
 int hdb::Enable(hdb_walk_msg *m, uid_t local_id)
 {
-    LOG(10, ("hdb::Enable: <%d>\n", local_id));
+    LOG(10, "hdb::Enable: <%d>\n", local_id);
 
     eprint("Enabling periodic hoard walks");
     GetVenusConf().set("nowalk", "0");
@@ -993,7 +989,7 @@ int hdb::Enable(hdb_walk_msg *m, uid_t local_id)
 
 int hdb::Disable(hdb_walk_msg *m, uid_t local_id)
 {
-    LOG(10, ("hdb::Disable: <%d>\n", local_id));
+    LOG(10, "hdb::Disable: <%d>\n", local_id);
 
     eprint("Disabling periodic hoard walks");
     GetVenusConf().set("nowalk", "1");
@@ -1006,7 +1002,7 @@ void hdb::ResetUser(uid_t uid)
 {
     hdb_iterator next;
     hdbent *h;
-    LOG(100, ("E hdb::ResetUser()\n"));
+    LOG(100, "E hdb::ResetUser()\n");
     while ((h = next())) {
         CODA_ASSERT(h != NULL);
         if (h->uid == uid) {
@@ -1015,7 +1011,7 @@ void hdb::ResetUser(uid_t uid)
         }
     }
 
-    LOG(100, ("L hdb::ResetUser()\n"));
+    LOG(100, "L hdb::ResetUser()\n");
 }
 
 void hdb::print(int fd, int SummaryOnly)
@@ -1113,7 +1109,7 @@ void hdbent::ResetTransient()
 /* MUST be called from within transaction! */
 hdbent::~hdbent()
 {
-    LOG(10, ("hdbent::~hdbent: (%x@%s, %s)\n", vid, realm, name));
+    LOG(10, "hdbent::~hdbent: (%x@%s, %s)\n", vid, realm, name);
 
     /* Shut down the name-context. */
     nc->Kill();
@@ -1305,8 +1301,8 @@ void *namectxt::operator new(size_t len)
 namectxt::namectxt(VenusFid *Cdir, char *Path, uid_t Vuid, int Priority,
                    int Children, int Descendents)
 {
-    LOG(10, ("namectxt::namectxt: (%s, %s), %d, %d\n", FID_(Cdir), Path, Vuid,
-             Priority));
+    LOG(10, "namectxt::namectxt: (%s, %s), %d, %d\n", FID_(Cdir), Path, Vuid,
+        Priority);
 
     cdir = *Cdir;
     path = Path;
@@ -1348,8 +1344,8 @@ namectxt::namectxt(VenusFid *Cdir, char *Path, uid_t Vuid, int Priority,
 /* It should share code with the constructor for non-meta-expanded contexts! */
 namectxt::namectxt(namectxt *Parent, char *Component)
 {
-    LOG(10, ("namectxt::namectxt: (%s, %s/%s), %d, %d\n", FID_(&Parent->cdir),
-             Parent->path, Component, Parent->uid, Parent->priority));
+    LOG(10, "namectxt::namectxt: (%s, %s/%s), %d, %d\n", FID_(&Parent->cdir),
+        Parent->path, Component, Parent->uid, Parent->priority);
 
     cdir = Parent->cdir;
     path = new char[strlen(Parent->path) + 1 + strlen(Component) + 1];
@@ -1415,8 +1411,8 @@ namectxt::~namectxt()
     NameCtxt_deallocs++;
 #endif
 
-    LOG(10, ("namectxt::~namectxt: (%s, %s), %d, %d\n", FID_(&cdir), path, uid,
-             priority));
+    LOG(10, "namectxt::~namectxt: (%s, %s), %d, %d\n", FID_(&cdir), path, uid,
+        priority);
 
     /* Context must not be busy! */
     if (inuse) {
@@ -1478,7 +1474,7 @@ namectxt::~namectxt()
             if (children != NULL) {
                 if (children->IsMember(d) == 1) {
                     LOG(0,
-                        ("namectxt::~namectxt:  why don't we remove elements off of the children list??\n"));
+                        "namectxt::~namectxt:  why don't we remove elements off of the children list??\n");
                 }
             }
 
@@ -1519,7 +1515,7 @@ void namectxt::hold()
     }
 
     if (dying) {
-        LOG(0, ("namectxt::hold: dead or dying object %p\n", this));
+        LOG(0, "namectxt::hold: dead or dying object %p\n", this);
     }
 
     inuse = 1;
@@ -1684,7 +1680,7 @@ void namectxt::Kill()
     if (inuse)
         return;
 
-    LOG(10, ("namectxt::Kill(%p)\n", this));
+    LOG(10, "namectxt::Kill(%p)\n", this);
     delete this;
 }
 
@@ -1784,7 +1780,7 @@ pestate namectxt::CheckExpansion()
 
         /* Abandon a context that was murdered during last namev. */
         if (dying) {
-            LOG(0, ("namectxt::CheckExpansion: dying context\n"));
+            LOG(0, "namectxt::CheckExpansion: dying context\n");
             vp->u.u_error = ESHUTDOWN;
             return (state);
         }
@@ -1802,7 +1798,7 @@ pestate namectxt::CheckExpansion()
 	 * indefinitely.  I've reorganized the loop to prevent the indefinite
 	 * loop.                                             mre 6/14/94 */
         if (demote_pending) {
-            LOG(10, ("namectxt::CheckExpansion: demote_pending context\n"));
+            LOG(10, "namectxt::CheckExpansion: demote_pending context\n");
             Transit(PeSuspect);
             demote_pending = 0;
             continue;
@@ -1812,8 +1808,8 @@ pestate namectxt::CheckExpansion()
         break;
     }
     if (iterations == MAX_CE_ITERATIONS)
-        LOG(0, ("MAX_CE_ITERATIONS reached.  vp->u.u_error = %d\n",
-                vp->u.u_error));
+        LOG(0, "MAX_CE_ITERATIONS reached.  vp->u.u_error = %d\n",
+            vp->u.u_error);
 
     /* Compute the next state. */
     pestate next_state;
@@ -1853,7 +1849,7 @@ pestate namectxt::CheckExpansion()
         /* Next opportunity for full validation will be signalled by */
         /* ResetUser event, callback break, or AVSG expansion. */
         /* (inducing a state change to "suspect" for this namectxt). */
-        LOG(10, ("Received EACCESS during CheckExpansion.\n"));
+        LOG(10, "Received EACCESS during CheckExpansion.\n");
         next_state = PeValid;
     } break;
 
@@ -1867,14 +1863,14 @@ pestate namectxt::CheckExpansion()
          *      volume
          * These cases are sufficiently obscure that I will ignore them
          * for now, but they should be accounted for eventually. */
-        LOG(10, ("Received ETIMEOUT during CheckExpansion.\n"));
+        LOG(10, "Received ETIMEOUT during CheckExpansion.\n");
         next_state = PeValid;
     } break;
 
     case ETOOMANYREFS: {
         /* Cannot fully validate context because there is an outstanding
 	       * reference. */
-        LOG(10, ("Received ETOOMANYREFS during CheckExpansion.\n"));
+        LOG(10, "Received ETOOMANYREFS during CheckExpansion.\n");
         next_state = PeValid;
     } break;
 
@@ -2000,7 +1996,7 @@ void namectxt::MetaExpand()
     if (!expand_children && !expand_descendents)
         return;
 
-    LOG(10, ("namectxt::MetaExpand: (%s, %s)\n", FID_(&cdir), path));
+    LOG(10, "namectxt::MetaExpand: (%s, %s)\n", FID_(&cdir), path);
 
     /* ?MARIA?  So what's the order of the expansion list.
        Why is the last element the interesting one?
@@ -2043,7 +2039,7 @@ void namectxt::MetaExpand()
 	 move the old children onto a new list and save some work???
        */
 
-        LOG(1, ("namectxt::MetaExpand: enumerating (%s)\n", FID_(&f->fid)));
+        LOG(1, "namectxt::MetaExpand: enumerating (%s)\n", FID_(&f->fid));
 
         /* Iterate through current contents of directory.
 	 * The idea is to make a new children list of namectxts corresponding
@@ -2111,8 +2107,8 @@ void namectxt::MetaExpand()
 /* This is called within vproc::vget or vproc::lookup upon a successful operation. */
 void namectxt::CheckComponent(fsobj *f)
 {
-    LOG(100, ("namectxt::CheckComponent: (%s, %s), %s, f = %x\n", FID_(&cdir),
-              path, PRINT_PESTATE(state), f));
+    LOG(100, "namectxt::CheckComponent: (%s, %s), %s, f = %x\n", FID_(&cdir),
+        path, PRINT_PESTATE(state), f);
 
     if (state != PeSuspect && state != PeIndigent && state != PeInconsistent) {
         print(GetLogFile());
@@ -2306,8 +2302,8 @@ int NC_PriorityFN(bsnode *b1, bsnode *b2)
     eprint("NC_PriorityFN: priorities tied (%d, %d, %d)!\n",
 	    n1->priority, n1->depth, n1->random);
     */
-    LOG(1, ("NC_PriorityFN: priorities tied (%d, %d, %d)!\n", n1->priority,
-            n1->depth, n1->random));
+    LOG(1, "NC_PriorityFN: priorities tied (%d, %d, %d)!\n", n1->priority,
+        n1->depth, n1->random);
     return (0);
 }
 

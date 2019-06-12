@@ -44,13 +44,13 @@ int mgrpent::deallocs = 0;
 
 void Mgrp_Wait(void)
 {
-    LOG(0, ("WAITING(MGRPQ):\n"));
+    LOG(0, "WAITING(MGRPQ):\n");
     START_TIMING();
 
     VprocWait((char *)&mgrpent::mgrp_sync);
 
     END_TIMING();
-    LOG(0, ("WAIT OVER, elapsed = %3.1f\n", elapsed));
+    LOG(0, "WAIT OVER, elapsed = %3.1f\n", elapsed);
 }
 
 void Mgrp_Signal(void)
@@ -133,7 +133,7 @@ static int Unanimity(int *codep, struct in_addr *hosts, RPC2_Integer *retcodes,
 
 RepOpCommCtxt::RepOpCommCtxt()
 {
-    LOG(100, ("RepOpCommCtxt::RepOpCommCtxt: \n"));
+    LOG(100, "RepOpCommCtxt::RepOpCommCtxt: \n");
     int i;
 
     HowMany = 0;
@@ -161,8 +161,8 @@ int RepOpCommCtxt::AnyReturned(int code)
 
 mgrpent::mgrpent(vsgent *VSG, uid_t Uid, RPC2_Handle mid, int authflag)
 {
-    LOG(1, ("mgrpent::mgrpent %p, uid = %d, mid = %d, auth = %d\n", this, uid,
-            mid, authflag));
+    LOG(1, "mgrpent::mgrpent %p, uid = %d, mid = %d, auth = %d\n", this, uid,
+        mid, authflag);
 
     /* These members are immutable. */
     uid = Uid;
@@ -180,8 +180,8 @@ mgrpent::mgrpent(vsgent *VSG, uid_t Uid, RPC2_Handle mid, int authflag)
 
 mgrpent::~mgrpent()
 {
-    LOG(1, ("mgrpent::~mgrpent %p, uid = %d, mid = %d, auth = %d\n", this, uid,
-            McastInfo.Mgroup, authenticated));
+    LOG(1, "mgrpent::~mgrpent %p, uid = %d, mid = %d, auth = %d\n", this, uid,
+        McastInfo.Mgroup, authenticated);
 
     int code = 0;
 
@@ -209,8 +209,8 @@ mgrpent::~mgrpent()
         /* Collate responses from individual servers and decide what to do next. */
         code = CheckNonMutating(code);
         MULTI_RECORD_STATS(ViceDisconnectFS_OP);
-        LOG(1, ("mgrpent::~mgrpent: ViceDisconnectFS -> %s\n",
-                RPC2_ErrorMsg(code)));
+        LOG(1, "mgrpent::~mgrpent: ViceDisconnectFS -> %s\n",
+            RPC2_ErrorMsg(code));
     }
 
     /* Kill active members. */
@@ -219,15 +219,15 @@ mgrpent::~mgrpent()
 
     /* Delete Mgroup. */
     code = (int)RPC2_DeleteMgrp(McastInfo.Mgroup);
-    LOG(1, ("mgrpent::~mgrpent: RPC2_DeleteMgrp -> %s\n", RPC2_ErrorMsg(code)));
+    LOG(1, "mgrpent::~mgrpent: RPC2_DeleteMgrp -> %s\n", RPC2_ErrorMsg(code));
 }
 
 void mgrpent::Put()
 {
     LOG(100,
-        ("mgrpent::Put %p, uid = %d, mid = %d, auth = %d, refcount = %d, detached = %d\n",
-         this, uid, McastInfo.Mgroup, authenticated, refcount,
-         list_empty(&vsghandle)));
+        "mgrpent::Put %p, uid = %d, mid = %d, auth = %d, refcount = %d, detached = %d\n",
+        this, uid, McastInfo.Mgroup, authenticated, refcount,
+        list_empty(&vsghandle));
 
     if (!InUse()) {
         print(GetLogFile());
@@ -243,8 +243,8 @@ void mgrpent::Put()
 
 void mgrpent::Kill(int tellservers)
 {
-    LOG(100, ("mgrpent::Kill: %p uid = %d, mid = %d\n", this, uid,
-              McastInfo.Mgroup));
+    LOG(100, "mgrpent::Kill: %p uid = %d, mid = %d\n", this, uid,
+        McastInfo.Mgroup);
 
     disconnectfs = tellservers;
 
@@ -262,8 +262,8 @@ int mgrpent::CreateMember(int idx)
 
     vsg->GetHosts(hosts);
 
-    LOG(100, ("mgrpent::CreateMember: %p, uid = %d, mid = %d, host = %s\n",
-              this, uid, McastInfo.Mgroup, inet_ntoa(hosts[idx])));
+    LOG(100, "mgrpent::CreateMember: %p, uid = %d, mid = %d, host = %s\n", this,
+        uid, McastInfo.Mgroup, inet_ntoa(hosts[idx]));
 
     if (!hosts[idx].s_addr)
         CHOKE("mgrpent::CreateMember: no host at index %d", idx);
@@ -281,8 +281,7 @@ int mgrpent::CreateMember(int idx)
 
     /* Add new connection to the Mgrp. */
     code = (int)RPC2_AddToMgrp(McastInfo.Mgroup, ConnHandle);
-    LOG(1,
-        ("mgrpent::CreateMember: RPC_AddToMgrp -> %s\n", RPC2_ErrorMsg(code)));
+    LOG(1, "mgrpent::CreateMember: RPC_AddToMgrp -> %s\n", RPC2_ErrorMsg(code));
     if (code != 0) {
         (void)RPC2_Unbind(ConnHandle);
         return (ETIMEDOUT);
@@ -301,8 +300,8 @@ int mgrpent::CreateMember(int idx)
 void mgrpent::KillMember(struct in_addr *host, int forcibly)
 {
     LOG(100,
-        ("mgrpent::KillMember: %p, uid = %d, mid = %d, host = %s, forcibly = %d\n",
-         this, uid, McastInfo.Mgroup, inet_ntoa(*host), forcibly));
+        "mgrpent::KillMember: %p, uid = %d, mid = %d, host = %s, forcibly = %d\n",
+        this, uid, McastInfo.Mgroup, inet_ntoa(*host), forcibly);
 
     long code = 0;
 
@@ -326,14 +325,14 @@ void mgrpent::KillMember(struct in_addr *host, int forcibly)
     for (int i = 0; i < VSG_MEMBERS; i++) {
         if (rocc.dying[i]) {
             code = RPC2_RemoveFromMgrp(McastInfo.Mgroup, rocc.handles[i]);
-            LOG(1, ("mgrpent::KillMember: RPC2_RemoveFromMgrp(%s, %d) -> %s\n",
-                    inet_ntoa(rocc.hosts[i]), rocc.handles[i],
-                    RPC2_ErrorMsg((int)code)));
+            LOG(1, "mgrpent::KillMember: RPC2_RemoveFromMgrp(%s, %d) -> %s\n",
+                inet_ntoa(rocc.hosts[i]), rocc.handles[i],
+                RPC2_ErrorMsg((int)code));
 
             code = RPC2_Unbind(rocc.handles[i]);
-            LOG(1, ("mgrpent::KillMember: RPC2_Unbind(%s, %d) -> %s\n",
-                    inet_ntoa(rocc.hosts[i]), rocc.handles[i],
-                    RPC2_ErrorMsg((int)code)));
+            LOG(1, "mgrpent::KillMember: RPC2_Unbind(%s, %d) -> %s\n",
+                inet_ntoa(rocc.hosts[i]), rocc.handles[i],
+                RPC2_ErrorMsg((int)code));
 
             rocc.HowMany--;
             rocc.handles[i]      = 0;
@@ -349,8 +348,8 @@ int mgrpent::GetHostSet()
     struct in_addr hosts[VSG_MEMBERS];
     vsg->GetHosts(hosts);
 
-    LOG(100, ("mgrpent::GetHostSet: %p, uid = %d, mid = %d\n", this, uid,
-              McastInfo.Mgroup));
+    LOG(100, "mgrpent::GetHostSet: %p, uid = %d, mid = %d\n", this, uid,
+        McastInfo.Mgroup);
     int i, rc;
 
     /* Create members of the specified set which are not already in the
@@ -391,7 +390,7 @@ int mgrpent::GetHostSet()
 
 void mgrpent::PutHostSet()
 {
-    LOG(100, ("mgrpent::PutHostSet: %p\n", this));
+    LOG(100, "mgrpent::PutHostSet: %p\n", this);
 
     /* Kill dying members. */
     for (int i = 0; i < VSG_MEMBERS; i++)
@@ -462,12 +461,11 @@ void mgrpent::CheckResult()
 int mgrpent::CheckNonMutating(int acode)
 {
     LOG(100,
-        ("mgrpent::CheckNonMutating: acode = %d\n\t\thosts = [%#x %#x %#x %#x %#x %#x %#x %#x],\n\t\tretcodes = [%d %d %d %d %d %d %d %d]\n",
-         acode, rocc.hosts[0], rocc.hosts[1], rocc.hosts[2], rocc.hosts[3],
-         rocc.hosts[4], rocc.hosts[5], rocc.hosts[6], rocc.hosts[7],
-         rocc.retcodes[0], rocc.retcodes[1], rocc.retcodes[2], rocc.retcodes[3],
-         rocc.retcodes[4], rocc.retcodes[5], rocc.retcodes[6],
-         rocc.retcodes[7]));
+        "mgrpent::CheckNonMutating: acode = %d\n\t\thosts = [%#x %#x %#x %#x %#x %#x %#x %#x],\n\t\tretcodes = [%d %d %d %d %d %d %d %d]\n",
+        acode, rocc.hosts[0], rocc.hosts[1], rocc.hosts[2], rocc.hosts[3],
+        rocc.hosts[4], rocc.hosts[5], rocc.hosts[6], rocc.hosts[7],
+        rocc.retcodes[0], rocc.retcodes[1], rocc.retcodes[2], rocc.retcodes[3],
+        rocc.retcodes[4], rocc.retcodes[5], rocc.retcodes[6], rocc.retcodes[7]);
 
     int code = 0;
     int i;
@@ -543,12 +541,11 @@ int mgrpent::CheckCOP1(int acode, ViceVersionVector *UpdateSet,
                        int TranslateEincompatible)
 {
     LOG(100,
-        ("mgrpent::CheckCOP1: acode = %d\n\t\thosts = [%#x %#x %#x %#x %#x %#x %#x %#x],\n\t\tretcodes = [%d %d %d %d %d %d %d %d]\n",
-         acode, rocc.hosts[0], rocc.hosts[1], rocc.hosts[2], rocc.hosts[3],
-         rocc.hosts[4], rocc.hosts[5], rocc.hosts[6], rocc.hosts[7],
-         rocc.retcodes[0], rocc.retcodes[1], rocc.retcodes[2], rocc.retcodes[3],
-         rocc.retcodes[4], rocc.retcodes[5], rocc.retcodes[6],
-         rocc.retcodes[7]));
+        "mgrpent::CheckCOP1: acode = %d\n\t\thosts = [%#x %#x %#x %#x %#x %#x %#x %#x],\n\t\tretcodes = [%d %d %d %d %d %d %d %d]\n",
+        acode, rocc.hosts[0], rocc.hosts[1], rocc.hosts[2], rocc.hosts[3],
+        rocc.hosts[4], rocc.hosts[5], rocc.hosts[6], rocc.hosts[7],
+        rocc.retcodes[0], rocc.retcodes[1], rocc.retcodes[2], rocc.retcodes[3],
+        rocc.retcodes[4], rocc.retcodes[5], rocc.retcodes[6], rocc.retcodes[7]);
 
     int code = 0;
     int i;
@@ -712,7 +709,7 @@ int mgrpent::DHCheck(ViceVersionVector **RVVs, int ph_ix, int *dh_ixp,
     *dh_ixp = PickDH(RVVs);
 
     if (PHReq) {
-        LOG(1, ("DHCheck: PH -> %x", rocc.hosts[*dh_ixp]));
+        LOG(1, "DHCheck: PH -> %x", rocc.hosts[*dh_ixp]);
         rocc.primaryhost = rocc.hosts[*dh_ixp];
         return (ERETRY);
     }

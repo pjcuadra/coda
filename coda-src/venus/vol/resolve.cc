@@ -62,7 +62,7 @@ int resent::deallocs = 0;
 
 void repvol::Resolve()
 {
-    LOG(0, ("repvol::Resolve: %s\n", name));
+    LOG(0, "repvol::Resolve: %s\n", name);
     MarinerLog("resolve::%s\n", name);
 
     fsobj *f;
@@ -96,7 +96,7 @@ void repvol::Resolve()
         connent *c = 0;
 
         {
-            LOG(0, ("repvol::Resolve: Resolving (%s)\n", FID_(&r->fid)));
+            LOG(0, "repvol::Resolve: Resolving (%s)\n", FID_(&r->fid));
 
             /* Get an Mgroup. */
             code = GetMgrp(&m, V_UID);
@@ -123,9 +123,10 @@ void repvol::Resolve()
             code = Collate(c, code);
             UNI_RECORD_STATS(ViceResolve_OP);
 
-            LOG(0, ("repvol::Resolve: Resolving (non-hinted) (%s) returned "
-                    "code %d\n",
-                    FID_(&r->fid), code));
+            LOG(0,
+                "repvol::Resolve: Resolving (non-hinted) (%s) returned "
+                "code %d\n",
+                FID_(&r->fid), code);
         }
 
         /* Demote the object (if cached) */
@@ -136,13 +137,14 @@ void repvol::Resolve()
         if (code) {
             if (code == VNOVNODE && f) {
                 /* Retrying resolve on parent is also a "hint" of sorts. */
-                LOG(0, ("Resolve: Submitting parent (%s) for resolution, "
-                        "failed on its child (%s)\n",
-                        FID_(&f->pfid), FID_(&r->fid)));
+                LOG(0,
+                    "Resolve: Submitting parent (%s) for resolution, "
+                    "failed on its child (%s)\n",
+                    FID_(&f->pfid), FID_(&r->fid));
                 ResSubmit(NULL, &f->pfid, &r);
             } else {
                 /* General failure case (can't win them all). */
-                LOG(0, ("Resolve: Failed on (%s)\n", FID_(&r->fid)));
+                LOG(0, "Resolve: Failed on (%s)\n", FID_(&r->fid));
             }
         }
 
@@ -244,7 +246,7 @@ int repvol::ResAwait(char *waitblk)
 
 resent::resent(VenusFid *Fid)
 {
-    LOG(10, ("resent::resent: fid = (%s)\n", FID_(Fid)));
+    LOG(10, "resent::resent: fid = (%s)\n", FID_(Fid));
 
     fid      = *Fid;
     result   = -1;
@@ -277,7 +279,7 @@ resent::~resent()
     deallocs++;
 #endif
 
-    LOG(10, ("resent::~resent: fid = (%s)\n", FID_(&fid)));
+    LOG(10, "resent::~resent: fid = (%s)\n", FID_(&fid));
 
     CODA_ASSERT(refcnt == 0);
 }
@@ -364,8 +366,8 @@ void Resolve(volent *v)
 resolver::resolver()
     : vproc("Resolver", NULL, VPT_Resolver, ResolverStackSize)
 {
-    LOG(100,
-        ("resolver::resolver(%#x): %-16s : lwpid = %d\n", this, name, lwpid));
+    LOG(100, "resolver::resolver(%#x): %-16s : lwpid = %d\n", this, name,
+        lwpid);
 
     /* Poke main procedure. */
     start_thread();
@@ -385,7 +387,7 @@ int resolver::operator=(resolver &r)
 
 resolver::~resolver()
 {
-    LOG(100, ("resolver::~resolver: %-16s : lwpid = %d\n", name, lwpid));
+    LOG(100, "resolver::~resolver: %-16s : lwpid = %d\n", name, lwpid);
 }
 
 void resolver::main()

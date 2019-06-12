@@ -83,7 +83,7 @@ void UserInit()
 
 userent *Realm::GetUser(uid_t uid)
 {
-    LOG(100, ("Realm::GetUser local uid '%d' for realm '%s'\n", uid, name));
+    LOG(100, "Realm::GetUser local uid '%d' for realm '%s'\n", uid, name);
 
     user_iterator next;
     userent *u;
@@ -101,8 +101,7 @@ userent *Realm::GetUser(uid_t uid)
 
 int Realm::NewUserToken(uid_t uid, SecretToken *secretp, ClearToken *clearp)
 {
-    LOG(100,
-        ("Realm::NewUserToken local uid '%d' for realm '%s'\n", uid, name));
+    LOG(100, "Realm::NewUserToken local uid '%d' for realm '%s'\n", uid, name);
     userent *u;
     int ret;
 
@@ -117,7 +116,7 @@ int Realm::NewUserToken(uid_t uid, SecretToken *secretp, ClearToken *clearp)
 
 void PutUser(userent **upp)
 {
-    LOG(100, ("PutUser: \n"));
+    LOG(100, "PutUser: \n");
 }
 
 void UserPrint()
@@ -158,25 +157,25 @@ int AuthorizedUser(uid_t thisUser)
     if (userent::PrimaryUser != UNSET_PRIMARYUSER) {
         if (userent::PrimaryUser == thisUser) {
             LOG(100,
-                ("AuthorizedUser: User (%d) --> authorized as primary user.\n",
-                 thisUser));
+                "AuthorizedUser: User (%d) --> authorized as primary user.\n",
+                thisUser);
             return (1);
         }
         /* When primary user is set, this overrides console user checks */
-        LOG(100, ("AuthorizedUser: User (%d) --> is not the primary user.\n",
-                  thisUser));
+        LOG(100, "AuthorizedUser: User (%d) --> is not the primary user.\n",
+            thisUser);
         return (0);
     }
 
     /* If this user is logged into the console, then this user is authorized */
     if (ConsoleUser(thisUser)) {
-        LOG(100, ("AuthorizedUser: User (%d) --> authorized as console user.\n",
-                  thisUser));
+        LOG(100, "AuthorizedUser: User (%d) --> authorized as console user.\n",
+            thisUser);
         return (1);
     }
 
     /* Otherwise, this user is not authorized */
-    LOG(100, ("AuthorizedUser: User (%d) --> NOT authorized.\n", thisUser));
+    LOG(100, "AuthorizedUser: User (%d) --> NOT authorized.\n", thisUser);
     return (0);
 }
 
@@ -235,7 +234,7 @@ int ConsoleUser(uid_t user)
 
 userent::userent(RealmId rid, uid_t userid)
 {
-    LOG(100, ("userent::userent: uid = %d\n", userid));
+    LOG(100, "userent::userent: uid = %d\n", userid);
 
     realmid     = rid;
     uid         = userid;
@@ -261,13 +260,13 @@ int userent::operator=(userent &u)
 
 userent::~userent()
 {
-    LOG(100, ("userent::~userent: uid = %d\n", uid));
+    LOG(100, "userent::~userent: uid = %d\n", uid);
     Invalidate();
 }
 
 long userent::SetTokens(SecretToken *asecret, ClearToken *aclear)
 {
-    LOG(100, ("userent::SetTokens: uid = %d\n", uid));
+    LOG(100, "userent::SetTokens: uid = %d\n", uid);
 
     /* grab an extra reference on the realm until the token expires */
     if (!tokensvalid) {
@@ -283,12 +282,12 @@ long userent::SetTokens(SecretToken *asecret, ClearToken *aclear)
     memcpy(&clear, aclear, sizeof(ClearToken));
     tokensvalid = 1;
 
-    LOG(100, ("SetTokens calling Reset\n"));
+    LOG(100, "SetTokens calling Reset\n");
     Reset();
 
     /* Inform the advice monitor that user now has tokens. */
-    LOG(100, ("calling TokensAcquired with %d\n",
-              (clear.EndTimestamp - CLOCK_SKEW)));
+    LOG(100, "calling TokensAcquired with %d\n",
+        (clear.EndTimestamp - CLOCK_SKEW));
 
     /* Make dirty volumes "owned" by this user available for reintegration. */
     repvol_iterator next;
@@ -304,8 +303,8 @@ long userent::SetTokens(SecretToken *asecret, ClearToken *aclear)
 
 long userent::GetTokens(SecretToken *asecret, ClearToken *aclear)
 {
-    LOG(100,
-        ("userent::GetTokens: uid = %d, tokensvalid = %d\n", uid, tokensvalid));
+    LOG(100, "userent::GetTokens: uid = %d, tokensvalid = %d\n", uid,
+        tokensvalid);
 
     if (!tokensvalid)
         return (ENOTCONN);
@@ -320,7 +319,7 @@ long userent::GetTokens(SecretToken *asecret, ClearToken *aclear)
 
 int userent::TokensValid()
 {
-    LOG(100, ("userent %d tokensvalid = %d\n", uid, tokensvalid));
+    LOG(100, "userent %d tokensvalid = %d\n", uid, tokensvalid);
     return (tokensvalid);
 }
 
@@ -352,8 +351,8 @@ void userent::CheckTokenExpiry()
 
 void userent::Invalidate()
 {
-    LOG(100, ("userent::Invalidate: uid = %d, tokensvalid = %d\n", uid,
-              tokensvalid));
+    LOG(100, "userent::Invalidate: uid = %d, tokensvalid = %d\n", uid,
+        tokensvalid);
 
     if (!tokensvalid)
         return;
@@ -376,17 +375,17 @@ void userent::Invalidate()
 
 void userent::Reset()
 {
-    LOG(100, ("E userent::Reset()\n"));
+    LOG(100, "E userent::Reset()\n");
     /* Clear the cached access info for the user. */
     // FSDB->ResetUser(uid);
 
     /* Invalidate kernel data for the user. */
     k_Purge(uid);
-    LOG(100, ("After k_Purge in userent::Reset\n"));
+    LOG(100, "After k_Purge in userent::Reset\n");
 
     /* Demote HDB bindings for the user. */
     HDB->ResetUser(uid);
-    LOG(100, ("After HDB::ResetUser in userent::Reset\n"));
+    LOG(100, "After HDB::ResetUser in userent::Reset\n");
 
     /* Delete the user's connections. */
     {
@@ -402,7 +401,7 @@ void userent::Reset()
     /* Delete the user's mgrps. */
     VSGDB->KillUserMgrps(uid);
 
-    LOG(100, ("L userent::Reset()\n"));
+    LOG(100, "L userent::Reset()\n");
 }
 
 int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
@@ -465,7 +464,7 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
     /* No doubt */
     if (code == RPC2_INVALIDOPCODE) {
         LOG(100,
-            ("userent::CheckFetchPartialSupport: ViceFetchPartial Operation Not supported\n"));
+            "userent::CheckFetchPartialSupport: ViceFetchPartial Operation Not supported\n");
         sv->fetchpartial_support = 0;
         return 0;
     }
@@ -473,7 +472,7 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
     /* If it's not clear retry */
     if (code < 0) {
         LOG(100,
-            ("userent::CheckFetchPartialSupport: ViceFetchPartial retrying\n"));
+            "userent::CheckFetchPartialSupport: ViceFetchPartial retrying\n");
         if (--*retry_cnt)
             return ERETRY;
         return code;
@@ -483,11 +482,11 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
        Conservatively interpret all other server return codes as nonexistence */
     if (code == EINVAL) {
         LOG(100,
-            ("userent::CheckFetchPartialSupport: ViceFetchPartial Supported\n"));
+            "userent::CheckFetchPartialSupport: ViceFetchPartial Supported\n");
         sv->fetchpartial_support = 1;
     } else {
         LOG(100,
-            ("userent::CheckFetchPartialSupport: ViceFetchPartial Operation Not supported\n"));
+            "userent::CheckFetchPartialSupport: ViceFetchPartial Operation Not supported\n");
         sv->fetchpartial_support = 0;
     }
 
@@ -496,8 +495,8 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
 
 int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
 {
-    LOG(100, ("userent::Connect: addr = %s, uid = %d, tokensvalid = %d\n",
-              inet_ntoa(*host), uid, tokensvalid));
+    LOG(100, "userent::Connect: addr = %s, uid = %d, tokensvalid = %d\n",
+        inet_ntoa(*host), uid, tokensvalid);
 
     *cid                  = 0;
     int code              = 0;
@@ -530,11 +529,11 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
         RPC2_SubsysIdent ssid;
         ssid.Tag            = RPC2_SUBSYSBYID;
         ssid.Value.SubsysId = SUBSYS_SRV;
-        LOG(1, ("userent::Connect: RPC2_CreateMgrp(%s)\n", inet_ntoa(*host)));
+        LOG(1, "userent::Connect: RPC2_CreateMgrp(%s)\n", inet_ntoa(*host));
         code = (int)RPC2_CreateMgrp(cid, &mcid, &pid, &ssid, sl,
                                     clear.HandShakeKey, RPC2_XOR, SMARTFTP);
-        LOG(1,
-            ("userent::Connect: RPC2_CreateMgrp -> %s\n", RPC2_ErrorMsg(code)));
+        LOG(1, "userent::Connect: RPC2_CreateMgrp -> %s\n",
+            RPC2_ErrorMsg(code));
     } else {
         char username[16];
         if (uid == 0)
@@ -584,16 +583,16 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
 
     RetryConnect:
 
-        LOG(1, ("userent::Connect: RPC2_NewBinding(%s)\n", inet_ntoa(*host)));
+        LOG(1, "userent::Connect: RPC2_NewBinding(%s)\n", inet_ntoa(*host));
         code = (int)RPC2_NewBinding(&hid, &pid, &ssid, &bparms, cid);
-        LOG(1,
-            ("userent::Connect: RPC2_NewBinding -> %s\n", RPC2_ErrorMsg(code)));
+        LOG(1, "userent::Connect: RPC2_NewBinding -> %s\n",
+            RPC2_ErrorMsg(code));
 
         /* Invalidate tokens on authentication failure. */
         /* Higher level software may retry unauthenticated if desired. */
         if (code == RPC2_NOTAUTHENTICATED) {
-            LOG(0, ("userent::Connect: Authenticated bind failure, uid = %d\n",
-                    uid));
+            LOG(0, "userent::Connect: Authenticated bind failure, uid = %d\n",
+                uid);
 
             Invalidate();
         }
@@ -613,14 +612,14 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
 
         srvent *sv  = FindServer(&hid.Value.InetAddress);
         char *sname = sv->name;
-        LOG(1, ("userent::Connect: NewConnectFS(%s)\n", sname));
+        LOG(1, "userent::Connect: NewConnectFS(%s)\n", sname);
         MarinerLog("fetch::NewConnectFS %s\n", sname);
         UNI_START_MESSAGE(ViceNewConnectFS_OP);
         code = (int)ViceNewConnectFS(*cid, VICE_VERSION, &vc);
         UNI_END_MESSAGE(ViceNewConnectFS_OP);
         MarinerLog("fetch::newconnectfs done\n");
         UNI_RECORD_STATS(ViceNewConnectFS_OP);
-        LOG(1, ("userent::Connect: NewConnectFS -> %d\n", code));
+        LOG(1, "userent::Connect: NewConnectFS -> %d\n", code);
 
         support_test_code = CheckFetchPartialSupport(cid, sv, &retry_cnt);
 
@@ -638,8 +637,8 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
 
         if (code) {
             int unbind_code = (int)RPC2_Unbind(*cid);
-            LOG(1, ("userent::Connect: RPC2_Unbind -> %s\n",
-                    RPC2_ErrorMsg(unbind_code)));
+            LOG(1, "userent::Connect: RPC2_Unbind -> %s\n",
+                RPC2_ErrorMsg(unbind_code));
             return (code);
         }
     }
@@ -654,8 +653,8 @@ int userent::GetWaitForever()
 void userent::SetWaitForever(int state)
 {
     LOG(1,
-        ("userent::SetWaitForever: uid = %d, old_state = %d, new_state = %d\n",
-         uid, waitforever, state));
+        "userent::SetWaitForever: uid = %d, old_state = %d, new_state = %d\n",
+        uid, waitforever, state);
 
     if (state == waitforever)
         return;

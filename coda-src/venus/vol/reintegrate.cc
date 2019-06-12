@@ -73,7 +73,7 @@ extern "C" {
 /* must not be called from within a transaction */
 void reintvol::Reintegrate()
 {
-    LOG(0, ("reintvol::Reintegrate\n"));
+    LOG(0, "reintvol::Reintegrate\n");
 
     if (!ReadyToReintegrate())
         return;
@@ -232,8 +232,7 @@ void reintvol::Reintegrate()
 
         conflict = FSDB->Find(&fids[0]);
         if (!conflict) {
-            LOG(0,
-                ("reintvol::Reintegrate: Couldn't find conflict for ASR!\n"));
+            LOG(0, "reintvol::Reintegrate: Couldn't find conflict for ASR!\n");
             goto Done;
         }
 
@@ -248,22 +247,25 @@ void reintvol::Reintegrate()
 	 * 5.) The timeout interval for ASR launching has expired.
 	 */
         if (!VDB->GetASRLauncherFile()) {
-            LOG(0, ("ClientModifyLog::HandleFailedMLE: No ASRLauncher "
-                    "specified in venus.conf!\n"));
+            LOG(0,
+                "ClientModifyLog::HandleFailedMLE: No ASRLauncher "
+                "specified in venus.conf!\n");
             goto Done;
         }
         if (!v->IsASRAllowed()) {
-            LOG(0, ("ClientModifyLog::HandleFailedMLE: User does not "
-                    "allow ASR execution in this volume.\n"));
+            LOG(0,
+                "ClientModifyLog::HandleFailedMLE: User does not "
+                "allow ASR execution in this volume.\n");
             goto Done;
         }
         if (v->asr_running()) {
-            LOG(0, ("ClientModifyLog::HandleFailedMLE: ASR already "
-                    "running in this volume.\n"));
+            LOG(0,
+                "ClientModifyLog::HandleFailedMLE: ASR already "
+                "running in this volume.\n");
             goto Done;
         }
         if ((tv.tv_sec - conflict->lastresolved) <= ASR_INTERVAL) {
-            LOG(0, ("ClientModifyLog::HandleFailedMLE: ASR too soon!\n"));
+            LOG(0, "ClientModifyLog::HandleFailedMLE: ASR too soon!\n");
             goto Done;
         }
 
@@ -288,13 +290,12 @@ Done:
 /* must not be called from within a transaction */
 int reintvol::IncReintegrate(int tid)
 {
-    LOG(0,
-        ("volent::IncReintegrate: (%s, %d) uid = %d\n", name, tid, CML.owner));
+    LOG(0, "volent::IncReintegrate: (%s, %d) uid = %d\n", name, tid, CML.owner);
     /* check if transaction "tid" has any cmlent objects */
     if (!CML.HaveElements(tid)) {
         LOG(0,
-            ("volent::IncReintegrate: transaction %d does not have any elements\n",
-             tid));
+            "volent::IncReintegrate: transaction %d does not have any elements\n",
+            tid);
         return 0;
     }
 
@@ -380,7 +381,7 @@ int reintvol::IncReintegrate(int tid)
             case EALREADY:
                 /* Commit logged mutations upon successful replay at server. */
                 CML.IncCommit(&UpdateSet, tid);
-                LOG(0, ("volent::IncReintegrate: committed\n"));
+                LOG(0, "volent::IncReintegrate: committed\n");
 
                 CML.ClearPending();
                 break;
@@ -445,7 +446,7 @@ int reintvol::IncReintegrate(int tid)
             default:
                 /* non-retryable failures */
 
-                LOG(0, ("volent::IncReintegrate: fail code = %d\n", code));
+                LOG(0, "volent::IncReintegrate: fail code = %d\n", code);
                 CML.print(GetLogFile());
                 /*
                  * checkpoint the log before localizing or aborting.
@@ -474,21 +475,20 @@ int reintvol::IncReintegrate(int tid)
     cur_reint_tid = UNSET_TID;
     END_TIMING();
     LOG(0,
-        ("IncReintegrate: (%s,%d) result = %s, elapsed = %3.1f (%3.1f, %3.1f, %3.1f)\n",
-         name, tid, VenusRetStr(code), elapsed, pre_elapsed, inter_elapsed,
-         post_elapsed));
-    LOG(100,
-        ("\t old stats = [%d, %d, %d, %d, %d]\n",
-         RecordsCancelled - StartCancelled, RecordsCommitted - StartCommitted,
-         RecordsAborted - StartAborted, FidsRealloced - StartRealloced,
-         BytesBackFetched - StartBackFetched));
+        "IncReintegrate: (%s,%d) result = %s, elapsed = %3.1f (%3.1f, %3.1f, %3.1f)\n",
+        name, tid, VenusRetStr(code), elapsed, pre_elapsed, inter_elapsed,
+        post_elapsed);
+    LOG(100, "\t old stats = [%d, %d, %d, %d, %d]\n",
+        RecordsCancelled - StartCancelled, RecordsCommitted - StartCommitted,
+        RecordsAborted - StartAborted, FidsRealloced - StartRealloced,
+        BytesBackFetched - StartBackFetched);
     LOG(0,
-        ("\tnew stats = [%4d, %5.1f, %7.1f, %4d, %5.1f], [%4d, %5.1f, %7.1f, %4d, %5.1f]\n",
-         current.store_count, current.store_size / 1024.0,
-         current.store_contents_size / 1024.0, current.other_count,
-         current.other_size / 1024.0, cancelled.store_count,
-         cancelled.store_size / 1024.0, cancelled.store_contents_size / 1024.0,
-         cancelled.other_count, cancelled.other_size / 1024.0));
+        "\tnew stats = [%4d, %5.1f, %7.1f, %4d, %5.1f], [%4d, %5.1f, %7.1f, %4d, %5.1f]\n",
+        current.store_count, current.store_size / 1024.0,
+        current.store_contents_size / 1024.0, current.other_count,
+        current.other_size / 1024.0, cancelled.store_count,
+        cancelled.store_size / 1024.0, cancelled.store_contents_size / 1024.0,
+        cancelled.other_count, cancelled.other_size / 1024.0);
 
     CML.cancellations.store_count         = 0;
     CML.cancellations.store_size          = 0.0;
@@ -517,8 +517,8 @@ int reintvol::PartialReintegrate(int tid, unsigned long *reint_time)
         return (ENOENT);
 
     cur_reint_tid = tid;
-    LOG(0, ("volent::PartialReintegrate: (%s, %d) uid = %d\n", name, tid,
-            CML.owner));
+    LOG(0, "volent::PartialReintegrate: (%s, %d) uid = %d\n", name, tid,
+        CML.owner);
 
     /* perform some late prelude functions. */
     {
@@ -583,7 +583,7 @@ CheckResult:
         if (m->DoneSending()) {
             /* Commit logged mutations upon successful replay at server. */
             CML.IncCommit(&UpdateSet, tid);
-            LOG(0, ("volent::PartialReintegrate: committed\n"));
+            LOG(0, "volent::PartialReintegrate: committed\n");
 
             CML.ClearPending();
             code = 0;
@@ -610,7 +610,7 @@ CheckResult:
         /* non-retryable failures -- see IncReintegrate for comments */
         m->flags.failed = 1;
 
-        LOG(0, ("volent::PartialReintegrate: fail code = %d\n", code));
+        LOG(0, "volent::PartialReintegrate: fail code = %d\n", code);
         CML.print(GetLogFile());
 
         /* checkpoint the log */
@@ -657,8 +657,7 @@ int reintvol::ReadyToReintegrate()
 
     m = next();
     if (!m) {
-        LOG(0,
-            ("repvol::ReadyToReintegrate: failed to find head of the CML\n"));
+        LOG(0, "repvol::ReadyToReintegrate: failed to find head of the CML\n");
         // Should we trigger an assertion? This should never happen because
         // CML.count is non-zero and we are not yet reintegrating.
         return 0;
@@ -690,12 +689,12 @@ int cmlent::ReintReady()
 
     /* check if its repair flag is set */
     if (!vol->IsSync() && IsToBeRepaired()) {
-        LOG(0, ("cmlent::ReintReady: this is a repair related cmlent\n"));
+        LOG(0, "cmlent::ReintReady: this is a repair related cmlent\n");
         return EINCONS;
     }
 
     if (ContainLocalFid()) {
-        LOG(0, ("cmlent::ReintReady: contains local fid\n"));
+        LOG(0, "cmlent::ReintReady: contains local fid\n");
         /* set its to_be_repaired flag */
         SetRepairFlag();
         return EINCONS;
@@ -703,12 +702,12 @@ int cmlent::ReintReady()
 
     /* check if this record is part of a transaction (IOT, etc.) */
     if (tid > 0) {
-        LOG(0, ("cmlent::ReintReady: transactional cmlent\n"));
+        LOG(0, "cmlent::ReintReady: transactional cmlent\n");
         return EALREADY;
     }
 
     if (!Aged()) {
-        LOG(100, ("cmlent::ReintReady: record too young\n"));
+        LOG(100, "cmlent::ReintReady: record too young\n");
         return EAGAIN;
     }
     return 0;
@@ -748,7 +747,7 @@ olist reintegrator::freelist;
    sets up its context, and gives it a poke. */
 void Reintegrate(reintvol *v)
 {
-    LOG(0, ("Reintegrate\n"));
+    LOG(0, "Reintegrate\n");
     /* Get a free reintegrator. */
     reintegrator *r;
     olink *o = reintegrator::freelist.get();
@@ -769,8 +768,8 @@ reintegrator::reintegrator()
     : vproc("Reintegrator", NULL, VPT_Reintegrator, ReintegratorStackSize,
             ReintegratorPriority)
 {
-    LOG(100, ("reintegrator::reintegrator(%#x): %-16s : lwpid = %d\n", this,
-              name, lwpid));
+    LOG(100, "reintegrator::reintegrator(%#x): %-16s : lwpid = %d\n", this,
+        name, lwpid);
 
     idle = 1;
     start_thread();
@@ -784,8 +783,7 @@ reintegrator::reintegrator(reintegrator &r)
 
 reintegrator::~reintegrator()
 {
-    LOG(100,
-        ("reintegrator::~reintegrator: %-16s : lwpid = %d\n", name, lwpid));
+    LOG(100, "reintegrator::~reintegrator: %-16s : lwpid = %d\n", name, lwpid);
 }
 
 /*

@@ -110,7 +110,7 @@ void *fsobj::operator new(size_t len, fso_alloc_t fromwhere, int AllocPriority)
     /* Find an existing object that can be reclaimed. */
     rc = FSDB->AllocFso(AllocPriority, &f);
     if (rc == ENOSPC)
-        LOG(0, ("fsobj::new returns 0 (fsdb::AllocFso returned ENOSPC)\n"));
+        LOG(0, "fsobj::new returns 0 (fsdb::AllocFso returned ENOSPC)\n");
     //    CODA_ASSERT(f);
     return (f);
 }
@@ -134,8 +134,8 @@ fsobj::fsobj(int i)
 fsobj::fsobj(VenusFid *key, const char *name)
     : cf()
 {
-    LOG(10, ("fsobj::fsobj: fid = (%s), comp = %s\n", FID_(key),
-             name == NULL ? "(no name)" : name));
+    LOG(10, "fsobj::fsobj: fid = (%s), comp = %s\n", FID_(key),
+        name == NULL ? "(no name)" : name);
 
     RVMLIB_REC_OBJECT(*this);
     ResetPersistent();
@@ -272,7 +272,7 @@ fsobj::~fsobj()
     }
 #endif /* VENUSDEBUG */
 
-    LOG(10, ("fsobj::~fsobj: fid = (%s), comp = %s\n", FID_(&fid), comp));
+    LOG(10, "fsobj::~fsobj: fid = (%s), comp = %s\n", FID_(&fid), comp);
 
     /* Reset reference counter for this slot. */
     FSDB->LastRef[ix] = 0;
@@ -388,7 +388,7 @@ fsobj::~fsobj()
 
     /* Notify waiters of dead runts. */
     if (!HAVESTATUS(this)) {
-        LOG(10, ("fsobj::~fsobj: dead runt = (%s)\n", FID_(&fid)));
+        LOG(10, "fsobj::~fsobj: dead runt = (%s)\n", FID_(&fid));
 
         FSDB->matriculation_count++;
         VprocSignal(&FSDB->matriculation_sync);
@@ -403,7 +403,7 @@ fsobj::~fsobj()
 
 void fsobj::operator delete(void *deadobj)
 {
-    LOG(10, ("fsobj::operator delete()\n"));
+    LOG(10, "fsobj::operator delete()\n");
 
     /* Stick on the free list. */
     FSDB->FreeFso((fsobj *)deadobj);
@@ -483,8 +483,8 @@ void fsobj::Recover()
     }
 
     if (!vol->IsReadWrite() && !IsLocalObj()) {
-        LOG(0, ("fsobj::Recover: (%s) is probably in a backup volume\n",
-                FID_(&fid)));
+        LOG(0, "fsobj::Recover: (%s) is probably in a backup volume\n",
+            FID_(&fid));
         goto Failure;
     }
 
@@ -493,14 +493,14 @@ void fsobj::Recover()
     if (IsNormal() && !FID_IsVolRoot(&fid) && FID_EQ(&pfid, &NullFid) &&
         !IsLocalObj()) {
         LOG(0,
-            ("fsobj::Recover: (%s) is a non-volume root whose pfid is NullFid\n",
-             FID_(&fid)));
+            "fsobj::Recover: (%s) is a non-volume root whose pfid is NullFid\n",
+            FID_(&fid));
         goto FailSafe;
     }
 
     if (IsFake()) {
-        LOG(1, ("fsobj::Recover: (%s) is marked as inconsistent (fake).\n",
-                FID_(&fid)));
+        LOG(1, "fsobj::Recover: (%s) is marked as inconsistent (fake).\n",
+            FID_(&fid));
         return;
     }
 
@@ -552,8 +552,8 @@ FailSafe:
     }
 
 Failure : {
-    LOG(0, ("fsobj::Recover: invalid fso (%s, %s), attempting to GC...\n", comp,
-            FID_(&fid)));
+    LOG(0, "fsobj::Recover: invalid fso (%s, %s), attempting to GC...\n", comp,
+        FID_(&fid));
     print(GetLogFile());
 
     /* Scavenge data for bogus objects. */
@@ -596,7 +596,7 @@ void fsobj::Matriculate()
         CHOKE("fsobj::Matriculate: HAVESTATUS");
     }
 
-    LOG(10, ("fsobj::Matriculate: (%s)\n", FID_(&fid)));
+    LOG(10, "fsobj::Matriculate: (%s)\n", FID_(&fid));
 
     RVMLIB_REC_OBJECT(state);
     state = FsoNormal;
@@ -619,7 +619,7 @@ void fsobj::Demote(void)
     if (IsFakeMTLink() || (IsLocalObj() && IsMTLink()))
         return;
 
-    LOG(10, ("fsobj::Demote: fid = (%s)\n", FID_(&fid)));
+    LOG(10, "fsobj::Demote: fid = (%s)\n", FID_(&fid));
 
     ClearRcRights();
 
@@ -641,7 +641,7 @@ void fsobj::Kill(int TellServers)
     if (DYING(this))
         return;
 
-    LOG(10, ("fsobj::Kill: (%s)\n", FID_(&fid)));
+    LOG(10, "fsobj::Kill: (%s)\n", FID_(&fid));
 
     DisableReplacement();
 
@@ -687,12 +687,12 @@ int fsobj::Flush()
         (void)u.root->Flush();
 
     if (!FLUSHABLE(this)) {
-        LOG(10, ("fsobj::Flush: (%s) !FLUSHABLE\n", FID_(&fid)));
+        LOG(10, "fsobj::Flush: (%s) !FLUSHABLE\n", FID_(&fid));
         Demote();
         return (EMFILE);
     }
 
-    LOG(10, ("fsobj::Flush: flushed (%s)\n", FID_(&fid)));
+    LOG(10, "fsobj::Flush: flushed (%s)\n", FID_(&fid));
     Recov_BeginTrans();
     Kill();
     GC();
@@ -715,7 +715,7 @@ void fsobj::UpdateStatus(ViceStatus *vstat, ViceVersionVector *UpdateSet,
         CHOKE("fsobj::UpdateStatus: IsMtPt!");
     }
 
-    LOG(100, ("fsobj::UpdateStatus: (%s), uid = %d\n", FID_(&fid), uid));
+    LOG(100, "fsobj::UpdateStatus: (%s), uid = %d\n", FID_(&fid), uid);
 
     /* if we got new status, the object should not be inconsistent */
     if (IsFake()) {
@@ -753,8 +753,8 @@ int fsobj::StatusEq(ViceStatus *vstat)
     if (stat.Length != vstat->Length) {
         eq = 0;
         if (log)
-            LOG(0, ("fsobj::StatusEq: (%s), Length %d != %d\n", FID_(&fid),
-                    stat.Length, vstat->Length));
+            LOG(0, "fsobj::StatusEq: (%s), Length %d != %d\n", FID_(&fid),
+                stat.Length, vstat->Length);
     }
     /* DataVersion is a non-replicated value and different replicas may
      * legitimately return different dataversions. On a replicated volume we
@@ -764,45 +764,45 @@ int fsobj::StatusEq(ViceStatus *vstat)
         if (stat.DataVersion != vstat->DataVersion) {
             eq = 0;
             if (log)
-                LOG(0, ("fsobj::StatusEq: (%s), DataVersion %d != %d\n",
-                        FID_(&fid), stat.DataVersion, vstat->DataVersion));
+                LOG(0, "fsobj::StatusEq: (%s), DataVersion %d != %d\n",
+                    FID_(&fid), stat.DataVersion, vstat->DataVersion);
         }
     }
 
     if (VV_Cmp(&stat.VV, &vstat->VV) != VV_EQ) {
         eq = 0;
         if (log)
-            LOG(0, ("fsobj::StatusEq: (%s), VVs differ\n", FID_(&fid)));
+            LOG(0, "fsobj::StatusEq: (%s), VVs differ\n", FID_(&fid));
     }
     if (stat.Date != vstat->Date) {
         eq = 0;
         if (log)
-            LOG(0, ("fsobj::StatusEq: (%s), Date %d != %d\n", FID_(&fid),
-                    stat.Date, vstat->Date));
+            LOG(0, "fsobj::StatusEq: (%s), Date %d != %d\n", FID_(&fid),
+                stat.Date, vstat->Date);
     }
     if (stat.Owner != vstat->Owner) {
         eq = 0;
         if (log)
-            LOG(0, ("fsobj::StatusEq: (%s), Owner %d != %d\n", FID_(&fid),
-                    stat.Owner, vstat->Owner));
+            LOG(0, "fsobj::StatusEq: (%s), Owner %d != %d\n", FID_(&fid),
+                stat.Owner, vstat->Owner);
     }
     if (stat.Mode != vstat->Mode) {
         eq = 0;
         if (log)
-            LOG(0, ("fsobj::StatusEq: (%s), Mode %d != %d\n", FID_(&fid),
-                    stat.Mode, vstat->Mode));
+            LOG(0, "fsobj::StatusEq: (%s), Mode %d != %d\n", FID_(&fid),
+                stat.Mode, vstat->Mode);
     }
     if (stat.LinkCount != vstat->LinkCount) {
         eq = 0;
         if (log)
-            LOG(0, ("fsobj::StatusEq: (%s), LinkCount %d != %d\n", FID_(&fid),
-                    stat.LinkCount, vstat->LinkCount));
+            LOG(0, "fsobj::StatusEq: (%s), LinkCount %d != %d\n", FID_(&fid),
+                stat.LinkCount, vstat->LinkCount);
     }
     if (stat.VnodeType != (int)vstat->VnodeType) {
         eq = 0;
         if (log)
-            LOG(0, ("fsobj::StatusEq: (%s), VnodeType %d != %d\n", FID_(&fid),
-                    stat.VnodeType, (int)vstat->VnodeType));
+            LOG(0, "fsobj::StatusEq: (%s), VnodeType %d != %d\n", FID_(&fid),
+                stat.VnodeType, (int)vstat->VnodeType);
     }
     return (eq);
 }
@@ -817,8 +817,8 @@ void fsobj::ReplaceStatus(ViceStatus *vstat, ViceVersionVector *UpdateSet)
      * Then the cached data is probably no longer useable! But try to fix up
      * the cachefile so that we can at least give a stale copy. */
     if (HAVEDATA(this) && stat.Length != vstat->Length) {
-        LOG(0, ("fsobj::ReplaceStatus: (%s), changed stat.length %d->%d\n",
-                FID_(&fid), stat.Length, vstat->Length));
+        LOG(0, "fsobj::ReplaceStatus: (%s), changed stat.length %d->%d\n",
+            FID_(&fid), stat.Length, vstat->Length);
         if (IsFile())
             LocalSetAttr((Date_t)-1, vstat->Length, (Date_t)-1, (uid_t)-1,
                          (unsigned short)-1);
@@ -859,15 +859,14 @@ void fsobj::SetRcRights(int rights)
     if (!HAVEALLDATA(this))
         rights &= ~RC_DATA;
 
-    LOG(100, ("fsobj::SetRcRights: (%s), rights = %d\n", FID_(&fid), rights));
+    LOG(100, "fsobj::SetRcRights: (%s), rights = %d\n", FID_(&fid), rights);
 
     RcRights = rights;
 }
 
 void fsobj::ClearRcRights()
 {
-    LOG(100,
-        ("fsobj::ClearRcRights: (%s), rights = %d\n", FID_(&fid), RcRights));
+    LOG(100, "fsobj::ClearRcRights: (%s), rights = %d\n", FID_(&fid), RcRights);
 
     RcRights = NullRcRights;
 }
@@ -956,8 +955,8 @@ int fsobj::CheckAcRights(uid_t uid, long rights, int connected)
     }
     PutUser(&ue);
 
-    LOG(10, ("fsobj::CheckAcRights: not found, (%s), (%d, %d, %d)\n",
-             FID_(&fid), uid, rights, connected));
+    LOG(10, "fsobj::CheckAcRights: not found, %s), %d, %d, %d)\n", FID_(&fid),
+        uid, rights, connected);
 
     /* if we are not checking specific rights, then we are just checking if the
      * object exists, but it is still useful to refetch attributes (and
@@ -979,8 +978,8 @@ void fsobj::SetAcRights(uid_t uid, long my_rights, long any_rights)
     int tokensvalid = ue->TokensValid();
 
     LOG(100,
-        ("fsobj::SetAcRights: (%s), uid = %d, my_rights = %d, any_rights = %d\n",
-         FID_(&fid), uid, my_rights, any_rights));
+        "fsobj::SetAcRights: (%s), uid = %d, my_rights = %d, any_rights = %d\n",
+        FID_(&fid), uid, my_rights, any_rights);
 
     if (!AnyUser.inuse || AnyUser.rights != any_rights) {
         RVMLIB_REC_OBJECT(AnyUser);
@@ -1026,7 +1025,7 @@ void fsobj::SetAcRights(uid_t uid, long my_rights, long any_rights)
 /* Need not be called from within transaction. */
 void fsobj::DemoteAcRights(uid_t uid)
 {
-    LOG(100, ("fsobj::DemoteAcRights: (%s), uid = %d\n", FID_(&fid), uid));
+    LOG(100, "fsobj::DemoteAcRights: (%s), uid = %d\n", FID_(&fid), uid);
 
     if (uid == ANYUSER_UID)
         AnyUser.valid = 0;
@@ -1039,7 +1038,7 @@ void fsobj::DemoteAcRights(uid_t uid)
 /* Need not be called from within transaction. */
 void fsobj::PromoteAcRights(uid_t uid)
 {
-    LOG(100, ("fsobj::PromoteAcRights: (%s), uid = %d\n", FID_(&fid), uid));
+    LOG(100, "fsobj::PromoteAcRights: (%s), uid = %d\n", FID_(&fid), uid);
 
     if (uid == ANYUSER_UID) {
         AnyUser.valid = 1;
@@ -1078,7 +1077,7 @@ void fsobj::PromoteAcRights(uid_t uid)
 /* MUST be called from within transaction! */
 void fsobj::ClearAcRights(uid_t uid)
 {
-    LOG(100, ("fsobj::ClearAcRights: (%s), uid = %d\n", FID_(&fid), uid));
+    LOG(100, "fsobj::ClearAcRights: (%s), uid = %d\n", FID_(&fid), uid);
 
     if (uid == ANYUSER_UID) {
         RVMLIB_REC_OBJECT(AnyUser);
@@ -1130,7 +1129,7 @@ void fsobj::MakeDirty()
     if (DIRTY(this))
         return;
 
-    LOG(1, ("fsobj::MakeDirty: (%s)\n", FID_(&fid)));
+    LOG(1, "fsobj::MakeDirty: (%s)\n", FID_(&fid));
 
     /* We must have data here */
     /* Not really, we could have created this object during a disconnection */
@@ -1151,7 +1150,7 @@ void fsobj::MakeClean()
     if (!DIRTY(this))
         return;
 
-    LOG(1, ("fsobj::MakeClean: (%s)\n", FID_(&fid)));
+    LOG(1, "fsobj::MakeClean: (%s)\n", FID_(&fid));
 
     RVMLIB_REC_OBJECT(flags);
     flags.dirty = 0;
@@ -1170,7 +1169,7 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
         CHOKE("fsobj::TryToCover: called without data");
     }
 
-    LOG(10, ("fsobj::TryToCover: fid = (%s)\n", FID_(&fid)));
+    LOG(10, "fsobj::TryToCover: fid = (%s)\n", FID_(&fid));
 
     int code = 0;
 
@@ -1209,8 +1208,8 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
     case '@':
         if (!IsLocalObj()) {
             LOG(0,
-                ("fsobj::TryToCover: (%s) -> %s wasn't expanded! Dangling symlink?\n",
-                 FID_(&fid), data.symlink));
+                "fsobj::TryToCover: (%s) -> %s wasn't expanded! Dangling symlink?\n",
+                FID_(&fid), data.symlink);
             code = ENOENT;
             break;
         }
@@ -1223,8 +1222,8 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
         n = sscanf(mtlink, "%x.%x.%x@%c", &vid.Volume, &root_fid.Vnode,
                    &root_fid.Unique, &tmp);
         if (n < 3) {
-            LOG(0, ("fsobj::TryToCover: (%s) -> %s failed parse.\n", FID_(&fid),
-                    data.symlink));
+            LOG(0, "fsobj::TryToCover: (%s) -> %s failed parse.\n", FID_(&fid),
+                data.symlink);
             free(mtlink);
             return EINVAL;
         }
@@ -1252,8 +1251,8 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
     free(mtlink);
 
     if (code != 0) {
-        LOG(0, ("fsobj::TryToCover: vdb::Get(%s) failed (%d)\n", data.symlink,
-                code));
+        LOG(0, "fsobj::TryToCover: vdb::Get(%s) failed (%d)\n", data.symlink,
+            code);
         return (code);
     }
 
@@ -1281,13 +1280,13 @@ int fsobj::TryToCover(VenusFid *inc_fid, uid_t uid)
 
     code = FSDB->Get(&rf, &root_fid, uid, RC_STATUS, comp, NULL, NULL, 1);
     if (code != 0) {
-        LOG(0, ("fsobj::TryToCover: Get root (%s) failed (%d)\n",
-                FID_(&root_fid), code));
+        LOG(0, "fsobj::TryToCover: Get root (%s) failed (%d)\n",
+            FID_(&root_fid), code);
 
         VDB->Put(&tvol);
         if (code == EINCONS && inc_fid != 0) {
-            LOG(0, ("fsobj::TryToCover: returning inconsistent fid. (%d)\n",
-                    FID_(&root_fid), code));
+            LOG(0, "fsobj::TryToCover: returning inconsistent fid. (%d)\n",
+                FID_(&root_fid), code);
             *inc_fid = root_fid;
         }
         return (code);
@@ -1343,8 +1342,8 @@ void fsobj::CoverMtPt(fsobj *root_fso)
         CHOKE("fsobj::CoverMtPt: no data.symlink!");
     }
 
-    LOG(10, ("fsobj::CoverMtPt: fid = (%s), rootfid = (%s)\n", FID_(&fid),
-             FID_(&root_fso->fid)));
+    LOG(10, "fsobj::CoverMtPt: fid = (%s), rootfid = (%s)\n", FID_(&fid),
+        FID_(&root_fso->fid));
 
     RVMLIB_REC_OBJECT(*this);
 
@@ -1370,8 +1369,8 @@ void fsobj::UncoverMtPt()
         CHOKE("fsobj::UncoverMtPt: no u.root!");
     }
 
-    LOG(10, ("fsobj::UncoverMtPt: fid = (%s), rootfid = (%s)\n", FID_(&fid),
-             FID_(&u.root->fid)));
+    LOG(10, "fsobj::UncoverMtPt: fid = (%s), rootfid = (%s)\n", FID_(&fid),
+        FID_(&u.root->fid));
 
     RVMLIB_REC_OBJECT(*this);
 
@@ -1398,8 +1397,8 @@ void fsobj::MountRoot(fsobj *mtpt_fso)
         CHOKE("fsobj::MountRoot: u.mtpoint exists!");
     }
 
-    LOG(10, ("fsobj::MountRoot: fid = %s, mtptfid = %s\n", FID_(&fid),
-             FID_(&mtpt_fso->fid)));
+    LOG(10, "fsobj::MountRoot: fid = %s, mtptfid = %s\n", FID_(&fid),
+        FID_(&mtpt_fso->fid));
 
     RVMLIB_REC_OBJECT(*this);
 
@@ -1423,8 +1422,8 @@ void fsobj::UnmountRoot()
         CHOKE("fsobj::UnmountRoot: no u.mtpoint!");
     }
 
-    LOG(10, ("fsobj::UnmountRoot: fid = (%s), mtptfid = (%s)\n", FID_(&fid),
-             FID_(&u.mtpoint->fid)));
+    LOG(10, "fsobj::UnmountRoot: fid = (%s), mtptfid = (%s)\n", FID_(&fid),
+        FID_(&u.mtpoint->fid));
 
     RVMLIB_REC_OBJECT(*this);
 
@@ -1499,8 +1498,8 @@ void fsobj::DetachChild(fsobj *child)
 /* Need not be called from within transaction. */
 void fsobj::Reference()
 {
-    LOG(100, ("fsobj::Reference: (%s), old = %d, new = %d\n", FID_(&fid),
-              FSDB->LastRef[ix], FSDB->RefCounter));
+    LOG(100, "fsobj::Reference: (%s), old = %d, new = %d\n", FID_(&fid),
+        FSDB->LastRef[ix], FSDB->RefCounter);
 
     FSDB->LastRef[ix] = FSDB->RefCounter++;
 }
@@ -1509,10 +1508,10 @@ void fsobj::Reference()
 /* Need not be called from within transaction. */
 void fsobj::ComputePriority(int Force)
 {
-    LOG(1000, ("fsobj::ComputePriority: (%s)\n", FID_(&fid)));
+    LOG(1000, "fsobj::ComputePriority: (%s)\n", FID_(&fid));
 
     if (IsLocalObj()) {
-        LOG(1000, ("fsobj::ComputePriority: local object\n"));
+        LOG(1000, "fsobj::ComputePriority: local object\n");
         return;
     }
     FSDB->Recomputes++;
@@ -1601,9 +1600,8 @@ void fsobj::EnableReplacement()
     if (priority == -1 && !IsLocalObj())
         eprint("EnableReplacement(%s): priority unset", FID_(&fid));
 
-    LOG(1000,
-        ("fsobj::EnableReplacement: (%s), priority = [%d (%d) %d %d]\n",
-         FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]));
+    LOG(1000, "fsobj::EnableReplacement: (%s), priority = [%d (%d) %d %d]\n",
+        FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]);
 
 #ifdef VENUSDEBUG
     if (GetLogLevel() >= 10000)
@@ -1624,24 +1622,12 @@ void fsobj::EnableReplacement()
 /* Need not be called from within transaction. */
 void fsobj::DisableReplacement()
 {
-#ifdef VENUSDEBUG
-    /* Sanity checks. */
-/*
-    if (DYING(this)) {
-	if (*((dlink **)&del_handle) == 0)
-	    { print(GetLogFile()); CHOKE("fsobj::DisableReplacement: dying && del_handle = 0"); }
-	return;
-    }
-*/
-#endif
-
     /* Already not replaceable? */
     if (!REPLACEABLE(this))
         return;
 
-    LOG(1000,
-        ("fsobj::DisableReplacement: (%s), priority = [%d (%d) %d %d]\n",
-         FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]));
+    LOG(1000, "fsobj::DisableReplacement: (%s), priority = [%d (%d) %d %d]\n",
+        FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]);
 
 #ifdef VENUSDEBUG
     if (GetLogLevel() >= 10000)
@@ -1703,7 +1689,7 @@ binding *fsobj::AttachHdbBinding(namectxt *binder)
 
     /* Check for duplicates */
     if (CheckForDuplicates(hdb_bindings, binder) != NULL) {
-        LOG(100, ("This is a duplicate binding...skip it.\n"));
+        LOG(100, "This is a duplicate binding...skip it.\n");
         return NULL;
     }
 
@@ -1712,7 +1698,7 @@ binding *fsobj::AttachHdbBinding(namectxt *binder)
     b->binder = binder;
     b->bindee = this;
 
-    LOG_CB_ARGS(1000, print_fso_bingins, this, b);
+    LOG(1000, print_fso_bingins, this, b);
 
     /* Attach ourselves to the binding. */
     if (!hdb_bindings)
@@ -1720,7 +1706,7 @@ binding *fsobj::AttachHdbBinding(namectxt *binder)
     hdb_bindings->insert(&b->bindee_handle);
     b->IncrRefCount();
 
-    LOG_CB_ARGS(10, print_fso_bingins, this, b);
+    LOG(10, print_fso_bingins, this, b);
 
     if (IsSymLink())
         DisableReplacement();
@@ -1823,8 +1809,8 @@ void fsobj::DetachHdbBinding(binding *b, int DemoteNameCtxt)
         int new_HoardPri    = 0;
         uid_t new_HoardVuid = HOARD_UID;
         gettimeofday(&StartTV, 0);
-        LOG(10, ("Detach: hdb_binding list contains %d namectxts\n",
-                 hdb_bindings->count()));
+        LOG(10, "Detach: hdb_binding list contains %d namectxts\n",
+            hdb_bindings->count());
         dlist_iterator next(*hdb_bindings);
         dlink *d;
         while ((d = next())) {
@@ -1837,8 +1823,8 @@ void fsobj::DetachHdbBinding(binding *b, int DemoteNameCtxt)
         }
         gettimeofday(&EndTV, 0);
         elapsed = SubTimes(&EndTV, &StartTV);
-        LOG(10,
-            ("fsobj::DetachHdbBinding: recompute, elapsed= %3.1f\n", elapsed));
+        LOG(10, "fsobj::DetachHdbBinding: recompute, elapsed= %3.1f\n",
+            elapsed);
 
         if (new_HoardPri < HoardPri) {
             HoardPri  = new_HoardPri;
@@ -1941,7 +1927,7 @@ void fsobj::DiscardData()
         CHOKE("fsobj::DiscardData: ACTIVE");
     }
 
-    LOG(10, ("fsobj::DiscardData: (%s)\n", FID_(&fid)));
+    LOG(10, "fsobj::DiscardData: (%s)\n", FID_(&fid));
 
     CODA_ASSERT(!DIRTY(this));
 
@@ -1996,7 +1982,7 @@ void fsobj::DiscardPartialData()
     uint64_t len         = 0;
     uint64_t free_blocks = 0;
 
-    LOG(10, ("fsobj::DiscardPartialData: (%s)\n", FID_(&fid)));
+    LOG(10, "fsobj::DiscardPartialData: (%s)\n", FID_(&fid));
 
     CODA_ASSERT(ISVASTRO(this) && ACTIVE(this));
     /* stat.Length() might have been changed, only data.file->Length()
@@ -2035,7 +2021,7 @@ void fsobj::DiscardPartialData()
 int fsobj::Fakeify(uid_t uid)
 {
     VenusFid fakefid;
-    LOG(10, ("fsobj::Fakeify: %s, (%s)\n", comp, FID_(&fid)));
+    LOG(10, "fsobj::Fakeify: %s, %s)\n", comp, FID_(&fid));
 
     Recov_BeginTrans();
     RVMLIB_REC_OBJECT(*this);
@@ -2072,10 +2058,10 @@ int fsobj::Fakeify(uid_t uid)
                 fakefid.Unique = realm->Id();
 
                 dir_Create(realm->Name(), &fakefid);
-                LOG(10, ("fsobj::Fakeify: created fake codaroot entry for %s\n",
-                         realm->Name()));
+                LOG(10, "fsobj::Fakeify: created fake codaroot entry for %s\n",
+                    realm->Name());
             }
-            LOG(10, ("fsobj::Fakeify: created fake codaroot directory\n"));
+            LOG(10, "fsobj::Fakeify: created fake codaroot directory\n");
 
         } else if (IsPioctlFile()) {
             stat.Mode      = 0600;
@@ -2088,8 +2074,8 @@ int fsobj::Fakeify(uid_t uid)
             int fd = GetContainerFD();
             close(fd);
 
-            LOG(10, ("fsobj::Fakeify: created PIOCTL.%x for user %d\n",
-                     fid.Unique, uid));
+            LOG(10, "fsobj::Fakeify: created PIOCTL.%x for user %d\n",
+                fid.Unique, uid);
 
         } else {
             stat.Mode      = 0644;
@@ -2107,8 +2093,8 @@ int fsobj::Fakeify(uid_t uid)
 
             pfid = fakefid;
 
-            LOG(10,
-                ("fsobj::Fakeify: created realm mountlink %s\n", data.symlink));
+            LOG(10, "fsobj::Fakeify: created realm mountlink %s\n",
+                data.symlink);
         }
         goto done;
     }
@@ -2138,8 +2124,8 @@ int fsobj::Fakeify(uid_t uid)
             fakefid.Unique = vp->GetVolumeId();
             dir_Create("localhost", &fakefid);
 
-            LOG(10, ("fsobj::Fakeify: new entry (localhost, %s)\n",
-                     FID_(&fakefid)));
+            LOG(10, "fsobj::Fakeify: new entry (localhost, %s)\n",
+                FID_(&fakefid));
 
             /* Make entries for each of the rw-replicas. */
             vp->GetHosts(volumehosts);
@@ -2152,8 +2138,8 @@ int fsobj::Fakeify(uid_t uid)
                 fakefid.Unique = volumeids[i];
                 dir_Create(s->name, &fakefid);
 
-                LOG(10, ("fsobj::Fakeify: new entry (%s, %s)\n", s->name,
-                         FID_(&fakefid)));
+                LOG(10, "fsobj::Fakeify: new entry (%s, %s)\n", s->name,
+                    FID_(&fakefid));
             }
         } else {
             /* get the actual object we're mounted on */
@@ -2179,15 +2165,15 @@ int fsobj::Fakeify(uid_t uid)
             /* Write out the link contents. */
             SetMtLinkContents(&LinkFid);
 
-            LOG(10, ("fsobj::Fakeify: making %s a symlink %s\n", FID_(&fid),
-                     data.symlink));
+            LOG(10, "fsobj::Fakeify: making %s a symlink %s\n", FID_(&fid),
+                data.symlink);
 
             UpdateCacheStats(&FSDB->FileDataStats, CREATE, BLOCKS(this));
         }
         goto done;
     }
 
-    LOG(0, ("fsobj::Fakeify: don't know how to fakeify %s\n", FID_(&fid)));
+    LOG(0, "fsobj::Fakeify: don't know how to fakeify %s\n", FID_(&fid));
     return ENOENT;
 
 done:
@@ -2206,8 +2192,8 @@ done:
 
 void fsobj::Lock(LockLevel level)
 {
-    LOG(1000, ("fsobj::Lock: (%s) level = %s\n", FID_(&fid),
-               ((level == RD) ? "RD" : "WR")));
+    LOG(1000, "fsobj::Lock: (%s) level = %s\n", FID_(&fid),
+        ((level == RD) ? "RD" : "WR"));
 
     if (level != RD && level != WR) {
         print(GetLogFile());
@@ -2216,12 +2202,12 @@ void fsobj::Lock(LockLevel level)
 
     FSO_HOLD(this);
     while (level == RD ? (writers > 0) : (writers > 0 || readers > 0)) {
-        LOG(0, ("WAITING(%s): level = %s, readers = %d, writers = %d\n",
-                FID_(&fid), lvlstr(level), readers, writers));
+        LOG(0, "WAITING(%s): level = %s, readers = %d, writers = %d\n",
+            FID_(&fid), lvlstr(level), readers, writers);
         START_TIMING();
         VprocWait(&fso_sync);
         END_TIMING();
-        LOG(0, ("WAIT OVER, elapsed = %3.1f\n", elapsed));
+        LOG(0, "WAIT OVER, elapsed = %3.1f\n", elapsed);
     }
     level == RD ? (readers++) : (writers++);
 }
@@ -2244,8 +2230,8 @@ void fsobj::DemoteLock()
 
 void fsobj::UnLock(LockLevel level)
 {
-    LOG(1000, ("fsobj::UnLock: (%s) level = %s\n", FID_(&fid),
-               ((level == RD) ? "RD" : "WR")));
+    LOG(1000, "fsobj::UnLock: (%s) level = %s\n", FID_(&fid),
+        ((level == RD) ? "RD" : "WR"));
 
     if (level != RD && level != WR) {
         print(GetLogFile());
@@ -2339,14 +2325,14 @@ void fsobj::GetPath(char *buf, int scope)
                 strcpy(buf, "/");
                 return;
             }
-            LOG(100, ("fsobj::GetPath (%s): venusRoot.\n", FID_(&fid)));
+            LOG(100, "fsobj::GetPath (%s): venusRoot.\n", FID_(&fid));
             strcpy(buf, venusRoot);
             return;
         }
 
         if (!u.mtpoint) {
-            LOG(100, ("fsobj::GetPath (%s): Root, but no mountpoint found.\n",
-                      FID_(&fid)));
+            LOG(100, "fsobj::GetPath (%s): Root, but no mountpoint found.\n",
+                FID_(&fid));
             strcpy(buf, "???");
             return;
         }
@@ -2372,13 +2358,13 @@ void fsobj::GetPath(char *buf, int scope)
         pfso->GetPath(buf, scope);
     } else {
         if (fid.Volume == FakeRootVolumeId) {
-            LOG(0, ("fsobj::GetPath (%s): In the local realm without a parent. "
-                    "Realm mountpoint?\n",
-                    FID_(&fid)));
+            LOG(0,
+                "fsobj::GetPath (%s): In the local realm without a parent. "
+                "Realm mountpoint?\n",
+                FID_(&fid));
             strcpy(buf, venusRoot);
         } else {
-            LOG(0,
-                ("fsobj::GetPath (%s): Couldn't find parent.\n", FID_(&fid)));
+            LOG(0, "fsobj::GetPath (%s): Couldn't find parent.\n", FID_(&fid));
             strcpy(buf, "???");
         }
     }
@@ -2546,7 +2532,7 @@ void fsobj::UpdateVastroFlag(uid_t uid, int force, int state)
     }
 
     if (!REACHABLE(this)) {
-        LOG(0, ("fsobj::UpdateVastroFlag: %s is unreachable\n", GetComp()));
+        LOG(0, "fsobj::UpdateVastroFlag: %s is unreachable\n", GetComp());
         return;
     }
 
@@ -2798,7 +2784,7 @@ int fsobj::LaunchASR(int conflict_type, int object_type)
         break;
 
     default:
-        LOG(0, ("fsobj::LaunchASR: Bad conflict type!\n"));
+        LOG(0, "fsobj::LaunchASR: Bad conflict type!\n");
         return -1;
     }
 
@@ -2823,15 +2809,15 @@ int fsobj::LaunchASR(int conflict_type, int object_type)
 
         root = FSDB->Find(&rootFid);
         if (root == NULL) {
-            LOG(0, ("fsobj::LaunchASR: ASR's Volume Root not cached!\n"));
+            LOG(0, "fsobj::LaunchASR: ASR's Volume Root not cached!\n");
             return -1;
         }
 
         root->GetPath(rootPath, 1);
     }
 
-    LOG(0, ("fsobj::LaunchASR:\n  Conflict path: %s\n  Volume Root: %s\n", path,
-            rootPath));
+    LOG(0, "fsobj::LaunchASR:\n  Conflict path: %s\n  Volume Root: %s\n", path,
+        rootPath);
 
     /* Obtain the user and his tokens to assign them to the ASRLauncher uid. */
 
@@ -2842,9 +2828,10 @@ int fsobj::LaunchASR(int conflict_type, int object_type)
 
     rc = ue->GetTokens(&st, &ct);
     if (rc != 0) {
-        LOG(0, ("fsobj::LaunchASR: ASR cannot launch: No valid"
-                " tokens exist for user: %d\n",
-                uid));
+        LOG(0,
+            "fsobj::LaunchASR: ASR cannot launch: No valid"
+            " tokens exist for user: %d\n",
+            uid);
         return -1;
     }
 
@@ -2854,12 +2841,12 @@ int fsobj::LaunchASR(int conflict_type, int object_type)
         if ((path[strlen(path) - 1]) != '/')
             strcat(path, "/");
 
-        LOG(0, ("fsobj::LaunchASR: Directory conflict! Pathname: %s\n", path));
+        LOG(0, "fsobj::LaunchASR: Directory conflict! Pathname: %s\n", path);
         break;
 
     case FILE_CONFLICT:
 
-        LOG(0, ("fsobj::LaunchASR: File conflict! Pathname: %s\n", path));
+        LOG(0, "fsobj::LaunchASR: File conflict! Pathname: %s\n", path);
         break;
 
     default:
@@ -2879,7 +2866,7 @@ int fsobj::LaunchASR(int conflict_type, int object_type)
     /* Not exactly thread-safe, but rarely do ASR's start concurrently. */
 
     if (ASRpid > 0) {
-        LOG(0, ("fsobj::LaunchASR: ASR in progress in another volume!\n"));
+        LOG(0, "fsobj::LaunchASR: ASR in progress in another volume!\n");
         return -1; /* or should we yield() for a while? */
     }
 
@@ -2892,8 +2879,8 @@ int fsobj::LaunchASR(int conflict_type, int object_type)
 
     /* Assign Coda tokens to Venus' uid. */
 
-    LOG(0, ("fsobj::LaunchASR: Assigning tokens from uid %d to uid %d\n", uid,
-            getuid()));
+    LOG(0, "fsobj::LaunchASR: Assigning tokens from uid %d to uid %d\n", uid,
+        getuid());
 
     v->realm->NewUserToken(uid, &st, &ct);
 

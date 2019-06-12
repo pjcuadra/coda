@@ -753,7 +753,7 @@ void StatsInit()
 {
     int i;
 
-    LOG(0, ("E StatsInit()\n"));
+    LOG(0, "E StatsInit()\n");
     memset((void *)&VFSStats, 0, (int)sizeof(VFSStatistics));
     for (i = 0; i < NVFSOPS; i++)
         strncpy(VFSStats.VFSOps[i].name, VFSOpsNameTemplate[i], VFSSTATNAMELEN);
@@ -763,7 +763,7 @@ void StatsInit()
         strncpy(RPCOpStats.RPCOps[i].name, (char *)srv_CallCount[i].name + 4,
                 RPCOPSTATNAMELEN);
     }
-    LOG(0, ("L StatsInit()\n"));
+    LOG(0, "L StatsInit()\n");
 }
 
 void ToggleMallocTrace()
@@ -781,7 +781,7 @@ void ToggleMallocTrace()
 
 void rds_printer(char *fmt...)
 {
-    LOG(0, (fmt));
+    LOG(0, fmt);
 }
 
 const char *lvlstr(LockLevel level)

@@ -401,7 +401,7 @@ void VFSMount()
 #endif /* __linux__ */
 
         if (error < 0) {
-            LOG(0, ("CHILD: mount system call failed. Killing parent.\n"));
+            LOG(0, "CHILD: mount system call failed. Killing parent.\n");
             eprint("CHILD: mount system call failed. Killing parent.\n");
             kill(parent, SIGKILL);
         } else {
@@ -570,7 +570,7 @@ int k_Purge()
     if (!worker::isReady())
         return (1);
 
-    LOG(1, ("k_Purge: Flush\n"));
+    LOG(1, "k_Purge: Flush\n");
 
     /* Construct a purge message. */
     union outputArgs msg;
@@ -584,7 +584,7 @@ int k_Purge()
     if (MsgWrite((char *)&msg, size) != size)
         CHOKE("k_Purge: Flush, message write returns %d", errno);
 
-    LOG(1, ("k_Purge: Flush, returns 0\n"));
+    LOG(1, "k_Purge: Flush, returns 0\n");
     VFSStats.VFSOps[CODA_FLUSH].success++;
 
     return (1);
@@ -597,7 +597,7 @@ int k_Purge(VenusFid *fid, int severely)
     if (!worker::isReady())
         return (1);
 
-    LOG(100, ("k_Purge: fid = (%s), severely = %d\n", FID_(fid), severely));
+    LOG(100, "k_Purge: fid = (%s), severely = %d\n", FID_(fid), severely);
 
     int retcode = 0;
 
@@ -625,20 +625,18 @@ int k_Purge(VenusFid *fid, int severely)
     /* Send the message. */
     if (MsgWrite((char *)&msg, size) != size) {
         retcode = errno;
-        LOG(0,
-            ("k_Purge: %s, message write fails: errno %d\n",
-             msg.oh.opcode == CODA_PURGEFID ?
-                 "CODA_PURGEFID" :
-                 msg.oh.opcode == CODA_ZAPFILE ? "CODA_ZAPFILE" : "CODA_ZAPDIR",
-             retcode));
+        LOG(0, "k_Purge: %s, message write fails: errno %d\n",
+            msg.oh.opcode == CODA_PURGEFID ?
+                "CODA_PURGEFID" :
+                msg.oh.opcode == CODA_ZAPFILE ? "CODA_ZAPFILE" : "CODA_ZAPDIR",
+            retcode);
     }
 
-    LOG(100,
-        ("k_Purge: %s, returns %d\n",
-         msg.oh.opcode == CODA_PURGEFID ?
-             "CODA_PURGEFID" :
-             msg.oh.opcode == CODA_ZAPFILE ? "CODA_ZAPFILE" : "CODA_ZAPDIR",
-         retcode));
+    LOG(100, "k_Purge: %s, returns %d\n",
+        msg.oh.opcode == CODA_PURGEFID ?
+            "CODA_PURGEFID" :
+            msg.oh.opcode == CODA_ZAPFILE ? "CODA_ZAPFILE" : "CODA_ZAPDIR",
+        retcode);
     if (retcode == 0) {
         VFSStats.VFSOps[msg.oh.opcode].success++;
     } else {
@@ -655,7 +653,7 @@ int k_Purge(uid_t uid)
     if (!worker::isReady())
         return (1);
 
-    LOG(1, ("k_Purge: uid = %d\n", uid));
+    LOG(1, "k_Purge: uid = %d\n", uid);
 
     /* Message prefix. */
     union outputArgs msg;
@@ -672,7 +670,7 @@ int k_Purge(uid_t uid)
     if (MsgWrite((char *)&msg, size) != size)
         CHOKE("k_Purge: PurgeUser, message write");
 
-    LOG(1, ("k_Purge: PurgeUser, returns 0\n"));
+    LOG(1, "k_Purge: PurgeUser, returns 0\n");
     VFSStats.VFSOps[CODA_PURGEUSER].success++;
 
     return (1);
@@ -684,8 +682,8 @@ int k_Replace(VenusFid *fid_1, VenusFid *fid_2)
     if (!fid_1 || !fid_2)
         CHOKE("k_Replace: nil fids");
 
-    LOG(0, ("k_Replace: VenusFid (%s) with VenusFid (%s) in mini-cache\n",
-            FID_(fid_1), FID_(fid_2)));
+    LOG(0, "k_Replace: VenusFid (%s) with VenusFid (%s) in mini-cache\n",
+        FID_(fid_1), FID_(fid_2));
 
     /* replace in 9pfs fidmaps */
     if (plan9server_enabled) {
@@ -712,7 +710,7 @@ int k_Replace(VenusFid *fid_1, VenusFid *fid_2)
     if (MsgWrite((char *)&msg, size) != size)
         CHOKE("k_Replace: message write");
 
-    LOG(0, ("k_Replace: returns 0\n"));
+    LOG(0, "k_Replace: returns 0\n");
     VFSStats.VFSOps[CODA_REPLACE].success++;
 
     return (1);
@@ -870,7 +868,7 @@ void DispatchWorker(msgent *m)
         worker *signallee = FindWorker(in->ih.unique);
         if (signallee) {
             if (!signallee->returned) {
-                LOG(1, ("DispatchWorker: signalled worker %x\n", signallee));
+                LOG(1, "DispatchWorker: signalled worker %x\n", signallee);
                 signallee->interrupted = 1;
 
                 /* Poke the vproc in case it is waiting on some event. */
@@ -881,7 +879,7 @@ void DispatchWorker(msgent *m)
         } else {
             msgent *qm = FindMsg(worker::QueuedMsgs, in->ih.unique);
             if (qm) {
-                LOG(1, ("DispatchWorker: signalled queued msg\n"));
+                LOG(1, "DispatchWorker: signalled queued msg\n");
                 worker::QueuedMsgs.remove(qm);
                 worker::FreeMsgs.append(qm);
             }
@@ -898,8 +896,8 @@ void DispatchWorker(msgent *m)
     if (IsAPrefetch(m)) {
         if (worker::nprefetchers >= vproc::MaxPrefetchers) {
             LOG(1,
-                ("DispatchWorker: queuing prefetch (%d workers, %d prefetching)\n",
-                 worker::nworkers, worker::nprefetchers));
+                "DispatchWorker: queuing prefetch (%d workers, %d prefetching)\n",
+                worker::nworkers, worker::nprefetchers);
             worker::QueuedMsgs.append(m);
             return;
         }
@@ -917,8 +915,8 @@ void DispatchWorker(msgent *m)
     }
 
     /* No one is able to handle this message now; queue it up for the next free worker. */
-    LOG(0, ("DispatchWorker: out of workers (max %d), queueing message\n",
-            vproc::MaxWorkers));
+    LOG(0, "DispatchWorker: out of workers (max %d), queueing message\n",
+        vproc::MaxWorkers);
     worker::QueuedMsgs.append(m);
 }
 
@@ -983,7 +981,7 @@ int GetKernelModuleVersion()
 worker::worker()
     : vproc("Worker", NULL, VPT_Worker, WorkerStackSize)
 {
-    LOG(100, ("worker::worker(%#x): %-16s : lwpid = %d\n", this, name, lwpid));
+    LOG(100, "worker::worker(%#x): %-16s : lwpid = %d\n", this, name, lwpid);
 
     nworkers++; /* Ought to be a lock protecting this! -JJK */
 
@@ -1014,7 +1012,7 @@ int worker::operator=(worker &w)
 
 worker::~worker()
 {
-    LOG(100, ("worker::~worker: %-16s : lwpid = %d\n", name, lwpid));
+    LOG(100, "worker::~worker: %-16s : lwpid = %d\n", name, lwpid);
 
     nworkers--; /* Ought to be a lock protecting this! -JJK */
 }
@@ -1030,8 +1028,8 @@ void worker::AwaitRequest()
     if (m && IsAPrefetch(m) && worker::nprefetchers >= vproc::MaxPrefetchers) {
         /* re-queue and look for a non-prefetch message */
         LOG(1,
-            ("worker::AwaitRequest: requeueing prefetch (%d workers, %d prefetching)\n",
-             worker::nworkers, worker::nprefetchers));
+            "worker::AwaitRequest: requeueing prefetch (%d workers, %d prefetching)\n",
+            worker::nworkers, worker::nprefetchers);
         QueuedMsgs.append(m);
         for (int i = 0; i < QueuedMsgs.count(); i++) {
             m = (msgent *)QueuedMsgs.get();
@@ -1044,7 +1042,7 @@ void worker::AwaitRequest()
     }
 
     if (m) {
-        LOG(1000, ("worker::AwaitRequest: dequeuing message\n"));
+        LOG(1000, "worker::AwaitRequest: dequeuing message\n");
         ActiveMsgs.append(m);
         msg                  = m;
         union inputArgs *inp = (union inputArgs *)m->msg_buf;
@@ -1067,10 +1065,10 @@ void worker::Resign(msgent *msg, int size)
 #ifdef TIMING
         float elapsed;
         elapsed = SubTimes(&(u.u_tv2), &(u.u_tv1));
-        LOG(1, ("[Return Done] %s : returns %s, elapsed = %3.1f\n", opstr,
-                retstr, elapsed));
+        LOG(1, "[Return Done] %s : returns %s, elapsed = %3.1f\n", opstr,
+            retstr, elapsed);
 #else /* !TIMING */
-        LOG(1, ("[Return Done] %s : returns %s\n", opstr, retstr))
+        LOG(1, "[Return Done] %s : returns %s\n", opstr, retstr)
 #endif
     } else {
         union outputArgs *outp = (union outputArgs *)msg->msg_buf;
@@ -1105,14 +1103,14 @@ void worker::Return(msgent *msg, size_t size)
     float elapsed;
     if (u.u_tv2.tv_sec != 0) {
         elapsed = SubTimes(&(u.u_tv2), &(u.u_tv1));
-        LOG(1, ("%s : returns %s, elapsed = %3.1f msec\n", opstr, retstr,
-                elapsed));
+        LOG(1, "%s : returns %s, elapsed = %3.1f msec\n", opstr, retstr,
+            elapsed);
     } else {
-        LOG(1, ("%s : returns %s, elapsed = unknown msec (Returning early)\n",
-                opstr, retstr));
+        LOG(1, "%s : returns %s, elapsed = unknown msec (Returning early)\n",
+            opstr, retstr);
     }
 #else /* !TIMING */
-    LOG(1, ("%s : returns %s\n", opstr, retstr));
+    LOG(1, "%s : returns %s\n", opstr, retstr);
 #endif
 
     /* There is no reply to an interrupted operation. */
@@ -1151,7 +1149,7 @@ inline void worker::op_coda_access(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_ACCESS: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_ACCESS: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vtarget, in->coda_access.Fid, 0);
     access(&vtarget, in->coda_access.flags);
 }
@@ -1161,7 +1159,7 @@ inline void worker::op_coda_close(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_CLOSE: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_CLOSE: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vtarget, in->coda_close.Fid, 0);
     close(&vtarget, in->coda_close.flags);
 }
@@ -1172,7 +1170,7 @@ inline void worker::op_coda_create(union inputArgs *in, union outputArgs *out,
     struct venus_cnode vtarget;
     struct venus_cnode vparent;
 
-    LOG(100, ("CODA_CREATE: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_CREATE: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vparent, in->coda_create.Fid, 0);
     create(&vparent, (char *)in + (int)in->coda_create.name,
            &in->coda_create.attr, in->coda_create.excl, in->coda_create.mode,
@@ -1190,7 +1188,7 @@ inline void worker::op_coda_fsync(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_FSYNC: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_FSYNC: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vtarget, in->coda_fsync.Fid, 0);
 }
 
@@ -1199,7 +1197,7 @@ inline void worker::op_coda_getattr(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_GETATTR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_GETATTR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vtarget, in->coda_getattr.Fid, 0);
     va_init(&out->coda_getattr.attr);
     getattr(&vtarget, &out->coda_getattr.attr);
@@ -1221,7 +1219,7 @@ inline void worker::op_coda_ioctl(union inputArgs *in, union outputArgs *out,
     data.out      = outbuf; /* Can't risk overcopying. Sigh. -dcs */
     data.out_size = 0;
 
-    LOG(100, ("CODA_IOCTL: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_IOCTL: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
 
     if (type != 'V') {
         u.u_error            = EOPNOTSUPP;
@@ -1239,7 +1237,7 @@ inline void worker::op_coda_ioctl(union inputArgs *in, union outputArgs *out,
          * leaving the switch */
         Resign(msg, sizeof(struct coda_ioctl_out));
 
-        LOG(0, ("TERM: Venus exiting\n"));
+        LOG(0, "TERM: Venus exiting\n");
         RecovFlush(1);
         RecovTerminate();
         VFSUnmount();
@@ -1274,7 +1272,7 @@ inline void worker::op_coda_link(union inputArgs *in, union outputArgs *out,
     struct venus_cnode vparent;
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_LINK: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_LINK: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     /* target = linked object, parent = destination directory */
     MAKE_CNODE(vtarget, in->coda_link.sourceFid, 0);
     MAKE_CNODE(vparent, in->coda_link.destFid, 0);
@@ -1287,7 +1285,7 @@ inline void worker::op_coda_lookup(union inputArgs *in, union outputArgs *out,
     struct venus_cnode vtarget;
     struct venus_cnode vparent;
 
-    LOG(100, ("CODA_LOOKUP: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_LOOKUP: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
 
     MAKE_CNODE(vparent, in->coda_lookup.Fid, 0);
     lookup(&vparent, (char *)in + (int)in->coda_lookup.name, &vtarget,
@@ -1308,7 +1306,7 @@ inline void worker::op_coda_mkdir(union inputArgs *in, union outputArgs *out,
     struct venus_cnode vparent;
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_MKDIR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_MKDIR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vparent, in->coda_mkdir.Fid, 0);
     mkdir(&vparent, (char *)in + (int)in->coda_mkdir.name, &in->coda_mkdir.attr,
           &vtarget);
@@ -1326,7 +1324,7 @@ inline void worker::op_coda_open(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_OPEN: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_OPEN: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
 
     /* Remember some info for dealing with interrupted open calls */
     *saveFid   = in->coda_open.Fid;
@@ -1351,8 +1349,8 @@ inline void worker::op_coda_open_by_fd(union inputArgs *in,
                                        int *saveFlags,
                                        struct venus_cnode *vtarget)
 {
-    LOG(100,
-        ("CODA_OPEN_BY_FD: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_OPEN_BY_FD: u.u_pid = %d u.u_pgid = %d\n", u.u_pid,
+        u.u_pgid);
     /* Remember some info for dealing with interrupted open calls */
     *saveFid   = in->coda_open_by_fd.Fid;
     *saveFlags = in->coda_open_by_fd.flags;
@@ -1366,7 +1364,7 @@ inline void worker::op_coda_open_by_fd(union inputArgs *in,
         MarinerReport(&vtarget->c_fid, u.u_uid);
         *openfd                 = vtarget->c_cf->Open(flags);
         out->coda_open_by_fd.fd = *openfd;
-        LOG(10, ("CODA_OPEN_BY_FD: fd = %d\n", *openfd));
+        LOG(10, "CODA_OPEN_BY_FD: fd = %d\n", *openfd);
         *msg_size = sizeof(struct coda_open_by_fd_out);
     }
 }
@@ -1377,8 +1375,8 @@ inline void worker::op_coda_open_by_path(union inputArgs *in,
 {
     struct venus_cnode vtarget;
 
-    LOG(100,
-        ("CODA_OPEN_BY_PATH: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_OPEN_BY_PATH: u.u_pid = %d u.u_pgid = %d\n", u.u_pid,
+        u.u_pgid);
 
 #ifdef __CYGWIN32__
     char *slash;
@@ -1407,8 +1405,8 @@ inline void worker::op_coda_open_by_path(union inputArgs *in,
         }
 #endif
         *msg_size = sizeof(struct coda_open_by_path_out) + strlen(begin) + 1;
-        LOG(100,
-            ("CODA_OPEN_BY_PATH: returning '%s', size=%d\n", begin, *msg_size));
+        LOG(100, "CODA_OPEN_BY_PATH: returning '%s', size=%d\n", begin,
+            *msg_size);
     }
 }
 
@@ -1417,8 +1415,7 @@ inline void worker::op_coda_readlink(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100,
-        ("CODA_READLINK: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_READLINK: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vtarget, in->coda_readlink.Fid, 0);
     struct coda_string string;
     string.cs_buf    = (char *)out + sizeof(struct coda_readlink_out);
@@ -1440,7 +1437,7 @@ inline void worker::op_coda_remove(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vparent;
 
-    LOG(100, ("CODA_REMOVE: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_REMOVE: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vparent, in->coda_remove.Fid, 0);
     remove(&vparent, (char *)in + (int)in->coda_remove.name);
 }
@@ -1451,7 +1448,7 @@ inline void worker::op_coda_rename(union inputArgs *in, union outputArgs *out,
     struct venus_cnode vparent;
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_RENAME: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_RENAME: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     /* parent = source directory, target = destination directory */
     MAKE_CNODE(vparent, in->coda_rename.sourceFid, 0);
     MAKE_CNODE(vtarget, in->coda_rename.destFid, 0);
@@ -1464,7 +1461,7 @@ inline void worker::op_coda_rmdir(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vparent;
 
-    LOG(100, ("CODA_RMDIR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_RMDIR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vparent, in->coda_rmdir.Fid, 0);
     rmdir(&vparent, (char *)in + (int)in->coda_rmdir.name);
 }
@@ -1487,7 +1484,7 @@ inline void worker::op_coda_setattr(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_SETATTR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_SETATTR: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     MAKE_CNODE(vtarget, in->coda_setattr.Fid, 0);
     setattr(&vtarget, &in->coda_setattr.attr);
 }
@@ -1497,7 +1494,7 @@ inline void worker::op_coda_symlink(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_SYMLINK: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_SYMLINK: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
 
     MAKE_CNODE(vtarget, in->coda_symlink.Fid, 0);
     symlink(&vtarget, (char *)in + (int)in->coda_symlink.srcname,
@@ -1509,7 +1506,7 @@ inline void worker::op_coda_vget(union inputArgs *in, union outputArgs *out,
 {
     struct venus_cnode vtarget;
 
-    LOG(100, ("CODA_VGET: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_VGET: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     VenusFid vfid;
     KernelToVenusFid(&vfid, &in->coda_vget.Fid);
     vget(&vtarget, &vfid, RC_DATA);
@@ -1526,7 +1523,7 @@ inline void worker::op_coda_vget(union inputArgs *in, union outputArgs *out,
 inline void worker::op_coda_statfs(union inputArgs *in, union outputArgs *out,
                                    int *msg_size)
 {
-    LOG(100, ("CODA_STATFS: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid));
+    LOG(100, "CODA_STATFS: u.u_pid = %d u.u_pgid = %d\n", u.u_pid, u.u_pgid);
     statfs(&(out->coda_statfs.stat));
 
     if (u.u_error == 0) {
@@ -1544,9 +1541,9 @@ inline void worker::op_coda_access_intent(union inputArgs *in,
     CODA_ASSERT(worker::kernel_version >= 5);
 
     LOG(100,
-        ("CODA_ACCESS_INTENT: u.u_pid = %d u.u_pgid = %d pos = %d count = %d, mode = %d \n",
-         u.u_pid, u.u_pgid, coda_access_intent->pos, coda_access_intent->count,
-         coda_access_intent->mode));
+        "CODA_ACCESS_INTENT: u.u_pid = %d u.u_pgid = %d pos = %d count = %d, mode = %d \n",
+        u.u_pid, u.u_pgid, coda_access_intent->pos, coda_access_intent->count,
+        coda_access_intent->mode);
 
     MAKE_CNODE(vtarget, coda_access_intent->Fid, 0);
 

@@ -301,8 +301,8 @@ void RecovInit(void)
         if (override)
             eprint("\t(restart venus with the -init flag to reset RVM values)");
 
-        LOG(10, ("RecovInit: MLEs = %d, CacheFiles = %d, HDBEs = %d\n", MLEs,
-                 CacheFiles, HDBEs));
+        LOG(10, "RecovInit: MLEs = %d, CacheFiles = %d, HDBEs = %d\n", MLEs,
+            CacheFiles, HDBEs);
     }
 
     RecovInited = 1;
@@ -355,8 +355,8 @@ static void Recov_CheckParms()
             exit(EXIT_FAILURE);
         }
 
-        LOG(0, ("RecovDataSizes: Log = %#x, Data = %#x\n", VenusLogDeviceSize,
-                VenusDataDeviceSize));
+        LOG(0, "RecovDataSizes: Log = %#x, Data = %#x\n", VenusLogDeviceSize,
+            VenusDataDeviceSize);
     } else /* !InitMetaData */
     {
         const char *failure = NULL;
@@ -641,16 +641,16 @@ void RecovFlush(int Force)
     if (FlushSize == 0)
         return;
 
-    LOG(0, ("BeginRvmFlush (%d, %d, %s)\n", FlushCount, FlushSize, reason));
+    LOG(0, "BeginRvmFlush (%d, %d, %s)\n", FlushCount, FlushSize, reason);
     START_TIMING();
     rvm_return_t ret = rvm_flush();
     if (ret != RVM_SUCCESS)
         CHOKE("RecovFlush: rvm_flush failed (%d)", ret);
     END_TIMING();
-    LOG(0, ("EndRvmFlush\n"));
+    LOG(0, "EndRvmFlush\n");
 
-    LOG(1, ("RecovFlush: count = %d, size = %d, elapsed = %3.1f\n", FlushCount,
-            FlushSize, elapsed));
+    LOG(1, "RecovFlush: count = %d, size = %d, elapsed = %3.1f\n", FlushCount,
+        FlushSize, elapsed);
 }
 
 void RecovTruncate(int Force)
@@ -669,18 +669,18 @@ void RecovTruncate(int Force)
     if (TruncateSize == 0)
         return;
 
-    LOG(0, ("BeginRvmTruncate (%d, %d, %s)\n", TruncateCount, TruncateSize,
-            reason));
+    LOG(0, "BeginRvmTruncate (%d, %d, %s)\n", TruncateCount, TruncateSize,
+        reason);
     START_TIMING();
     rvm_return_t ret = rvm_truncate();
     if (ret != RVM_SUCCESS)
         CHOKE("RecovTruncate: rvm_truncate failed (%d)", ret);
     END_TIMING();
-    LOG(0, ("EndRvmTruncate\n"));
+    LOG(0, "EndRvmTruncate\n");
 
     /*    if (post_vm_usage - pre_vm_usage != 0)*/
-    LOG(1, ("RecovTruncate: count = %d, size = %d, elapsed = %3.1f\n",
-            TruncateCount, TruncateSize, elapsed));
+    LOG(1, "RecovTruncate: count = %d, size = %d, elapsed = %3.1f\n",
+        TruncateCount, TruncateSize, elapsed);
 }
 
 void RecovTerminate()

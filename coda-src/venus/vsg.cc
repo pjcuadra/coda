@@ -31,9 +31,9 @@ unsigned int vsgent::deallocs = 0;
 
 vsgent::vsgent(struct in_addr Hosts[VSG_MEMBERS], RealmId id)
 {
-    LOG(10, ("vsgent::vsgent %p %08x %08x %08x %08x %08x %08x %08x %08x\n",
-             this, Hosts[0], Hosts[1], Hosts[2], Hosts[3], Hosts[4], Hosts[5],
-             Hosts[6], Hosts[7]));
+    LOG(10, "vsgent::vsgent %p %08x %08x %08x %08x %08x %08x %08x %08x\n", this,
+        Hosts[0], Hosts[1], Hosts[2], Hosts[3], Hosts[4], Hosts[5], Hosts[6],
+        Hosts[7]);
 
     int i;
 
@@ -59,9 +59,9 @@ vsgent::vsgent(struct in_addr Hosts[VSG_MEMBERS], RealmId id)
 
 vsgent::~vsgent(void)
 {
-    LOG(10, ("vsgent::~vsgent %p %08x %08x %08x %08x %08x %08x %08x %08x\n",
-             this, hosts[0], hosts[1], hosts[2], hosts[3], hosts[4], hosts[5],
-             hosts[6], hosts[7]));
+    LOG(10, "vsgent::~vsgent %p %08x %08x %08x %08x %08x %08x %08x %08x\n",
+        this, hosts[0], hosts[1], hosts[2], hosts[3], hosts[4], hosts[5],
+        hosts[6], hosts[7]);
 
 #ifdef VENUSDEBUG
     deallocs++;
@@ -76,7 +76,7 @@ const int MAXMGRPSPERUSER = 30; /* Max simultaneous mgrps per user per vsg. */
 
 int vsgent::GetMgrp(mgrpent **m, uid_t uid, int auth)
 {
-    LOG(10, ("vsgent::GetMgrp %p %d %d\n", this, uid, auth));
+    LOG(10, "vsgent::GetMgrp %p %d %d\n", this, uid, auth);
 
     int code = 0;
 
@@ -166,7 +166,7 @@ exit:
 
 void vsgent::KillMgrps(void)
 {
-    LOG(10, ("vsgent::KillMgrps %p\n", this));
+    LOG(10, "vsgent::KillMgrps %p\n", this);
 
     while (!list_empty(&mgrpents)) {
         mgrpent *m = list_entry_plusplus(mgrpents.next, mgrpent, vsghandle);
@@ -176,7 +176,7 @@ void vsgent::KillMgrps(void)
 
 void vsgent::KillUserMgrps(uid_t uid)
 {
-    LOG(10, ("vsgent::KillUserMgrps %p %d\n", this, uid));
+    LOG(10, "vsgent::KillUserMgrps %p %d\n", this, uid);
 
     struct dllist_head *p;
 again:
@@ -194,7 +194,7 @@ again:
 
 void vsgent::KillMgrpMember(struct in_addr *addr)
 {
-    LOG(10, ("vsgent::KillMgrpMember %p %s\n", this, inet_ntoa(*addr)));
+    LOG(10, "vsgent::KillMgrpMember %p %s\n", this, inet_ntoa(*addr));
 
     struct dllist_head *p;
     list_for_each(p, mgrpents)
@@ -234,9 +234,8 @@ vsgdb::~vsgdb(void)
 
 vsgent *vsgdb::GetVSG(struct in_addr hosts[VSG_MEMBERS], RealmId realmid)
 {
-    LOG(10,
-        ("vsgdb::GetVSG %08x %08x %08x %08x %08x %08x %08x %08x\n", hosts[0],
-         hosts[1], hosts[2], hosts[3], hosts[4], hosts[5], hosts[6], hosts[7]));
+    LOG(10, "vsgdb::GetVSG %08x %08x %08x %08x %08x %08x %08x %08x\n", hosts[0],
+        hosts[1], hosts[2], hosts[3], hosts[4], hosts[5], hosts[6], hosts[7]);
 
     struct dllist_head *p;
     vsgent *v;

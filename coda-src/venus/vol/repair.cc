@@ -97,8 +97,8 @@ extern "C" {
 int repvol::Repair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
                    VolumeId *RWVols, int *ReturnCodes)
 {
-    LOG(0, ("volent::Repair: fid = %s, file = %s, uid = %d\n", FID_(RepairFid),
-            RepairFile, uid));
+    LOG(0, "volent::Repair: fid = %s, file = %s, uid = %d\n", FID_(RepairFid),
+        RepairFile, uid);
     if (IsUnreachable())
         return ETIMEDOUT;
 
@@ -133,13 +133,13 @@ static int GetRepairF(char *RepairFile, uid_t uid, fsobj **RepairF)
     realm->PutRef();
 
     if (code) {
-        LOG(0, ("GetRepairF: fsdb::Get failed with code: %d\n", code));
+        LOG(0, "GetRepairF: fsdb::Get failed with code: %d\n", code);
         return code;
     }
 
     if (!(*RepairF)->IsFile()) {
         FSDB->Put(RepairF);
-        LOG(0, ("GetRepairF: wasn't a file!\n"));
+        LOG(0, "GetRepairF: wasn't a file!\n");
         return EINVAL;
     }
     return 0;
@@ -174,12 +174,12 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             if (code == 0) {
                 eprint("Repair: %s (%s) consistent\n", f->GetComp(),
                        FID_(RepairFid));
-                LOG(0, ("repvol::Repair: %s (%s) consistent\n", f->GetComp(),
-                        FID_(RepairFid)));
+                LOG(0, "repvol::Repair: %s (%s) consistent\n", f->GetComp(),
+                    FID_(RepairFid));
                 code = EINVAL; /* XXX -JJK */
             }
-            LOG(0, ("repvol::Repair: %s (%s) fsdb::Get failed with code %d\n",
-                    f->GetComp(), FID_(RepairFid), code));
+            LOG(0, "repvol::Repair: %s (%s) fsdb::Get failed with code %d\n",
+                f->GetComp(), FID_(RepairFid), code);
             FSDB->Put(&f);
             return (code);
         }
@@ -190,7 +190,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         FSDB->Put(&f);
     }
 
-    LOG(0, ("repvol::Repair: (%s) inconsistent!\n", FID_(RepairFid)));
+    LOG(0, "repvol::Repair: (%s) inconsistent!\n", FID_(RepairFid));
 
     /* Flush all COP2 entries. */
     /* This would NOT be necessary if ViceRepair took
@@ -198,16 +198,16 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
     {
         code = FlushCOP2();
         if (code != 0) {
-            LOG(0, ("repvol::ConnectedRepair: FlushCOP2 failed with code %d!\n",
-                    code));
+            LOG(0, "repvol::ConnectedRepair: FlushCOP2 failed with code %d!\n",
+                code);
             return (code);
         }
     }
 
     code = GetRepairF(RepairFile, uid, &RepairF);
     if (code) {
-        LOG(0, ("repvol::ConnectedRepair: GetRepairF failed with code %d!\n",
-                code));
+        LOG(0, "repvol::ConnectedRepair: GetRepairF failed with code %d!\n",
+            code);
         return code;
     }
 
@@ -220,12 +220,11 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
     /* Acquire an Mgroup. */
     code = GetMgrp(&m, uid);
     if (code != 0) {
-        LOG(0,
-            ("repvol::ConnectedRepair: GetMgrp failed with code %d!\n", code));
+        LOG(0, "repvol::ConnectedRepair: GetMgrp failed with code %d!\n", code);
         goto Exit;
     }
 
-    LOG(0, ("repvol::Repair: (%s) attempting COP1!\n", FID_(RepairFid)));
+    LOG(0, "repvol::Repair: (%s) attempting COP1!\n", FID_(RepairFid));
 
     /* The COP1 call. */
     ViceVersionVector UpdateSet;
@@ -264,9 +263,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             struct stat tstat;
             if (::stat(RepairFile, &tstat) < 0) {
                 code = errno;
-                LOG(0,
-                    ("repvol::Repair: (%s) Failed stat of RepairFile (%s)!\n",
-                     FID_(RepairFid), RepairFile));
+                LOG(0, "repvol::Repair: (%s) Failed stat of RepairFile (%s)!\n",
+                    FID_(RepairFid), RepairFile);
                 goto Exit;
             }
 
@@ -291,8 +289,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 #endif
             default:
                 code = EINVAL;
-                LOG(0, ("repvol::Repair: (%s) invalid Vnode type!\n",
-                        FID_(RepairFid)));
+                LOG(0, "repvol::Repair: (%s) invalid Vnode type!\n",
+                    FID_(RepairFid));
                 goto Exit;
             }
         }
@@ -335,8 +333,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             fd = open(RepairFile, O_RDONLY, (int)V_MODE);
 
         if (fd < 0) {
-            LOG(0, ("repvol::Repair: (%s) failed opening fixfile (%s)!\n",
-                    FID_(RepairFid), RepairFile));
+            LOG(0, "repvol::Repair: (%s) failed opening fixfile (%s)!\n",
+                FID_(RepairFid), RepairFile);
             goto Exit;
         }
 
@@ -348,8 +346,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 	 * pruning CML entries.  Must do this here, since later would get
 	 * errno 157/ERETRY (Resource temporarily unavailable) */
 
-        LOG(0, ("repvol::Repair: (%s) attempting fixfile parse\n",
-                FID_(RepairFid)));
+        LOG(0, "repvol::Repair: (%s) attempting fixfile parse\n",
+            FID_(RepairFid));
         if (ISDIR(*RepairFid)) {
             int hcount;
             struct repair *rep_ent;
@@ -359,8 +357,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
                 code =
                     errno; /* XXXX - Could use a more meaningful return code here */
                 LOG(0,
-                    ("repvol::Repair: (%s) repair_getdfile failed: %d, fd = %d\n",
-                     FID_(RepairFid), code, fd));
+                    "repvol::Repair: (%s) repair_getdfile failed: %d, fd = %d\n",
+                    FID_(RepairFid), code, fd);
                 goto Exit;
             }
 
@@ -380,8 +378,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
                                                 sizeof(VenusFid));
                     if ((LCarr == NULL) || (fidarr == NULL)) {
                         code = ENOMEM;
-                        LOG(0, ("repvol::Repair: (%s) LCarr calloc failed!\n",
-                                FID_(RepairFid)));
+                        LOG(0, "repvol::Repair: (%s) LCarr calloc failed!\n",
+                            FID_(RepairFid));
                         goto Exit;
                     }
                 }
@@ -398,8 +396,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
                         code = FSDB->Get(&local, RepairFid, uid, RC_DATA, NULL,
                                          NULL, NULL, 1);
                         if (code || !local) {
-                            LOG(0, ("Repair: FSDB->Get(%s) error: %d",
-                                    FID_(RepairFid), rep_ent[i].name));
+                            LOG(0, "Repair: FSDB->Get(%s) error: %d",
+                                FID_(RepairFid), rep_ent[i].name);
                             if (local)
                                 FSDB->Put(&local);
                             goto Exit;
@@ -408,8 +406,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
                         code = local->Lookup(&e, NULL, rep_ent[i].name, uid,
                                              CLU_CASE_SENSITIVE);
                         if (code) {
-                            LOG(0, ("Repair: local(%s)->Lookup(%s) error",
-                                    FID_(&local->fid), rep_ent[i].name));
+                            LOG(0, "Repair: local(%s)->Lookup(%s) error",
+                                FID_(&local->fid), rep_ent[i].name);
                             goto Exit;
                         }
                         fidarr[i] = e->fid;
@@ -420,8 +418,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
                             code = local->Lookup(&e, NULL, rep_ent[i].newname,
                                                  uid, CLU_CASE_SENSITIVE);
                             if (code != 0) {
-                                LOG(0, ("Repair: (%s)->Lookup(%s) error",
-                                        FID_(&local->fid), rep_ent[i].newname));
+                                LOG(0, "Repair: (%s)->Lookup(%s) error",
+                                    FID_(&local->fid), rep_ent[i].newname);
                                 goto Exit;
                             }
                             fidarr[(l->repairCount + i)]       = e->fid;
@@ -450,7 +448,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
   repair actions </strong> </a>
   END_HTML
 */
-        LOG(0, ("repvol::Repair: (%s) Attempting RPC call\n", FID_(RepairFid)));
+        LOG(0, "repvol::Repair: (%s) Attempting RPC call\n", FID_(RepairFid));
 
         /* Make the RPC call. */
         MarinerLog("store::Repair (%s)\n", FID_(rFid));
@@ -470,8 +468,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         }
         MULTI_RECORD_STATS(ViceRepair_OP);
         if (code != 0 && code != ESYNRESOLVE) {
-            LOG(0, ("repvol::Repair: (%s) Collate_COP1 failed: %d!\n",
-                    FID_(RepairFid), code));
+            LOG(0, "repvol::Repair: (%s) Collate_COP1 failed: %d!\n",
+                FID_(RepairFid), code);
             goto Exit;
         }
 
@@ -495,8 +493,8 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         if (HostCount != m->rocc.HowMany)
             CHOKE("volent::Repair: collate failed");
         if (code != 0) {
-            LOG(0, ("repvol::Repair: (%s) can you even get here? code:%d!\n",
-                    FID_(RepairFid), code));
+            LOG(0, "repvol::Repair: (%s) can you even get here? code:%d!\n",
+                FID_(RepairFid), code);
             goto Exit;
         }
     }
@@ -508,15 +506,15 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         int rc;
         struct repair *rep_ent;
 
-        LOG(0, ("repvol::Repair: (%s) pruning CML from fixfile!\n",
-                FID_(RepairFid)));
+        LOG(0, "repvol::Repair: (%s) pruning CML from fixfile!\n",
+            FID_(RepairFid));
 
         /* found localhost in fixfile */
         rep_ent = l->repairList;
 
         rc = time(&modtime);
         if (rc == (time_t)-1) {
-            LOG(0, ("repvol::Repair: (%s) time() failed!\n", FID_(RepairFid)));
+            LOG(0, "repvol::Repair: (%s) time() failed!\n", FID_(RepairFid));
             code = errno;
             goto Exit;
         }
@@ -582,21 +580,21 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             case REPAIR_CREATEL: /* Create (hard) link */
             case REPAIR_SETACL: /* Set rights */
             case REPAIR_SETNACL: /* Set negative rights */
-                LOG(0, ("Unexpected local repair command code (%d)",
-                        rep_ent[i].opcode));
+                LOG(0, "Unexpected local repair command code (%d)",
+                    rep_ent[i].opcode);
                 code =
                     EINVAL; /* XXXX - Could use a more meaningful return code here */
                 break;
 
             case REPAIR_REPLICA:
-                LOG(0, ("Unexpected REPAIR_REPLICA -- truncated fixfile?"));
+                LOG(0, "Unexpected REPAIR_REPLICA -- truncated fixfile?");
                 code =
                     EINVAL; /* XXXX - Could use a more meaningful return code here */
                 break;
 
             default:
-                LOG(0, ("Unknown local repair command code (%d)",
-                        rep_ent[i].opcode));
+                LOG(0, "Unknown local repair command code (%d)",
+                    rep_ent[i].opcode);
                 code =
                     EINVAL; /* XXXX - Could use a more meaningful return code here */
                 break;
@@ -615,7 +613,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         CML.ClearToBeRepaired();
     }
 
-    LOG(0, ("repvol::Repair: (%s) sending COP2!\n", FID_(RepairFid)));
+    LOG(0, "repvol::Repair: (%s) sending COP2!\n", FID_(RepairFid));
     /* Send the COP2 message.  Don't Piggy!  */
     (void)COP2(m, &sid, &UpdateSet, 1);
 
@@ -671,8 +669,8 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
     vproc *vp = VprocSelf();
     CODA_ASSERT(vp);
 
-    LOG(0, ("volent::DisconnectedRepair: fid = (%s), file = %s, uid = %d\n",
-            FID_(RepairFid), RepairFile, uid));
+    LOG(0, "volent::DisconnectedRepair: fid = (%s), file = %s, uid = %d\n",
+        FID_(RepairFid), RepairFile, uid);
 
     VenusFid tpfid;
     tpfid.Realm  = RepairFid->Realm;
@@ -702,12 +700,12 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             if (code == 0) {
                 eprint("DisconnectedRepair: %s (%s) consistent\n", f->GetComp(),
                        FID_(RepairFid));
-                LOG(0, ("DisconnectedRepair: %s (%s) consistent\n",
-                        f->GetComp(), FID_(RepairFid)));
+                LOG(0, "DisconnectedRepair: %s (%s) consistent\n", f->GetComp(),
+                    FID_(RepairFid));
                 code = EINVAL; /* XXX -JJK */
             } else
-                LOG(0, ("DisconnectedRepair: %s (%s) Get failed with code %d\n",
-                        f->GetComp(), FID_(RepairFid), code));
+                LOG(0, "DisconnectedRepair: %s (%s) Get failed with code %d\n",
+                    f->GetComp(), FID_(RepairFid), code);
             FSDB->Put(&f);
             return (code);
         }
@@ -718,14 +716,14 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         FSDB->Put(&f);
     }
 
-    LOG(0, ("DisconnectedRepair: (%s) inconsistent!\n", FID_(RepairFid)));
+    LOG(0, "DisconnectedRepair: (%s) inconsistent!\n", FID_(RepairFid));
     /* check rights - can user write the file to be repaired */
     {
-        LOG(0, ("DisconnectedRepair: Going to check access control (%s)\n",
-                FID_(&tpfid)));
+        LOG(0, "DisconnectedRepair: Going to check access control (%s)\n",
+            FID_(&tpfid));
         if (!tpfid.Vnode) {
             LOG(0,
-                ("DisconnectedRepair: Parent fid is NULL - cannot check access control\n"));
+                "DisconnectedRepair: Parent fid is NULL - cannot check access control\n");
             return (EACCES);
         }
         /* check the parent's rights for write permission*/
@@ -734,21 +732,21 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         if (code == 0) {
             code = parentf->Access(PRSFS_WRITE, C_A_W_OK, vp->u.u_uid);
             if (code) {
-                LOG(0, ("DisconnectedRepair: Access disallowed (%s)\n",
-                        FID_(&tpfid)));
+                LOG(0, "DisconnectedRepair: Access disallowed (%s)\n",
+                    FID_(&tpfid));
                 FSDB->Put(&parentf);
                 return (code);
             }
         } else {
-            LOG(0, ("DisconnectedRepair: Couldn't get parent (%s)\n",
-                    FID_(&tpfid)));
+            LOG(0, "DisconnectedRepair: Couldn't get parent (%s)\n",
+                FID_(&tpfid));
             if (parentf)
                 FSDB->Put(&parentf);
             return (code);
         }
         FSDB->Put(&parentf);
     }
-    LOG(0, ("DisconnectedRepair: checking repair file %s\n", RepairFile));
+    LOG(0, "DisconnectedRepair: checking repair file %s\n", RepairFile);
     code = GetRepairF(RepairFile, uid, &RepairF);
     if (code)
         return code;
@@ -783,8 +781,8 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         /* set up status block */
         memset((void *)&status, 0, (int)sizeof(ViceStatus));
         if (RepairF != 0) {
-            LOG(0, ("DisconnectedRepair: RepairF found! (%s)\n",
-                    FID_(&RepairF->fid)));
+            LOG(0, "DisconnectedRepair: RepairF found! (%s)\n",
+                FID_(&RepairF->fid));
             status.Length    = RepairF->stat.Length;
             status.Date      = RepairF->stat.Date;
             status.Owner     = RepairF->stat.Owner;
@@ -792,12 +790,12 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             status.LinkCount = RepairF->stat.LinkCount;
             status.VnodeType = RepairF->stat.VnodeType;
         } else {
-            LOG(0, ("DisconnectedRepair: RepairF not found!\n"));
+            LOG(0, "DisconnectedRepair: RepairF not found!\n");
             struct stat tstat;
             if (::stat(RepairFile, &tstat) < 0) {
                 code = errno;
-                LOG(0, ("DisconnectedRepair: (%s) stat failed\n",
-                        FID_(RepairFid)));
+                LOG(0, "DisconnectedRepair: (%s) stat failed\n",
+                    FID_(RepairFid));
                 goto Exit;
             }
 
@@ -809,8 +807,8 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             status.LinkCount    = (RPC2_Integer)tstat.st_nlink;
             if ((tstat.st_mode & S_IFMT) != S_IFREG) {
                 code = EINVAL;
-                LOG(0, ("DisconnectedRepair: (%s) not a regular file\n",
-                        FID_(RepairFid)));
+                LOG(0, "DisconnectedRepair: (%s) not a regular file\n",
+                    FID_(RepairFid));
                 goto Exit;
             }
         }
@@ -823,8 +821,8 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         /* first kill the fake directory if it exists */
         fsobj *f = FSDB->Find(RepairFid);
         if (f != 0) {
-            LOG(0, ("DisconnectedRepair: Going to kill %s, refcnt: %d\n",
-                    FID_(&f->fid), f->refcnt));
+            LOG(0, "DisconnectedRepair: Going to kill %s, refcnt: %d\n",
+                FID_(&f->fid), f->refcnt);
 
             if (f->IsExpandedObj())
                 f->CollapseObject(); /* drop FSO_HOLD ref */
@@ -836,8 +834,8 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
 
             if (f->refcnt > 1) {
                 LOG(0,
-                    ("DisconnectedRepair: (%s) has %d active references - cannot repair\n",
-                     FID_(RepairFid), f->refcnt));
+                    "DisconnectedRepair: (%s) has %d active references - cannot repair\n",
+                    FID_(RepairFid), f->refcnt);
                 /* Put isn't going to release the object so can't call create
 	       * Instead of failing, put an informative message on console
 	       * and ask user to retry */
@@ -850,23 +848,22 @@ int repvol::DisconnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
             /* Ought to flush its descendents too? XXX -PK */
         }
         /* attempt the create now */
-        LOG(0, ("DisconnectedRepair: Going to create %s\n", FID_(RepairFid)));
+        LOG(0, "DisconnectedRepair: Going to create %s\n", FID_(RepairFid));
         /* need to get the priority from the vproc pointer */
         f = FSDB->Create(RepairFid, vp->u.u_priority, NULL, NULL);
         /* don't know the component name */
         if (f == 0) {
             UpdateCacheStats(&FSDB->FileAttrStats, NOSPACE,
                              NBLOCKS(sizeof(fsobj)));
-            LOG(0,
-                ("DisconnectedRepair: Create failed (%s)\n", FID_(RepairFid)));
+            LOG(0, "DisconnectedRepair: Create failed (%s)\n", FID_(RepairFid));
             code = ENOSPC;
             goto Exit;
         }
 
         Date_t Mtime = Vtime();
 
-        LOG(0, ("DisconnectedRepair: Going to call LocalRepair(%s)\n",
-                FID_(RepairFid)));
+        LOG(0, "DisconnectedRepair: Going to call LocalRepair(%s)\n",
+            FID_(RepairFid));
         Recov_BeginTrans();
         code = LogRepair(Mtime, uid, RepairFid, status.Length, status.Date,
                          status.Owner, status.Mode, 1);
@@ -900,7 +897,7 @@ Exit:
     if (RepairF)
         FSDB->Put(&RepairF);
 
-    LOG(0, ("DisconnectedRepair: returns %u\n", code));
+    LOG(0, "DisconnectedRepair: returns %u\n", code);
     return (code);
 }
 
@@ -908,7 +905,7 @@ Exit:
 int repvol::LocalRepair(fsobj *f, ViceStatus *status, char *fname,
                         VenusFid *pfid)
 {
-    LOG(100, ("LocalRepair: %s local file %s \n", FID_(&f->fid), fname));
+    LOG(100, "LocalRepair: %s local file %s \n", FID_(&f->fid), fname);
     RVMLIB_REC_OBJECT(*f);
 
     f->stat.VnodeType   = status->VnodeType;
@@ -936,7 +933,7 @@ int repvol::LocalRepair(fsobj *f, ViceStatus *status, char *fname,
 
         int srcfd = open(fname, O_RDONLY | O_BINARY, V_MODE);
         CODA_ASSERT(srcfd);
-        LOG(0, ("LocalRepair: Going to open %s\n", f->data.file->Name()));
+        LOG(0, "LocalRepair: Going to open %s\n", f->data.file->Name());
         int tgtfd =
             open(f->data.file->Name(), O_WRONLY | O_TRUNC | O_BINARY, V_MODE);
         CODA_ASSERT(tgtfd > 0);
@@ -957,8 +954,8 @@ int repvol::LocalRepair(fsobj *f, ViceStatus *status, char *fname,
 
         if ((unsigned long)stbuf.st_size != status->Length) {
             LOG(0,
-                ("LocalRepair: Length mismatch - actual stored %u bytes, expected %u bytes\n",
-                 stbuf.st_size, status->Length));
+                "LocalRepair: Length mismatch - actual stored %u bytes, expected %u bytes\n",
+                stbuf.st_size, status->Length);
             return (EIO); /* XXX - what else can we return? */
         }
         f->data.file->SetLength((unsigned int)stbuf.st_size);
@@ -973,24 +970,24 @@ int repvol::LocalRepair(fsobj *f, ViceStatus *status, char *fname,
 /* Enable ASR invocation for this volume (as a volume service)  */
 void reintvol::EnableASR(uid_t uid)
 {
-    LOG(100, ("reintvol::EnableASR: vol = %x, uid = %d\n", vid, uid));
+    LOG(100, "reintvol::EnableASR: vol = %x, uid = %d\n", vid, uid);
 
     /* Place volume in "repair mode." */
     if (IsASREnabled())
-        LOG(0, ("volent::EnableASR: ASR for %x already enabled", vid));
+        LOG(0, "volent::EnableASR: ASR for %x already enabled", vid);
 
     flags.enable_asrinvocation = 1;
 }
 
 int reintvol::DisableASR(uid_t uid)
 {
-    LOG(100, ("reintvol::DisableASR: vol = %x, uid = %d\n", vid, uid));
+    LOG(100, "reintvol::DisableASR: vol = %x, uid = %d\n", vid, uid);
 
     if (asr_running())
         return EBUSY;
 
     if (!IsASREnabled())
-        LOG(0, ("volent::DisableASR: ASR for %x already disabled", vid));
+        LOG(0, "volent::DisableASR: ASR for %x already disabled", vid);
 
     flags.enable_asrinvocation = 0;
 
@@ -1000,11 +997,11 @@ int reintvol::DisableASR(uid_t uid)
 /* Allow ASR invocation for this volume (this is user's permission). */
 int reintvol::AllowASR(uid_t uid)
 {
-    LOG(100, ("reintvol::AllowASR: vol = %x, uid = %d\n", vid, uid));
+    LOG(100, "reintvol::AllowASR: vol = %x, uid = %d\n", vid, uid);
 
     /* Place volume in "repair mode." */
     if (IsASRAllowed())
-        LOG(0, ("volent::AllowASR: ASR for %x already allowed", vid));
+        LOG(0, "volent::AllowASR: ASR for %x already allowed", vid);
 
     flags.allow_asrinvocation = 1;
 
@@ -1013,13 +1010,13 @@ int reintvol::AllowASR(uid_t uid)
 
 int reintvol::DisallowASR(uid_t uid)
 {
-    LOG(100, ("reintvol::DisallowASR: vol = %x, uid = %d\n", vid, uid));
+    LOG(100, "reintvol::DisallowASR: vol = %x, uid = %d\n", vid, uid);
 
     if (asr_running())
         return EBUSY;
 
     if (!IsASRAllowed())
-        LOG(0, ("volent::DisallowASR: ASR for %x already disallowed", vid));
+        LOG(0, "volent::DisallowASR: ASR for %x already disallowed", vid);
 
     flags.allow_asrinvocation = 0;
 

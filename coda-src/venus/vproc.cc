@@ -102,11 +102,11 @@ void VprocInit()
 
 void Rtry_Wait()
 {
-    LOG(0, ("WAITING(RTRYQ):\n"));
+    LOG(0, "WAITING(RTRYQ):\n");
     START_TIMING();
     VprocWait(&vproc::rtry_sync);
     END_TIMING();
-    LOG(0, ("WAIT OVER, elapsed = %3.1f\n", elapsed));
+    LOG(0, "WAIT OVER, elapsed = %3.1f\n", elapsed);
 }
 
 void Rtry_Signal()
@@ -232,8 +232,7 @@ void VprocSignal(const void *addr, int yield)
               (yield ? "LWP_SignalProcess" : "LWP_NoYieldSignal"), lwprc);
     /*
     if (lwprc == LWP_ENOWAIT)
-	LOG(100, ("VprocSignal: ENOWAIT returned for addr %x\n",
-		addr, (yield ? "LWP_SignalProcess" : "LWP_NoYieldSignal")));
+	LOG(100, "VprocSignal: ENOWAIT returned for addr %x\n", 		addr, yield ? "LWP_SignalProcess" : "LWP_NoYieldSignal");
 */
 }
 
@@ -265,11 +264,11 @@ void VprocYield()
     /* Do a polling select first to make vprocs with pending I/O runnable. */
     (void)IOMGR_Poll();
 
-    LOG(1000, ("VprocYield: pre-yield\n"));
+    LOG(1000, "VprocYield: pre-yield\n");
     int lwprc = LWP_DispatchProcess();
     if (lwprc != LWP_SUCCESS)
         CHOKE("VprocYield: LWP_DispatchProcess failed (%d)", lwprc);
-    LOG(1000, ("VprocYield: post-yield\n"));
+    LOG(1000, "VprocYield: post-yield\n");
 }
 
 int VprocSelect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
@@ -602,8 +601,8 @@ static int VolModeMap[NVFSOPS] = {
 /* local-repair modification */
 void vproc::Begin_VFS(Volid *volid, int vfsop, int volmode)
 {
-    LOG(1, ("vproc::Begin_VFS(%s): vid = %x.%x, u.u_vol = %x, mode = %d\n",
-            VenusOpStr(vfsop), volid->Realm, volid->Volume, u.u_vol, volmode));
+    LOG(1, "vproc::Begin_VFS(%s): vid = %x.%x, u.u_vol = %x, mode = %d\n",
+        VenusOpStr(vfsop), volid->Realm, volid->Volume, u.u_vol, volmode);
 
     /* Set up this thread's volume-related context. */
     if (u.u_vol == 0) {
@@ -682,8 +681,7 @@ void vproc::Begin_VFS(Volid *volid, int vfsop, int volmode)
 /* Retryp MUST be non-null in order to do any form of waiting. */
 void vproc::End_VFS(int *retryp)
 {
-    LOG(1,
-        ("vproc::End_VFS(%s): code = %d\n", VenusOpStr(u.u_vfsop), u.u_error));
+    LOG(1, "vproc::End_VFS(%s): code = %d\n", VenusOpStr(u.u_vfsop), u.u_error);
 
     if (retryp)
         *retryp = 0;
@@ -895,16 +893,15 @@ void va_init(struct coda_vattr *vap)
 
 void VPROC_printvattr(struct coda_vattr *vap)
 {
-    LOG(1000, ("\tmode = %#o, uid = %d, gid = %d, rdev = %d\n", vap->va_mode,
-               vap->va_uid, vap->va_gid, vap->va_rdev));
+    LOG(1000, "\tmode = %#o, uid = %d, gid = %d, rdev = %d\n", vap->va_mode,
+        vap->va_uid, vap->va_gid, vap->va_rdev);
     LOG(1000,
-        ("\tid = %d, nlink = %d, size = %d, blocksize = %d, storage = %d\n",
-         vap->va_fileid, vap->va_nlink, vap->va_size, vap->va_blocksize,
-         vap->va_bytes));
-    LOG(1000,
-        ("\tatime = <%d, %d>, mtime = <%d, %d>, ctime = <%d, %d>\n",
-         vap->va_atime.tv_sec, vap->va_atime.tv_nsec, vap->va_mtime.tv_sec,
-         vap->va_mtime.tv_nsec, vap->va_ctime.tv_sec, vap->va_ctime.tv_nsec));
+        "\tid = %d, nlink = %d, size = %d, blocksize = %d, storage = %d\n",
+        vap->va_fileid, vap->va_nlink, vap->va_size, vap->va_blocksize,
+        vap->va_bytes);
+    LOG(1000, "\tatime = <%d, %d>, mtime = <%d, %d>, ctime = <%d, %d>\n",
+        vap->va_atime.tv_sec, vap->va_atime.tv_nsec, vap->va_mtime.tv_sec,
+        vap->va_mtime.tv_nsec, vap->va_ctime.tv_sec, vap->va_ctime.tv_nsec);
 }
 
 long FidToNodeid(VenusFid *fid)
@@ -921,8 +918,8 @@ long FidToNodeid(VenusFid *fid)
     /* Other volume root.  We need the relevant mount point's fid,
 	   but we don't know what that is! */
     if (FID_IsVolRoot(fid)) {
-        LOG(0, ("FidToNodeid: called for volume root (%x.%x)!!!\n", fid->Realm,
-                fid->Volume));
+        LOG(0, "FidToNodeid: called for volume root (%x.%x)!!!\n", fid->Realm,
+            fid->Volume);
     }
 
     /* Non volume root. */

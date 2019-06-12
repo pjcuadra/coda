@@ -156,10 +156,10 @@ int fsobj::LookAside(void)
         data.file->Close(fd);
 
         if (emsg[0])
-            LOG(0, ("LookAsideAndFillContainer(%s): %s\n", cf.Name(), emsg));
+            LOG(0, "LookAsideAndFillContainer(%s): %s\n", cf.Name(), emsg);
 
         if (lka_successful)
-            LOG(0, ("Lookaside of %s succeeded!\n", cf.Name()));
+            LOG(0, "Lookaside of %s succeeded!\n", cf.Name());
     }
 
     /* Note that the container file now has all the data we expected */
@@ -210,8 +210,8 @@ int fsobj::FetchFileRPC(connent *con, ViceStatus *status, uint64_t offset,
     UNI_END_MESSAGE(viceop);
     CFSOP_POSTLUDE("fetch::Fetch done\n");
 
-    LOG(10, ("fsobj::FetchFileRPC: (%s), pos = %d, count = %d, ret = %d \n",
-             GetComp(), offset, len, code));
+    LOG(10, "fsobj::FetchFileRPC: (%s), pos = %d, count = %d, ret = %d \n",
+        GetComp(), offset, len, code);
 
     /* Examine the return code to decide what to do next. */
     code = vol->Collate(con, code);
@@ -223,7 +223,7 @@ int fsobj::FetchFileRPC(connent *con, ViceStatus *status, uint64_t offset,
 static int CheckTransferredData(uint64_t pos, int64_t count, uint64_t length,
                                 uint64_t transfred, bool vastro)
 {
-    LOG(10, ("(Multi)ViceFetch: fetched %lu bytes\n", transfred));
+    LOG(10, "(Multi)ViceFetch: fetched %lu bytes\n", transfred);
 
     if (pos > length)
         return EINVAL;
@@ -238,15 +238,15 @@ static int CheckTransferredData(uint64_t pos, int64_t count, uint64_t length,
     /* If reaching EOF */
     if (pos + count > length) {
         if (transfred != (length - pos)) {
-            LOG(0, ("fsobj::Fetch: fetched data amount mismatch (%lu, %lu)\n",
-                    transfred, (length - pos)));
+            LOG(0, "fsobj::Fetch: fetched data amount mismatch (%lu, %lu)\n",
+                transfred, (length - pos));
             return ERETRY;
         }
     }
 
     if (transfred != (uint64_t)count) {
-        LOG(0, ("fsobj::Fetch: fetched data amount mismatch (%lu, %lu)\n",
-                transfred, count));
+        LOG(0, "fsobj::Fetch: fetched data amount mismatch (%lu, %lu)\n",
+            transfred, count);
         return ERETRY;
     }
 
@@ -256,8 +256,8 @@ TillEndFetching:
     /* If not VASTRO or Fetch till the end */
     if ((pos + transfred) != length) {
         // print(GetLogFile());
-        LOG(0, ("fsobj::Fetch: fetched file length mismatch (%lu, %lu)\n",
-                pos + transfred, length));
+        LOG(0, "fsobj::Fetch: fetched file length mismatch (%lu, %lu)\n",
+            pos + transfred, length);
         return ERETRY;
     }
 
@@ -288,7 +288,7 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
     int fd   = -1;
     int code = 0;
 
-    LOG(10, ("fsobj::Fetch: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::Fetch: (%s), uid = %d\n", GetComp(), uid);
 
     CODA_ASSERT(!IsLocalObj() && !IsFake());
 
@@ -473,9 +473,9 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
             /* Handle failed validations. */
             if (VV_Cmp(&status.VV, &stat.VV) != VV_EQ) {
-                LOG(1, ("fsobj::Fetch: failed validation\n"));
-                LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
-                            &stat.VV);
+                LOG(1, "fsobj::Fetch: failed validation\n");
+                LOG(1, vvValidationFailureLoggingCallback, &status.VV,
+                    &stat.VV);
                 code = EAGAIN;
             }
         }
@@ -535,10 +535,9 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
         /* Handle failed validations. */
         if (HAVESTATUS(this) && status.DataVersion != stat.DataVersion) {
-            LOG(1, ("fsobj::Fetch: failed validation (%d, %d)\n",
-                    status.DataVersion, stat.DataVersion));
-            LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
-                        &stat.VV);
+            LOG(1, "fsobj::Fetch: failed validation (%d, %d)\n",
+                status.DataVersion, stat.DataVersion);
+            LOG(1, vvValidationFailureLoggingCallback, &status.VV, &stat.VV);
             code = EAGAIN;
         }
 
@@ -633,7 +632,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
     char val_prel_str[256];
     int asy_resolve = 0;
 
-    LOG(10, ("fsobj::GetAttr: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::GetAttr: (%s), uid = %d\n", GetComp(), uid);
 
     CODA_ASSERT(!IsLocalObj());
 
@@ -738,8 +737,8 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
                     FSO_ASSERT(this, f->vol->IsReadWrite());
 
                     LOG(1000,
-                        ("fsobj::GetAttr: packing piggy fid (%s) comp = %s\n",
-                         FID_(&f->fid), f->comp));
+                        "fsobj::GetAttr: packing piggy fid (%s) comp = %s\n",
+                        FID_(&f->fid), f->comp);
 
                     FAVs[numPiggyFids].Fid = *MakeViceFid(&f->fid);
                     FAVs[numPiggyFids].VV  = f->stat.VV;
@@ -816,8 +815,8 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
                         }
 
                     LOG(10,
-                        ("fsobj::GetAttr: ValidateAttrs (%s), %d fids sent, %d checked\n",
-                         GetComp(), numPiggyFids, numVFlags));
+                        "fsobj::GetAttr: ValidateAttrs (%s), %d fids sent, %d checked\n",
+                        GetComp(), numPiggyFids, numVFlags);
 
                     nchecked += numPiggyFids;
                     /*
@@ -934,8 +933,8 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
                     MULTI_RECORD_STATS(ViceGetACL_OP);
                 } else {
                     /* get attributes from replicated servers */
-                    LOG(1, ("fsobj::GetAttr: ViceGetAttrPlusSHA(0x%x.%x.%x)\n",
-                            fid.Volume, fid.Vnode, fid.Unique));
+                    LOG(1, "fsobj::GetAttr: ViceGetAttrPlusSHA(0x%x.%x.%x)\n",
+                        fid.Volume, fid.Vnode, fid.Unique);
                     MULTI_START_MESSAGE(ViceGetAttrPlusSHA_OP);
                     code = (int)MRPC_MakeMulti(
                         ViceGetAttrPlusSHA_OP, ViceGetAttrPlusSHA_PTR,
@@ -1018,8 +1017,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 #if 0 /* XXX: How can this be right? */
 	    /* Handle successful validation of fake directory! */
 	    if (IsFakeDir() || IsExpandedDir()) { /* XXX:? Adam 5/17/05 */
-		LOG(0, ("fsobj::GetAttr: (%s) validated fake directory\n",
-			FID_(&fid)));
+		LOG(0, "fsobj::GetAttr: (%s) validated fake directory\n", 			FID_(&fid);
 
 		Recov_BeginTrans();
 		Kill();
@@ -1032,9 +1030,9 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
             /* Handle failed validations. */
             if (HAVESTATUS(this) && VV_Cmp(&status.VV, &stat.VV) != VV_EQ) {
-                LOG(1, ("fsobj::GetAttr: failed validation\n"));
-                LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
-                            &stat.VV);
+                LOG(1, "fsobj::GetAttr: failed validation\n");
+                LOG(1, vvValidationFailureLoggingCallback, &status.VV,
+                    &stat.VV);
 
                 Demote();
                 nfailed++;
@@ -1178,10 +1176,9 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
         /* Handle failed validations. */
         if (HAVESTATUS(this) && status.DataVersion != stat.DataVersion) {
-            LOG(1, ("fsobj::GetAttr: failed validation (%d, %d)\n",
-                    status.DataVersion, stat.DataVersion));
-            LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
-                        &stat.VV);
+            LOG(1, "fsobj::GetAttr: failed validation (%d, %d)\n",
+                status.DataVersion, stat.DataVersion);
+            LOG(1, vvValidationFailureLoggingCallback, &status.VV, &stat.VV);
 
             Demote();
 
@@ -1239,7 +1236,7 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
 int fsobj::GetACL(RPC2_BoundedBS *acl, uid_t uid)
 {
-    LOG(10, ("fsobj::GetACL: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::GetACL: (%s), uid = %d\n", GetComp(), uid);
 
     if (IsLocalObj()) {
         /* Just read/lookup rights for System:AnyUser */
@@ -1305,7 +1302,7 @@ int fsobj::DisconnectedStore(Date_t Mtime, uid_t uid, unsigned long NewLength,
 
 int fsobj::Store(unsigned long NewLength, Date_t Mtime, uid_t uid)
 {
-    LOG(10, ("fsobj::Store: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::Store: (%s), uid = %d\n", GetComp(), uid);
 
     int code = 0;
 
@@ -1413,7 +1410,7 @@ int fsobj::SetAttr(struct coda_vattr *vap, uid_t uid)
     uid_t NewOwner          = VA_IGNORE_UID;
     unsigned short NewMode  = VA_IGNORE_MODE;
 
-    LOG(10, ("fsobj::SetAttr: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::SetAttr: (%s), uid = %d\n", GetComp(), uid);
     VPROC_printvattr(vap);
 
     if (vap->va_size != VA_IGNORE_SIZE)
@@ -1488,7 +1485,7 @@ int fsobj::SetACL(RPC2_CountedBS *acl, uid_t uid)
     int asy_resolve = 0;
     repvol *vp      = (repvol *)vol;
 
-    LOG(10, ("fsobj::SetACL: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::SetACL: (%s), uid = %d\n", GetComp(), uid);
 
     if (!REACHABLE(this))
         return ETIMEDOUT;
@@ -1522,7 +1519,7 @@ int fsobj::SetACL(RPC2_CountedBS *acl, uid_t uid)
     status.Mode   = (unsigned)-1;
     status.Length = (unsigned)-1;
 
-    LOG(100, ("fsobj::ConnectedSetAcl\n"));
+    LOG(100, "fsobj::ConnectedSetAcl\n");
 
     /* COP2 Piggybacking. */
     char PiggyData[COP2SIZE];
@@ -1809,8 +1806,8 @@ Exit:
 int fsobj::Create(char *name, fsobj **target_fso_addr, uid_t uid,
                   unsigned short Mode, int target_pri)
 {
-    LOG(10, ("fsobj::Create: (%s, %s, %d), uid = %d\n", GetComp(), name,
-             target_pri, uid));
+    LOG(10, "fsobj::Create: (%s, %s, %d), uid = %d\n", GetComp(), name,
+        target_pri, uid);
 
     int code         = 0;
     Date_t Mtime     = Vtime();

@@ -124,7 +124,7 @@ void VolDaemon(void)
         }
 
         END_TIMING();
-        LOG(10, ("VolDaemon: elapsed = %3.1f\n", elapsed));
+        LOG(10, "VolDaemon: elapsed = %3.1f\n", elapsed);
 
         /* Bump sequence number. */
         vp->seq++;
@@ -134,7 +134,7 @@ void VolDaemon(void)
 /* local-repair modification */
 void vdb::GetDown()
 {
-    LOG(10, ("vdb::GetDown: \n"));
+    LOG(10, "vdb::GetDown: \n");
 
     Recov_BeginTrans();
     { /* find reclaimable replicated volumes */
@@ -142,7 +142,7 @@ void vdb::GetDown()
         repvol *v;
         while ((v = next())) {
             if (v->refcnt == 1 && v->CML.count() == 0)
-                LOG(10, ("vdb::GetDown destroying %x\n", v->GetVolumeId()));
+                LOG(10, "vdb::GetDown destroying %x\n", v->GetVolumeId());
         }
     }
     { /* find reclaimable volume replicas */
@@ -150,7 +150,7 @@ void vdb::GetDown()
         volrep *v;
         while ((v = next()))
             if (v->refcnt == 1)
-                LOG(10, ("vdb::GetDown destroying %x\n", v->GetVolumeId()));
+                LOG(10, "vdb::GetDown destroying %x\n", v->GetVolumeId());
     }
     Recov_EndTrans(0);
 }
@@ -158,7 +158,7 @@ void vdb::GetDown()
 /* local-repair modification */
 void vdb::FlushCOP2()
 {
-    LOG(100, ("vdb::FlushCOP2: \n"));
+    LOG(100, "vdb::FlushCOP2: \n");
 
     /* For each volume. */
     repvol_iterator vnext;
@@ -185,7 +185,7 @@ void vdb::FlushCOP2()
 /* XXX Use this routine to "touch" all volumes periodically so that volume state changes get taken! */
 void vdb::TakeTransition()
 {
-    LOG(100, ("vdb::TakeTransition: \n"));
+    LOG(100, "vdb::TakeTransition: \n");
 
     /* For each volume. */
     repvol_iterator rvnext;
@@ -194,7 +194,7 @@ void vdb::TakeTransition()
     while ((v = rvnext()) || (v = vrnext())) {
         if (v->IsLocalRealm())
             continue;
-        LOG(1000, ("vdb::TakeTransition: checking %s\n", v->name));
+        LOG(1000, "vdb::TakeTransition: checking %s\n", v->name);
         if (v->Enter((VM_OBSERVING | VM_NDELAY), V_UID) == 0)
             v->Exit(VM_OBSERVING, V_UID);
     }
@@ -207,7 +207,7 @@ void vdb::TakeTransition()
  */
 void vdb::CheckPoint(unsigned long curr_time)
 {
-    LOG(100, ("vdb::CheckPoint: \n"));
+    LOG(100, "vdb::CheckPoint: \n");
 
     /* For each volume. */
     repvol_iterator vnext;
@@ -224,7 +224,7 @@ void vdb::CheckPoint(unsigned long curr_time)
             /* skip checkpointing if there is unrepaired mutations */
         } else if (v->LastMLETime(&lmTime) == 0 &&
                    (lmTime > curr_time - VolCheckPointInterval)) {
-            LOG(1000, ("vdb::CheckPoint: checking %s\n", v->name));
+            LOG(1000, "vdb::CheckPoint: checking %s\n", v->name);
             if (CheckLock(&v->CML_lock)) {
                 eprint("volume %s CML is busy, skip checkpoint!\n", v->name);
             } else if (v->Enter((VM_OBSERVING | VM_NDELAY), V_UID) == 0) {
@@ -238,14 +238,14 @@ void vdb::CheckPoint(unsigned long curr_time)
 /* Note: no longer in class vdb, since VolDaemon isn't (Satya, 5/20/95) */
 void TrickleReintegrate()
 {
-    LOG(100, ("TrickleReintegrate(): \n"));
+    LOG(100, "TrickleReintegrate(): \n");
 
     /* For each volume. */
     reintvol_iterator next;
     reintvol *v;
 
     while ((v = next())) {
-        LOG(1000, ("TrickleReintegrate: checking %s\n", v->GetName()));
+        LOG(1000, "TrickleReintegrate: checking %s\n", v->GetName());
         if (v->Enter((VM_OBSERVING | VM_NDELAY), V_UID) == 0) {
             /* force a connectivity check? */
             /* try to propagate updates from this volume.  */

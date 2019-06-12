@@ -82,18 +82,18 @@ int fsobj::OpenPioctlFile(void)
     n = fscanf(f, "%u\n%u\n%u\n%u\n%u\n%*c", &nr, &plen, &follow, &in_size,
                &out_size);
     if (n != 5) {
-        LOG(0, ("fsobj::OpenPioctlFile: failed to parse data header\n"));
+        LOG(0, "fsobj::OpenPioctlFile: failed to parse data header\n");
         code = EIO;
     PioctlErrOut:
         data.file->FClose(f);
         return code;
     }
 
-    LOG(0, ("fsobj::Open: got pioctl %u (%u, %u, %u, %u)\n", nr, plen, follow,
-            in_size, out_size));
+    LOG(0, "fsobj::Open: got pioctl %u (%u, %u, %u, %u)\n", nr, plen, follow,
+        in_size, out_size);
 
     if (nr > 255 || in_size > CFS_PIOBUFSIZE || out_size > CFS_PIOBUFSIZE) {
-        LOG(0, ("fsobj::OpenPioctlFile: unexpected data header value\n"));
+        LOG(0, "fsobj::OpenPioctlFile: unexpected data header value\n");
         code = EINVAL;
         goto PioctlErrOut;
     }
@@ -103,7 +103,7 @@ int fsobj::OpenPioctlFile(void)
     struct venus_cnode vnp;
 
     if (plen > CODA_MAXPATHLEN || fread(in_buffer, 1, plen, f) != plen) {
-        LOG(0, ("fsobj::OpenPioctlFile: failed to read path\n"));
+        LOG(0, "fsobj::OpenPioctlFile: failed to read path\n");
         code = EINVAL;
         goto PioctlErrOut;
     }
@@ -112,7 +112,7 @@ int fsobj::OpenPioctlFile(void)
     vp->u.u_cdir = vproc::GetRootFid();
     vp->u.u_nc   = NULL;
     if (!vp->namev(in_buffer, flags, &vnp)) {
-        LOG(10, ("fsobj::OpenPioctlFile: namev failed to traverse\n"));
+        LOG(10, "fsobj::OpenPioctlFile: namev failed to traverse\n");
         code = vp->u.u_error;
         goto PioctlErrOut;
     }
@@ -126,7 +126,7 @@ int fsobj::OpenPioctlFile(void)
     }
 
     if (fread(in_buffer, 1, in_size, f) != in_size) {
-        LOG(0, ("fsobj::OpenPioctlFile: failed to read request data\n"));
+        LOG(0, "fsobj::OpenPioctlFile: failed to read request data\n");
         code = EFAULT;
         goto PioctlErrOut;
     }
@@ -168,7 +168,7 @@ int fsobj::OpenPioctlFile(void)
 
     if (fprintf(f, "%d\n%u\n%c", error, vidata.out_size, '\0') == -1 ||
         fwrite(vidata.out, 1, vidata.out_size, f) != vidata.out_size) {
-        LOG(0, ("fsobj::OpenPioctlFile: failed to write result\n"));
+        LOG(0, "fsobj::OpenPioctlFile: failed to write result\n");
         code = ENOSPC;
         goto PioctlErrOut;
     }
@@ -190,8 +190,8 @@ int fsobj::OpenPioctlFile(void)
 /* MUST NOT be called from within a transaction. */
 int fsobj::Open(int writep, int truncp, struct venus_cnode *cp, uid_t uid)
 {
-    LOG(10, ("fsobj::Open: (%s, %d, %d), uid = %d\n", GetComp(), writep, truncp,
-             uid));
+    LOG(10, "fsobj::Open: (%s, %d, %d), uid = %d\n", GetComp(), writep, truncp,
+        uid);
 
     int code = 0;
 
@@ -265,7 +265,7 @@ int fsobj::Open(int writep, int truncp, struct venus_cnode *cp, uid_t uid)
 
         /* Recompute udir contents if necessary. */
         if (!data.dir->udcfvalid) {
-            LOG(100, ("fsobj::Open: recomputing udir\n"));
+            LOG(100, "fsobj::Open: recomputing udir\n");
 
             /* XXX I reactivated this code. It seems a good idea
 	       pjb 9/21/98 */
@@ -273,7 +273,7 @@ int fsobj::Open(int writep, int truncp, struct venus_cnode *cp, uid_t uid)
 	    /* Reset a cache entry that others are still reading, but
                that we must now change. */
 	    if (openers > 1) {
-		LOG(100, ("fsobj::Open: udir in use, detaching for current users\n"));
+		LOG(100, "fsobj::Open: udir in use, detaching for current users\n");
 
 		/* Unlink the old inode.  Kernel will keep it around
                    for current openers. */
@@ -343,7 +343,7 @@ Exit:
 /* We CANNOT return ERETRY from this routine! */
 int fsobj::Sync(uid_t uid)
 {
-    LOG(10, ("fsobj::Sync: (%s), uid = %d\n", GetComp(), uid));
+    LOG(10, "fsobj::Sync: (%s), uid = %d\n", GetComp(), uid);
 
     int code = 0;
 
@@ -421,7 +421,7 @@ int fsobj::Sync(uid_t uid)
 /* We CANNOT return ERETRY from this routine! */
 void fsobj::Release(int writep)
 {
-    LOG(10, ("fsobj::Release: (%s, %d)\n", GetComp(), writep));
+    LOG(10, "fsobj::Release: (%s, %d)\n", GetComp(), writep);
 
     FSO_ASSERT(this, openers != 0);
     CacheChunk currc;
@@ -461,15 +461,15 @@ void fsobj::Release(int writep)
 
             /* Fudge size of files that were deleted while open. */
             if (DYING(this)) {
-                LOG(0, ("fsobj::Release: last writer && dying (%s)\n",
-                        FID_(&fid)));
+                LOG(0, "fsobj::Release: last writer && dying (%s)\n",
+                    FID_(&fid));
                 RVMLIB_REC_OBJECT(stat.Length);
                 stat.Length = 0; /* Necessary for blocks maintenance! */
             }
             Recov_EndTrans(DMFP);
         }
     } else if (IsPioctlFile()) {
-        LOG(10, ("fsobj::Release: dropping pioctl file (%s)\n", FID_(&fid)));
+        LOG(10, "fsobj::Release: dropping pioctl file (%s)\n", FID_(&fid));
         Recov_BeginTrans();
         Kill();
         Recov_EndTrans(DMFP);
@@ -496,8 +496,8 @@ int fsobj::Close(int writep, uid_t uid)
 /* Need to incorporate System:Administrator knowledge here! -JJK */
 int fsobj::Access(int rights, int modes, uid_t uid)
 {
-    LOG(10, ("fsobj::Access : (%s, %d, %d), uid = %d\n", GetComp(), rights,
-             modes, uid));
+    LOG(10, "fsobj::Access : (%s, %d, %d), uid = %d\n", GetComp(), rights,
+        modes, uid);
 
     int code = 0, connected;
 
@@ -631,8 +631,8 @@ int fsobj::Access(int rights, int modes, uid_t uid)
 int fsobj::Lookup(fsobj **target_fso_addr, VenusFid *inc_fid, const char *name,
                   uid_t uid, int flags, int GetInconsistent)
 {
-    LOG(10, ("fsobj::Lookup: (%s/%s), uid = %d, GetInconsistent = %d\n",
-             GetComp(), name, uid, GetInconsistent));
+    LOG(10, "fsobj::Lookup: (%s/%s), uid = %d, GetInconsistent = %d\n",
+        GetComp(), name, uid, GetInconsistent);
 
     /* We're screwed if (name == "." or ".."). -JJK */
     CODA_ASSERT(!STREQ(name, ".") && !STREQ(name, ".."));
@@ -780,8 +780,8 @@ done:
 /* Call with object read-locked. */
 int fsobj::Readlink(char *buf, unsigned long len, int *cc, uid_t uid)
 {
-    LOG(10, ("fsobj::Readlink : (%s, %x, %d, %x), uid = %d\n", GetComp(), buf,
-             len, cc, uid));
+    LOG(10, "fsobj::Readlink : (%s, %x, %d, %x), uid = %d\n", GetComp(), buf,
+        len, cc, uid);
 
     if (!HAVEALLDATA(this)) {
         print(GetLogFile());
@@ -803,7 +803,7 @@ int fsobj::Readlink(char *buf, unsigned long len, int *cc, uid_t uid)
     /* hacky, assume buf has enough space for an extra '\0' even though we
      * are not supposed to return it, but we need it to log the content. */
     buf[stat.Length] = '\0';
-    LOG(100, ("fsobj::Readlink: contents = %s\n", buf));
+    LOG(100, "fsobj::Readlink: contents = %s\n", buf);
     return (0);
 }
 

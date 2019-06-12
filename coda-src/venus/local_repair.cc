@@ -67,7 +67,7 @@ void ClientModifyLog::CheckCMLHead(char *msg)
         m->GetLocalOpMsg(opmsg);
         m->CheckRepair(checkmsg, &mcode, &rcode);
         sprintf(msg, "local mutation: %s\n%s", opmsg, checkmsg);
-        LOG(0, ("ClientModifyLog::CheckCMLHead: %s", msg));
+        LOG(0, "ClientModifyLog::CheckCMLHead: %s", msg);
     }
 }
 
@@ -101,9 +101,10 @@ int ClientModifyLog::DiscardLocalMutation(char *msg)
 
     /* XXX: Dependencies need to be checked here! */
 
-    LOG(0, ("ClientModifyLog::DiscardLocalMutation: dropping head of CML:"
-            "%s\n",
-            opmsg));
+    LOG(0,
+        "ClientModifyLog::DiscardLocalMutation: dropping head of CML:"
+        "%s\n",
+        opmsg);
     CODA_ASSERT(m->IsFrozen());
     Recov_BeginTrans();
     cancelFreezes(1);
@@ -112,8 +113,8 @@ int ClientModifyLog::DiscardLocalMutation(char *msg)
     Recov_EndTrans(CMFP);
 
     if (rc != 1) {
-        LOG(0,
-            ("ClientModifyLog::DiscardLocalMutation: cancel failed: %d\n", rc));
+        LOG(0, "ClientModifyLog::DiscardLocalMutation: cancel failed: %d\n",
+            rc);
         sprintf(msg, "discard of local mutation failed");
     } else {
         sprintf(msg, "discarded local mutation %s\n", opmsg);

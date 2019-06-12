@@ -573,15 +573,15 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                             CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT, 1);
                     if (rc) {
                         LOG(0,
-                            ("VIOC_REPAIR: Lookup() failed for LOCALCACHE:%d\n",
-                             rc));
+                            "VIOC_REPAIR: Lookup() failed for LOCALCACHE:%d\n",
+                            rc);
                         break;
                     } else
                         CODA_ASSERT(f);
 
                     LOG(0,
-                        ("VIOC_REPAIR: called on expanded directory (%s)! redirecting to localcache (%s)\n",
-                         FID_(&fakedir->fid), FID_(&f->fid)));
+                        "VIOC_REPAIR: called on expanded directory (%s)! redirecting to localcache (%s)\n",
+                        FID_(&fakedir->fid), FID_(&f->fid));
 
                     FSDB->Put(&fakedir);
                 }
@@ -612,16 +612,16 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
 
                 if (v->IsReplicated()) {
                     VenusFid fid = f->fid;
-                    LOG(0, ("VIOC_REPAIR calling repvol::Repair (%s)\n",
-                            FID_(&f->fid)));
+                    LOG(0, "VIOC_REPAIR calling repvol::Repair (%s)\n",
+                        FID_(&f->fid));
                     FSDB->Put(&f);
                     u.u_error = ((repvol *)v)
                                     ->Repair(&fid, RepairFile, u.u_uid, RWVols,
                                              ReturnCodes);
                 } else
-                    LOG(0, ("VIOC_REPAIR: non-replicated volume!\n"));
+                    LOG(0, "VIOC_REPAIR: non-replicated volume!\n");
 
-                LOG(0, ("VIOC_REPAIR: repvol::Repair returns %d\n", u.u_error));
+                LOG(0, "VIOC_REPAIR: repvol::Repair returns %d\n", u.u_error);
 #undef RepairFile
 #undef startp
 #undef RWVols
@@ -644,8 +644,8 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                  * --JH */
                 {
                     /* ASR flush operation allowed only for files */
-                    LOG(100, ("Going to reset lastresolved time for %s\n",
-                              FID_(fid)));
+                    LOG(100, "Going to reset lastresolved time for %s\n",
+                        FID_(fid));
                     u.u_error = f->SetLastResolved(0);
                     break;
                 }
@@ -762,8 +762,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
             data_in = (struct listcache_in *)data->in;
             temp_fd = mkstemp(listcache_temp);
             if (temp_fd == -1) {
-                LOG(0,
-                    ("Failed to create temporary file: %s\n", listcache_temp));
+                LOG(0, "Failed to create temporary file: %s\n", listcache_temp);
                 u.u_error = errno;
                 break;
             }
@@ -779,7 +778,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
             if (fchown(temp_fd, u.u_uid, -1) == -1)
 #endif
             {
-                LOG(0, ("Cannot chown file: %s\n", listcache_temp));
+                LOG(0, "Cannot chown file: %s\n", listcache_temp);
                 u.u_error = errno;
             }
             fclose(temp_fp);
@@ -844,8 +843,9 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                  sizeof(unsigned int) + /* hogtime */
                  sizeof(uint64_t)) /* cml_bytes */
                 > VC_MAXDATASIZE) {
-                LOG(0, ("vproc::do_ioctl: VIOCGETVOLSTAT: buffer is "
-                        "not large enough to hold the message\n"));
+                LOG(0,
+                    "vproc::do_ioctl: VIOCGETVOLSTAT: buffer is "
+                    "not large enough to hold the message\n");
                 u.u_error = EINVAL;
                 break;
             }
@@ -1115,23 +1115,23 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
 
                 msg = (char *)data->out;
                 if (!msg) {
-                    LOG(0, ("REP_CMD_BEGIN: (%s) bad data->out parameter\n",
-                            FID_(fid)));
+                    LOG(0, "REP_CMD_BEGIN: (%s) bad data->out parameter\n",
+                        FID_(fid));
                     code = -1;
                     goto BEGIN_cleanup;
                 }
 
                 dir = FSDB->Find(fid);
                 if (!dir) {
-                    LOG(0, ("REP_CMD_BEGIN: (%s) <= this object missing!\n",
-                            FID_(fid)));
+                    LOG(0, "REP_CMD_BEGIN: (%s) <= this object missing!\n",
+                        FID_(fid));
                     code = -1;
                     goto BEGIN_cleanup;
                 }
 
                 if (!dir->IsLocalObj()) {
-                    LOG(0, ("REP_CMD_BEGIN: (%s) not an expanded dir\n",
-                            FID_(fid)));
+                    LOG(0, "REP_CMD_BEGIN: (%s) not an expanded dir\n",
+                        FID_(fid));
                     code = -1;
                     goto BEGIN_cleanup;
                 }
@@ -1143,9 +1143,10 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                     rc = dir->Lookup(&localcache, fid, LOCALCACHE, u.u_uid,
                                      CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT, 1);
                 if (!localcache || (rc && rc != EINCONS)) {
-                    LOG(0, ("REP_CMD_BEGIN: (%s) failed finding localcache "
-                            "object.. bad news.\n",
-                            FID_(fid)));
+                    LOG(0,
+                        "REP_CMD_BEGIN: (%s) failed finding localcache "
+                        "object.. bad news.\n",
+                        FID_(fid));
                     code = -1;
                     goto BEGIN_cleanup;
                 }
@@ -1341,8 +1342,8 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
 
                 temp_fd = mkstemp(listlocal_temp);
                 if (temp_fd == -1) {
-                    LOG(0, ("Failed to create temporary file: %s\n",
-                            listlocal_temp));
+                    LOG(0, "Failed to create temporary file: %s\n",
+                        listlocal_temp);
                     u.u_error = errno;
                     break;
                 }
@@ -1365,7 +1366,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                 if (fchown(temp_fd, u.u_uid, -1) == -1)
 #endif
                 {
-                    LOG(0, ("Cannot chown file: %s\n", listlocal_temp));
+                    LOG(0, "Cannot chown file: %s\n", listlocal_temp);
                     u.u_error = errno;
                 }
                 fclose(temp_fp);
@@ -1445,8 +1446,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
             data_in = (struct listcache_in *)data->in;
             temp_fd = mkstemp(listcache_temp);
             if (temp_fd == -1) {
-                LOG(0,
-                    ("Failed to create temporary file: %s\n", listcache_temp));
+                LOG(0, "Failed to create temporary file: %s\n", listcache_temp);
                 u.u_error = errno;
                 break;
             }
@@ -1462,7 +1462,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
             if (fchown(temp_fd, u.u_uid, -1) == -1)
 #endif
             {
-                LOG(0, ("Cannot chown file: %s\n", listcache_temp));
+                LOG(0, "Cannot chown file: %s\n", listcache_temp);
                 u.u_error = errno;
             }
             fclose(temp_fp);

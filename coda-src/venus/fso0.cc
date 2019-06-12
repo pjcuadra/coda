@@ -291,8 +291,8 @@ int FSO_PriorityFN(bsnode *b1, bsnode *b2)
     eprint("FSO_PriorityFN: priorities tied (%d, %d)!\n",
 	    f1->priority, f1->flags.random);
 */
-    LOG(1, ("FSO_PriorityFN: priorities tied (%d, %d)!\n", f1->priority,
-            f1->flags.random));
+    LOG(1, "FSO_PriorityFN: priorities tied (%d, %d)!\n", f1->priority,
+        f1->flags.random);
     return (0);
 }
 
@@ -487,9 +487,9 @@ fsobj *fsdb::Create(VenusFid *key, int priority, const char *comp,
     Recov_EndTrans(MAXFP);
 
     if (!f)
-        LOG(0, ("fsdb::Create: (%s, %d) failed\n", FID_(key), priority));
+        LOG(0, "fsdb::Create: (%s, %d) failed\n", FID_(key), priority);
     else
-        LOG(100, ("fsdb::Create: (%s, %d) succeeded\n", FID_(key), priority));
+        LOG(100, "fsdb::Create: (%s, %d) succeeded\n", FID_(key), priority);
 
     return (f);
 }
@@ -524,8 +524,8 @@ int fsdb::Get(fsobj **f_addr, VenusFid *key, uid_t uid, int rights,
     *f_addr     = 0; /* OUT parameter valid on success only. */
     vproc *vp   = VprocSelf();
 
-    LOG(100, ("fsdb::Get: key = (%s), uid = %d, rights = %d, comp = %s\n",
-              FID_(key), uid, rights, comp));
+    LOG(100, "fsdb::Get: key = (%s), uid = %d, rights = %d, comp = %s\n",
+        FID_(key), uid, rights, comp);
 
     /* if (vp->type != VPT_HDBDaemon)
      *  NotifyUserOfProgramAccess(uid, vp->u.u_pid, vp->u.u_pgid, key); */
@@ -582,8 +582,8 @@ RestartFind:
         /* if it's in the local realm and the repair vol, and is a fake root,
 	   it must have left a dangling reference during a collapse */
         if (FID_IsExpandedDir(key)) {
-            LOG(0, ("Failed to get (%s), probably a collapsed expansion dir!\n",
-                    FID_(key)));
+            LOG(0, "Failed to get (%s), probably a collapsed expansion dir!\n",
+                FID_(key));
 
             return (EIO);
         }
@@ -595,15 +595,14 @@ RestartFind:
 	 * the object belongs to is the local volume.  yuck.  --lily
 	 */
         if (FID_IsDisco(MakeViceFid(key))) {
-            LOG(0,
-                ("fsdb::Get: Locally created fid %s not found!\n", FID_(key)));
+            LOG(0, "fsdb::Get: Locally created fid %s not found!\n", FID_(key));
             return ETIMEDOUT;
         }
 
         /* Must ensure that the volume is cached. */
         volent *v = 0;
         if (VDB->Get(&v, MakeVolid(key))) {
-            LOG(100, ("Volume not cached and we couldn't get it...\n"));
+            LOG(100, "Volume not cached and we couldn't get it...\n");
             return (ETIMEDOUT);
         }
 
@@ -616,14 +615,14 @@ RestartFind:
 
         if (v->IsResolving()) {
             LOG(0,
-                ("Volume resolving and file not cached, retrying VDB->Get!\n"));
+                "Volume resolving and file not cached, retrying VDB->Get!\n");
             VDB->Put(&v);
             return (ERETRY);
         }
 
         /* Cut-out early if volume is unreachable! */
         if (v->IsUnreachable()) {
-            LOG(100, ("Volume unreachable and file not cached!\n"));
+            LOG(100, "Volume unreachable and file not cached!\n");
             VDB->Put(&v);
             return (ETIMEDOUT);
         }
@@ -641,11 +640,11 @@ RestartFind:
         /* The first clause catches the /coda root, the second catches
 	   realms as they are demand loaded */
         if (FID_IsLocalFake(key) || FID_IsFakeRoot(MakeViceFid(key))) {
-            LOG(0, ("fsdb::Get: transforming %s (%s) with Fakeify()\n",
-                    f->GetComp(), FID_(&f->fid)));
+            LOG(0, "fsdb::Get: transforming %s (%s) with Fakeify()\n",
+                f->GetComp(), FID_(&f->fid));
             if (f->Fakeify(uid)) {
-                LOG(0, ("fsdb::Get: can't transform %s (%s) into fake mt pt\n",
-                        f->GetComp(), FID_(&f->fid)));
+                LOG(0, "fsdb::Get: can't transform %s (%s) into fake mt pt\n",
+                    f->GetComp(), FID_(&f->fid));
                 Recov_BeginTrans();
                 f->Kill();
                 Recov_EndTrans(MAXFP);
@@ -660,12 +659,12 @@ RestartFind:
         int curr_matriculation_count = matriculation_count;
         if (!HAVESTATUS(f) && !f->IsFake()) {
             while (curr_matriculation_count == matriculation_count) {
-                LOG(0, ("WAITING(MATRICULATION): count = %d\n",
-                        matriculation_count));
+                LOG(0, "WAITING(MATRICULATION): count = %d\n",
+                    matriculation_count);
                 START_TIMING();
                 VprocWait(&matriculation_sync);
                 END_TIMING();
-                LOG(0, ("WAIT OVER, elapsed = %3.1f\n", elapsed));
+                LOG(0, "WAIT OVER, elapsed = %3.1f\n", elapsed);
             }
             goto RestartFind;
         }
@@ -732,8 +731,8 @@ RestartFind:
 
                     k_Purge(&f->fid, 0);
 
-                    LOG(0, ("fsdb::Get: %s (%s) in server/server conflict\n",
-                            path, FID_(key)));
+                    LOG(0, "fsdb::Get: %s (%s) in server/server conflict\n",
+                        path, FID_(key));
                     MarinerLog("fsobj::CONFLICT (server/server): %s (%s)\n",
                                path, FID_(key));
                 } /* s/s conflict objs fall through if(GetInconsistent) */
@@ -747,9 +746,9 @@ RestartFind:
 
                 if (code && !(code == EINCONS && GetInconsistent)) {
                     if (code == EINCONS)
-                        LOG(0, ("fsdb::Get: EINCONS after GetAttr\n"));
+                        LOG(0, "fsdb::Get: EINCONS after GetAttr\n");
                     if (code == ETIMEDOUT)
-                        LOG(100, ("fsdb::Get: TIMEDOUT after GetAttr\n"));
+                        LOG(100, "fsdb::Get: TIMEDOUT after GetAttr\n");
                     Put(&f);
                     return (code);
                 }
@@ -779,8 +778,8 @@ RestartFind:
                             f)) { /* Create empty container file for VASTROS */
                         Recov_BeginTrans();
                         LOG(0,
-                            ("fsdb::Get: Creating Container file for VASTRO Comp: %s, Length: %d\n",
-                             f->comp, f->stat.Length));
+                            "fsdb::Get: Creating Container file for VASTRO Comp: %s, Length: %d\n",
+                            f->comp, f->stat.Length);
                         int fd = f->GetContainerFD();
                         CODA_ASSERT(fd != -1);
                         f->cf.Close(fd);
@@ -804,7 +803,7 @@ RestartFind:
             f->DemoteLock();
         } else { /* !FETCHABLE(f) */
             if (RESOLVING(f)) {
-                LOG(100, ("(MARIA) TIMEOUT !fetchable and resolving...\n"));
+                LOG(100, "(MARIA) TIMEOUT !fetchable and resolving...\n");
                 Put(&f);
                 return (ETIMEDOUT);
             }
@@ -824,26 +823,28 @@ RestartFind:
 	     * STATUS, but log that we did so.
 	     *
 	     *   if (DYING(f)) {
-	     *     LOG(0, ("Active reference prevents refetching object!  Providing limited access to stale status!\n"));
+	     *     LOG(0, "Active reference prevents refetching object!  Providing limited access to stale status!\n");
 	     *     *f_addr = f;
 	     *     Put(&f);
 	     *     return(ETOOMANYREFS);
 	     *   }
 	     */
             if (DYING(f))
-                LOG(0, ("Active reference prevents refetching object! "
-                        "Allowing access to stale status! (key = <%s>)\n",
-                        FID_(key)));
+                LOG(0,
+                    "Active reference prevents refetching object! "
+                    "Allowing access to stale status! (key = <%s>)\n",
+                    FID_(key));
 
             else if (!STATUSVALID(f) && !f->IsLocalObj())
-                LOG(0, ("Allowing access to stale status! (key = <%s>)\n",
-                        FID_(key)));
+                LOG(0, "Allowing access to stale status! (key = <%s>)\n",
+                    FID_(key));
 
             if (getdata) {
                 if (DYING(f)) {
-                    LOG(0, ("Active reference prevents refetching object! "
-                            "Disallowing access to stale data! (key = <%s>)\n",
-                            FID_(key)));
+                    LOG(0,
+                        "Active reference prevents refetching object! "
+                        "Disallowing access to stale data! (key = <%s>)\n",
+                        FID_(key));
                     Put(&f);
                     return (ETOOMANYREFS);
                 }
@@ -865,8 +866,8 @@ RestartFind:
                 }
 
                 if (!DATAVALID(f) && !f->IsLocalObj())
-                    LOG(0, ("Allowing access to stale data! (key = <%s>)\n",
-                            FID_(key)));
+                    LOG(0, "Allowing access to stale data! (key = <%s>)\n",
+                        FID_(key));
             }
         }
     }
@@ -879,8 +880,8 @@ RestartFind:
         struct timeval tv;
         fsobj *realobj;
 
-        LOG(0, ("fsdb::Get:Volume NOT under repair and IsFake(%s)\n",
-                FID_(&f->fid)));
+        LOG(0, "fsdb::Get:Volume NOT under repair and IsFake(%s)\n",
+            FID_(&f->fid));
 
         /* At this point, we have Fakeify'd the real object, and f is the
 	 * fake object served in its place. Unfortunately, it is not linked
@@ -890,7 +891,7 @@ RestartFind:
 
         realobj = Find(key);
         if (!realobj) {
-            LOG(0, ("fsdb::Get:Find failed!\n"));
+            LOG(0, "fsdb::Get:Find failed!\n");
             Put(&f);
             return EINCONS;
         }
@@ -914,36 +915,36 @@ RestartFind:
 
         if (VDB->GetASRLauncherFile() == NULL)
             LOG(0,
-                ("fsdb::Get: asrlauncher_file not specified in venus.conf!\n"));
+                "fsdb::Get: asrlauncher_file not specified in venus.conf!\n");
 
         if (VDB->GetASRPolicyFile() == NULL)
-            LOG(0,
-                ("fsdb::Get: asrpolicy_file not specified in venus.conf!\n"));
+            LOG(0, "fsdb::Get: asrpolicy_file not specified in venus.conf!\n");
 
         if (vp->type != VPT_Worker)
-            LOG(0, ("fsdb::Get: Non-worker Thread\n"));
+            LOG(0, "fsdb::Get: Non-worker Thread\n");
 
         if (!v->IsASREnabled())
-            LOG(0, ("fsdb::Get: ASRs disabled by the system at the moment \n"));
+            LOG(0, "fsdb::Get: ASRs disabled by the system at the moment \n");
 
         if (v->asr_running())
-            LOG(0, ("fsdb::Get: ASR already running in this volume\n"));
+            LOG(0, "fsdb::Get: ASR already running in this volume\n");
 
         if (((tv.tv_sec - realobj->lastresolved) <= ASR_INTERVAL))
-            LOG(0, ("fsdb::Get: ASR executed too recently for this object\n"
-                    "fsdb::Get: New time: %d\tOld time: %d\tDiff:%d\n",
-                    tv.tv_sec, realobj->lastresolved,
-                    tv.tv_sec - realobj->lastresolved));
+            LOG(0,
+                "fsdb::Get: ASR executed too recently for this object\n"
+                "fsdb::Get: New time: %d\tOld time: %d\tDiff:%d\n",
+                tv.tv_sec, realobj->lastresolved,
+                tv.tv_sec - realobj->lastresolved);
 
         if (!v->IsASRAllowed())
-            LOG(0, ("fsdb::Get: ASRs disabled in this volume by some user\n"));
+            LOG(0, "fsdb::Get: ASRs disabled in this volume by some user\n");
 
         if (v->asr_running() && vp->u.u_pgid != v->asr_pgid())
             code = ERETRY; /* Bounce out anything which tries to hold
 				* kernel locks while repairing. */
 
         else if (ASRInvokable) { /* Execute ASR. */
-            LOG(0, ("fsdb::Get: Launching for (%s)... \n", FID_(key)));
+            LOG(0, "fsdb::Get: Launching for (%s)... \n", FID_(key));
             if (realobj->LaunchASR(SERVER_SERVER, realobj->IsDir() ?
                                                       DIRECTORY_CONFLICT :
                                                       FILE_CONFLICT) == 0)
@@ -951,7 +952,7 @@ RestartFind:
             else
                 code = EINCONS;
         } else {
-            LOG(0, ("fsdb::Get: ASR not invokable for %s\n", FID_(key)));
+            LOG(0, "fsdb::Get: ASR not invokable for %s\n", FID_(key));
             code = EINCONS;
         }
 
@@ -972,14 +973,14 @@ RestartFind:
 void fsdb::Put(fsobj **f_addr)
 {
     if (!(*f_addr)) {
-        LOG(100, ("fsdb::Put: Null FSO\n"));
+        LOG(100, "fsdb::Put: Null FSO\n");
         return;
     }
 
     fsobj *f = *f_addr;
     LOG(100,
-        ("fsdb::Put: (%s), refcnt = %d, readers = %d, writers = %d, openers = %d\n",
-         FID_(&f->fid), f->refcnt, f->readers, f->writers, f->openers));
+        "fsdb::Put: (%s), refcnt = %d, readers = %d, writers = %d, openers = %d\n",
+        FID_(&f->fid), f->refcnt, f->readers, f->writers, f->openers);
 
     if (f->readers == 0 && f->writers == 0) {
         f->print(GetLogFile());
@@ -990,7 +991,7 @@ void fsdb::Put(fsobj **f_addr)
 
     /* Perform GC if necessary. */
     if (GCABLE(f)) {
-        LOG(10, ("fsdb::Put: GC (%s)\n", FID_(&f->fid)));
+        LOG(10, "fsdb::Put: GC (%s)\n", FID_(&f->fid));
 
         Recov_BeginTrans();
         f->GC();
@@ -1101,7 +1102,7 @@ int fsdb::TranslateFid(VenusFid *OldFid, VenusFid *NewFid)
     fsobj *f = 0;
     VenusFid pFid;
 
-    LOG(100, ("fsdb::TranslateFid: %s --> %s\n", FID_(OldFid), FID_(NewFid)));
+    LOG(100, "fsdb::TranslateFid: %s --> %s\n", FID_(OldFid), FID_(NewFid));
 
     /* cross volume replacements are for local fids */
     if (!FID_VolEQ(OldFid, NewFid) && NewFid->Realm != LocalRealm->Id())
@@ -1111,7 +1112,7 @@ int fsdb::TranslateFid(VenusFid *OldFid, VenusFid *NewFid)
     /* First, change the object itself. */
     f = Find(OldFid);
     if (f == NULL) {
-        LOG(0, ("fsdb::TranslateFid: %s not found\n", FID_(OldFid)));
+        LOG(0, "fsdb::TranslateFid: %s not found\n", FID_(OldFid));
         return (ENOENT);
     }
 
@@ -1253,8 +1254,8 @@ int fsdb::FreeFsoCount()
 {
     int count = (MaxFiles - htab.count());
     if (count != freelist.count())
-        LOG(0, ("fsdb::FreeFsoCount: counts disagree (%d - %d != %d)\n",
-                MaxFiles, htab.count(), freelist.count()));
+        LOG(0, "fsdb::FreeFsoCount: counts disagree (%d - %d != %d)\n",
+            MaxFiles, htab.count(), freelist.count());
 
     return (count);
 }
@@ -1519,7 +1520,7 @@ void fsdb::FreeBlocks(int nblocks)
  */
 void fsdb::ChangeDiskUsage(int delta_blocks)
 {
-    LOG(10, ("fsdb::ChangeDiskUsage: %d blocks\n", delta_blocks));
+    LOG(10, "fsdb::ChangeDiskUsage: %d blocks\n", delta_blocks);
 
     blocks += delta_blocks;
 }

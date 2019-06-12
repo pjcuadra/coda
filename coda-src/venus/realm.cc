@@ -75,7 +75,7 @@ Realm::~Realm(void)
     VenusFid Fid;
     fsobj *f;
 
-    LOG(100, ("Realm::~Realm %s\n", name));
+    LOG(100, "Realm::~Realm %s\n", name);
 
     CODA_ASSERT(!rec_refcount && refcount <= 1);
 
@@ -196,7 +196,7 @@ int Realm::GetAdmConn(connent **cpp)
     srvent *s;
     int code = 0, unknown, resolve;
 
-    LOG(100, ("GetAdmConn: %s\n", name));
+    LOG(100, "GetAdmConn: %s\n", name);
 
     if (STREQ(name, LOCALREALM))
         return ETIMEDOUT;

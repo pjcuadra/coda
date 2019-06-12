@@ -129,8 +129,8 @@ int fsobj::ExpandObject(void)
         fakedir->dir_Create(name, &fakelink->fid);
 
         fakedir->AttachChild(fakelink);
-        LOG(10, ("fsobj::ExpandObject: new entry (%s, %s) -> %s\n", name,
-                 FID_(&fakelink->fid), FID_(&fid)));
+        LOG(10, "fsobj::ExpandObject: new entry (%s, %s) -> %s\n", name,
+            FID_(&fakelink->fid), FID_(&fid));
         FSDB->Put(&fakelink);
     }
 
@@ -155,8 +155,8 @@ int fsobj::ExpandObject(void)
             fakelink->pfid = fakedir->fid;
             fakedir->dir_Create(s->name, &fakelink->fid);
             fakedir->AttachChild(fakelink);
-            LOG(10, ("fsobj::ExpandObject: new entry (%s, %s) -> %s\n", s->name,
-                     FID_(&fakelink->fid), FID_(&replicafid)));
+            LOG(10, "fsobj::ExpandObject: new entry (%s, %s) -> %s\n", s->name,
+                FID_(&fakelink->fid), FID_(&replicafid));
             FSDB->Put(&fakelink);
         }
     }
@@ -166,8 +166,8 @@ int fsobj::ExpandObject(void)
         RVMLIB_REC_OBJECT(*mod_fso);
         mod_fso->DiscardData();
         mod_fso->SetMtLinkContents(&fakedir->fid);
-        LOG(10, ("volent::ExpandObject: changed mountlink to %s -> %s\n",
-                 FID_(&mod_fso->fid), mod_fso->data.symlink));
+        LOG(10, "volent::ExpandObject: changed mountlink to %s -> %s\n",
+            FID_(&mod_fso->fid), mod_fso->data.symlink);
     } else {
         fsobj *fakelink;
         fakelink = mod_fso->vol->NewFakeMountLinkObj(&fakedir->fid, name);
@@ -224,7 +224,7 @@ fsobj *volent::NewFakeDirObj(const char *comp)
 
     dir->dir_MakeDir();
 
-    LOG(10, ("volent::NewFakeDirObj: made a directory %s\n", FID_(&fakefid)));
+    LOG(10, "volent::NewFakeDirObj: made a directory %s\n", FID_(&fakefid));
 
     return dir;
 }
@@ -250,8 +250,8 @@ fsobj *volent::NewFakeMountLinkObj(VenusFid *fid, const char *comp)
 
     link->SetMtLinkContents(fid);
 
-    LOG(10, ("volent::NewFakeMountLinkObj: made a mountlink %s -> %s\n",
-             FID_(&fakefid), link->data.symlink));
+    LOG(10, "volent::NewFakeMountLinkObj: made a mountlink %s -> %s\n",
+        FID_(&fakefid), link->data.symlink);
 
     UpdateCacheStats(&FSDB->FileDataStats, CREATE, BLOCKS(link));
 
@@ -297,8 +297,8 @@ int fsobj::CollapseObject(void)
      * up on the expanded fake directory object */
 
     if (!IsLocalObj()) {
-        LOG(0, ("fsobj::CollapseObject: (%s) not an expanded object\n",
-                FID_(&fid)));
+        LOG(0, "fsobj::CollapseObject: (%s) not an expanded object\n",
+            FID_(&fid));
         return EINVAL;
     }
 
@@ -310,33 +310,33 @@ int fsobj::CollapseObject(void)
                 /* replica mountpoint */
                 CODA_ASSERT(pfso);
                 LOG(10,
-                    ("fsobj::CollapseObject: (%s) is a replica mountlink, refocusing collapse on 'fake' parent directory\n",
-                     FID_(&fid)));
+                    "fsobj::CollapseObject: (%s) is a replica mountlink, refocusing collapse on 'fake' parent directory\n",
+                    FID_(&fid));
                 return pfso->CollapseObject();
             }
 
             if (TryToCover(NULL, V_UID) == 0) {
                 LOG(10,
-                    ("fsobj::CollapseObject: (%s) is a expanded directory's mountlink, refocusing collapse on its root\n",
-                     FID_(&fid)));
+                    "fsobj::CollapseObject: (%s) is a expanded directory's mountlink, refocusing collapse on its root\n",
+                    FID_(&fid));
                 return u.root->CollapseObject();
             }
             LOG(0,
-                ("fsobj::CollapseObject: (%s) unable to find expanded directory\n",
-                 FID_(&fid)));
+                "fsobj::CollapseObject: (%s) unable to find expanded directory\n",
+                FID_(&fid));
             return EIO;
         } else {
             /* replica (local or global) */
             if (IsMtPt()) {
                 CODA_ASSERT(u.mtpoint);
                 LOG(10,
-                    ("fsobj::CollapseObject: (%s) is a replica, refocusing on the replica's mountpoint\n",
-                     FID_(&fid)));
+                    "fsobj::CollapseObject: (%s) is a replica, refocusing on the replica's mountpoint\n",
+                    FID_(&fid));
                 return u.mtpoint->CollapseObject();
             }
             LOG(0,
-                ("fsobj::CollapseObject: (%s) unable to find expanded parent\n",
-                 FID_(&fid)));
+                "fsobj::CollapseObject: (%s) unable to find expanded parent\n",
+                FID_(&fid));
             return EIO;
         }
     }
@@ -350,14 +350,13 @@ int fsobj::CollapseObject(void)
         rc = Lookup(&localcache, NULL, LOCALCACHE_HIDDEN, vp->u.u_uid,
                     CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT, 1);
     if (rc || !localcache) {
-        LOG(0,
-            ("fsobj::CollapseObject: Lookup failed for LOCALCACHE:%d\n", rc));
+        LOG(0, "fsobj::CollapseObject: Lookup failed for LOCALCACHE:%d\n", rc);
         return rc;
     }
 
     LOG(10,
-        ("fsobj::CollapseObject: Fake directory (%s) collapse attempted, LOCALCACHE is %s\n",
-         FID_(&fid), FID_(&localcache->fid)));
+        "fsobj::CollapseObject: Fake directory (%s) collapse attempted, LOCALCACHE is %s\n",
+        FID_(&fid), FID_(&localcache->fid));
 
     Recov_BeginTrans();
 

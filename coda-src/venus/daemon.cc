@@ -62,7 +62,7 @@ void DaemonInit()
 
 void RegisterDaemon(unsigned long interval, char *sync)
 {
-    LOG(100, ("RegisterDaemon:\n"));
+    LOG(100, "RegisterDaemon:\n");
 
     struct TM_Elem *tp    = (struct TM_Elem *)malloc(sizeof(struct TM_Elem));
     tp->TotalTime.tv_sec  = interval;
@@ -118,8 +118,8 @@ void DispatchDaemons()
         if (((struct DaemonInfo *)tp->BackPointer)->sync)
             VprocSignal(((struct DaemonInfo *)tp->BackPointer)->sync);
         else { /* once a day task */
-            LOG(0, ("At the tone the time will be %s",
-                    ctime((time_t *)&curr_time)));
+            LOG(0, "At the tone the time will be %s",
+                ctime((time_t *)&curr_time));
             RusagePrint(fileno(GetLogFile()));
             MallocPrint(fileno(GetLogFile()));
         }
@@ -162,13 +162,13 @@ void Daemon::main(void)
     while (1) {
         VprocWait(&sync);
 
-        LOG(10, ("%s: running\n", name));
+        LOG(10, "%s: running\n", name);
 
         START_TIMING();
         function();
         END_TIMING();
 
-        LOG(10, ("%s: elapsed = %3.1f\n", name, elapsed));
+        LOG(10, "%s: elapsed = %3.1f\n", name, elapsed);
 
         seq++;
     }

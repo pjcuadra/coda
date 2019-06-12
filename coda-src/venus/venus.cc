@@ -330,7 +330,7 @@ int main(int argc, char **argv)
         DispatchDaemons();
     }
 
-    LOG(0, ("Venus exiting\n"));
+    LOG(0, "Venus exiting\n");
 
     RecovFlush(1);
     RecovTerminate();

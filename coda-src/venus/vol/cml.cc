@@ -354,8 +354,8 @@ int ClientModifyLog::GetReintegrateable(int tid, unsigned long *reint_time,
     }
 
     LOG(0,
-        ("ClientModifyLog::GetReintegrateable: (%s, %d) %d records, %d msec remaining\n",
-         vol->name, tid, *nrecs, *reint_time));
+        "ClientModifyLog::GetReintegrateable: (%s, %d) %d records, %d msec remaining\n",
+        vol->name, tid, *nrecs, *reint_time);
     return done;
 }
 
@@ -432,8 +432,8 @@ void ClientModifyLog::MarkFailedMLE(int ix)
                 m->GetLocalOpMsg(opmsg);
 
                 LOG(0,
-                    ("ClientModifyLog::MarkFailedMLE: failed reintegrating: %s\n",
-                     opmsg));
+                    "ClientModifyLog::MarkFailedMLE: failed reintegrating: %s\n",
+                    opmsg);
 
                 CODA_ASSERT((conflict = FSDB->Find(&m->u.u_repair.Fid)));
                 conflict->GetPath(path, 1);
@@ -443,8 +443,8 @@ void ClientModifyLog::MarkFailedMLE(int ix)
                 m->flags.failed = 1;
 
                 LOG(0,
-                    ("ClientModifyLog::MarkFailedMLE: %s(%s) now in local/global conflict\n",
-                     path, FID_(&m->u.u_repair.Fid)));
+                    "ClientModifyLog::MarkFailedMLE: %s(%s) now in local/global conflict\n",
+                    path, FID_(&m->u.u_repair.Fid));
                 MarinerLog(
                     "ClientModifyLog::CONFLICT (local/global): %s (%s)\n", path,
                     FID_(&m->u.u_repair.Fid));
@@ -519,7 +519,7 @@ void *cmlent::operator new(size_t len)
 {
     cmlent *c = 0;
 
-    LOG(1, ("cmlent::operator new()\n"));
+    LOG(1, "cmlent::operator new()\n");
 
     CODA_ASSERT(VDB->AllocatedMLEs < VDB->MaxMLEs);
 
@@ -541,7 +541,7 @@ void *cmlent::operator new(size_t len)
 cmlent::cmlent(ClientModifyLog *Log, time_t Mtime, uid_t Uid, int op,
                int prepend...)
 {
-    LOG(1, ("cmlent::cmlent(...)\n"));
+    LOG(1, "cmlent::cmlent(...)\n");
     RVMLIB_REC_OBJECT(*this);
     RPC2_String name, newname;
 
@@ -675,8 +675,8 @@ cmlent::cmlent(ClientModifyLog *Log, time_t Mtime, uid_t Uid, int op,
     if (log->bytes > log->bytesHighWater)
         log->bytesHighWater = log->bytes;
 
-    LOG(1, ("cmlent::cmlent: tid = (%x.%d), uid = %d, op = %s\n", sid.HostId,
-            sid.Uniquifier, uid, PRINT_MLETYPE(op)));
+    LOG(1, "cmlent::cmlent: tid = (%x.%d), uid = %d, op = %s\n", sid.HostId,
+        sid.Uniquifier, uid, PRINT_MLETYPE(op));
 }
 
 void cmlent::ResetTransient()
@@ -758,8 +758,8 @@ void cmlent::ResetTransient()
 /* MUST be called from within transaction! */
 cmlent::~cmlent()
 {
-    LOG(1, ("cmlent::~cmlent: tid = (%x.%d), uid = %d, op = %s\n", sid.HostId,
-            sid.Uniquifier, uid, PRINT_MLETYPE(opcode)));
+    LOG(1, "cmlent::~cmlent: tid = (%x.%d), uid = %d, op = %s\n", sid.HostId,
+        sid.Uniquifier, uid, PRINT_MLETYPE(opcode));
 
     RVMLIB_REC_OBJECT(*this);
     long thisBytes = bytes();
@@ -790,7 +790,7 @@ void cmlent::operator delete(void *deadobj)
 {
     cmlent *c = (cmlent *)deadobj;
 
-    LOG(1, ("cmlent::operator delete()\n"));
+    LOG(1, "cmlent::operator delete()\n");
 
     /* Stick on free list or give back to heap. */
     if (VDB->mlefreelist.count() < MLENTMaxFreeEntries)
@@ -982,8 +982,8 @@ void cmlent::print(int afd)
 int reintvol::LogStore(time_t Mtime, uid_t uid, VenusFid *Fid,
                        RPC2_Unsigned NewLength, int prepend)
 {
-    LOG(1, ("reintvol::LogStore: %d, %d, (%s), %d %d\n", Mtime, uid, FID_(Fid),
-            NewLength, prepend));
+    LOG(1, "reintvol::LogStore: %d, %d, %s), %d %d\n", Mtime, uid, FID_(Fid),
+        NewLength, prepend);
 
     if (LogOpts && !prepend) {
         /* Cancel stores, as long as they are not followed by chowns. */
@@ -1054,8 +1054,8 @@ int reintvol::LogSetAttr(time_t Mtime, uid_t uid, VenusFid *Fid,
 int reintvol::LogTruncate(time_t Mtime, uid_t uid, VenusFid *Fid,
                           RPC2_Unsigned NewLength, int prepend)
 {
-    LOG(1, ("reintvol::LogTruncate: %d, %d, (%s), %d %d\n", Mtime, uid,
-            FID_(Fid), NewLength, prepend));
+    LOG(1, "reintvol::LogTruncate: %d, %d, %s), %d %d\n", Mtime, uid, FID_(Fid),
+        NewLength, prepend);
 
     /* Treat truncates as stores for now. -JJK */
     return (LogStore(Mtime, uid, Fid, NewLength, prepend));
@@ -1065,8 +1065,8 @@ int reintvol::LogTruncate(time_t Mtime, uid_t uid, VenusFid *Fid,
 int reintvol::LogUtimes(time_t Mtime, uid_t uid, VenusFid *Fid, Date_t NewDate,
                         int prepend)
 {
-    LOG(1, ("reintvol::LogUtimes: %d, %d, (%s), %d %d\n", Mtime, uid, FID_(Fid),
-            NewDate, prepend));
+    LOG(1, "reintvol::LogUtimes: %d, %d, %s), %d %d\n", Mtime, uid, FID_(Fid),
+        NewDate, prepend);
 
     if (LogOpts && !prepend) {
         int cancellation;
@@ -1093,8 +1093,8 @@ int reintvol::LogUtimes(time_t Mtime, uid_t uid, VenusFid *Fid, Date_t NewDate,
 int reintvol::LogChown(time_t Mtime, uid_t uid, VenusFid *Fid, UserId NewOwner,
                        int prepend)
 {
-    LOG(1, ("reintvol::LogChown: %d, %d, (%s), %d %d\n", Mtime, uid, FID_(Fid),
-            NewOwner, prepend));
+    LOG(1, "reintvol::LogChown: %d, %d, %s), %d %d\n", Mtime, uid, FID_(Fid),
+        NewOwner, prepend);
 
     if (LogOpts && !prepend) {
         int cancellation;
@@ -1121,8 +1121,8 @@ int reintvol::LogChown(time_t Mtime, uid_t uid, VenusFid *Fid, UserId NewOwner,
 int reintvol::LogChmod(time_t Mtime, uid_t uid, VenusFid *Fid,
                        RPC2_Unsigned NewMode, int prepend)
 {
-    LOG(1, ("reintvol::LogChmod: %d, %d, (%s), %o %d\n", Mtime, uid, FID_(Fid),
-            NewMode, prepend));
+    LOG(1, "reintvol::LogChmod: %d, %d, %s), %o %d\n", Mtime, uid, FID_(Fid),
+        NewMode, prepend);
 
     if (LogOpts && !prepend) {
         int cancellation;
@@ -1157,8 +1157,8 @@ int reintvol::LogChmod(time_t Mtime, uid_t uid, VenusFid *Fid,
 int reintvol::LogCreate(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
                         VenusFid *CFid, RPC2_Unsigned Mode, int prepend)
 {
-    LOG(1, ("reintvol::LogCreate: %d, %d, (%s), %s, (%s), %o %d\n", Mtime, uid,
-            FID_(PFid), Name, FID_(CFid), Mode, prepend));
+    LOG(1, "reintvol::LogCreate: %d, %d, %s), %s, %s), %o %d\n", Mtime, uid,
+        FID_(PFid), Name, FID_(CFid), Mode, prepend);
 
     cmlent *create_mle = new cmlent(&CML, Mtime, uid, CML_Create_OP, prepend,
                                     PFid, Name, CFid, Mode);
@@ -1169,8 +1169,8 @@ int reintvol::LogCreate(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
 int reintvol::LogRemove(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
                         const VenusFid *CFid, int LinkCount, int prepend)
 {
-    LOG(1, ("reintvol::LogRemove: %d, %d, (%s), %s, (%s), %d %d\n", Mtime, uid,
-            FID_(PFid), Name, FID_(CFid), LinkCount, prepend));
+    LOG(1, "reintvol::LogRemove: %d, %d, %s), %s, %s), %d %d\n", Mtime, uid,
+        FID_(PFid), Name, FID_(CFid), LinkCount, prepend);
 
     int ObjectCreated = 0;
 
@@ -1244,8 +1244,8 @@ int reintvol::LogRemove(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
                 int size = (int)(sizeof(cmlent) + strlen(Name));
 
                 LOG(0 /*10*/,
-                    ("reintvol::LogRemove: record cancelled, %s, size = %d\n",
-                     Name, size));
+                    "reintvol::LogRemove: record cancelled, %s, size = %d\n",
+                    Name, size);
                 CML.cancellations.other_count++;
                 CML.cancellations.other_size += size;
                 return (0);
@@ -1267,8 +1267,8 @@ int reintvol::LogRemove(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
 int reintvol::LogLink(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
                       VenusFid *CFid, int prepend)
 {
-    LOG(1, ("reintvol::LogLink: %d, %d, (%s), %s, (%s) %d\n", Mtime, uid,
-            FID_(PFid), Name, FID_(CFid), prepend));
+    LOG(1, "reintvol::LogLink: %d, %d, %s), %s, %s) %d\n", Mtime, uid,
+        FID_(PFid), Name, FID_(CFid), prepend);
 
     cmlent *link_mle =
         new cmlent(&CML, Mtime, uid, CML_Link_OP, prepend, PFid, Name, CFid);
@@ -1292,9 +1292,8 @@ int reintvol::LogRename(time_t Mtime, uid_t uid, VenusFid *SPFid, char *OldName,
             return (code);
     }
 
-    LOG(1,
-        ("reintvol::LogRename: %d, %d, (%s), %s, (%s), %s, (%s) %d\n", Mtime,
-         uid, FID_(SPFid), OldName, FID_(TPFid), NewName, FID_(SFid), prepend));
+    LOG(1, "reintvol::LogRename: %d, %d, (%s), %s, (%s), %s, (%s) %d\n", Mtime,
+        uid, FID_(SPFid), OldName, FID_(TPFid), NewName, FID_(SFid), prepend);
 
     cmlent *rename_mle = new cmlent(&CML, Mtime, uid, CML_Rename_OP, prepend,
                                     SPFid, OldName, TPFid, NewName, SFid);
@@ -1305,8 +1304,8 @@ int reintvol::LogRename(time_t Mtime, uid_t uid, VenusFid *SPFid, char *OldName,
 int reintvol::LogMkdir(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
                        VenusFid *CFid, RPC2_Unsigned Mode, int prepend)
 {
-    LOG(1, ("reintvol::LogMkdir: %d, %d, (%s), %s, (%s), %o %d\n", Mtime, uid,
-            FID_(PFid), Name, FID_(CFid), Mode, prepend));
+    LOG(1, "reintvol::LogMkdir: %d, %d, %s), %s, %s), %o %d\n", Mtime, uid,
+        FID_(PFid), Name, FID_(CFid), Mode, prepend);
 
     cmlent *mkdir_mle = new cmlent(&CML, Mtime, uid, CML_MakeDir_OP, prepend,
                                    PFid, Name, CFid, Mode);
@@ -1317,8 +1316,8 @@ int reintvol::LogMkdir(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
 int reintvol::LogRmdir(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
                        const VenusFid *CFid, int prepend)
 {
-    LOG(0, ("reintvol::LogRmdir: %d, %d, (%s), %s, (%s) %d\n", Mtime, uid,
-            FID_(PFid), Name, FID_(CFid), prepend));
+    LOG(0, "reintvol::LogRmdir: %d, %d, %s), %s, %s) %d\n", Mtime, uid,
+        FID_(PFid), Name, FID_(CFid), prepend);
 
     int ObjectCreated     = 0;
     int DependentChildren = 0;
@@ -1410,8 +1409,8 @@ int reintvol::LogRmdir(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
             int size = (int)(sizeof(cmlent) + strlen(Name));
 
             LOG(0 /*10*/,
-                ("reintvol::LogRmdir: record cancelled, %s, size = %d\n", Name,
-                 size));
+                "reintvol::LogRmdir: record cancelled, %s, size = %d\n", Name,
+                size);
 
             CML.cancellations.other_count++;
             CML.cancellations.other_size += size;
@@ -1434,8 +1433,8 @@ int reintvol::LogSymlink(time_t Mtime, uid_t uid, VenusFid *PFid, char *Name,
                          char *Contents, VenusFid *CFid, RPC2_Unsigned Mode,
                          int prepend)
 {
-    LOG(1, ("reintvol::LogSymlink: %d, %d, (%s), %s, %s, (%s), %o %d\n", Mtime,
-            uid, FID_(PFid), Name, Contents, FID_(CFid), Mode, prepend));
+    LOG(1, "reintvol::LogSymlink: %d, %d, %s), %s, %s, %s), %o %d\n", Mtime,
+        uid, FID_(PFid), Name, Contents, FID_(CFid), Mode, prepend);
 
     cmlent *symlink_mle = new cmlent(&CML, Mtime, uid, CML_SymLink_OP, prepend,
                                      PFid, Name, Contents, CFid, Mode);
@@ -1447,8 +1446,8 @@ int reintvol::LogRepair(time_t Mtime, uid_t uid, VenusFid *Fid,
                         RPC2_Unsigned Length, Date_t Date, UserId Owner,
                         RPC2_Unsigned Mode, int prepend)
 {
-    LOG(1, ("reintvol::LogRepair: %d %d (%s) attrs [%u %d %u %o] %d\n", Mtime,
-            uid, FID_(Fid), Length, Date, Owner, Mode, prepend));
+    LOG(1, "reintvol::LogRepair: %d %d (%s) attrs [%u %d %u %o] %d\n", Mtime,
+        uid, FID_(Fid), Length, Date, Owner, Mode, prepend);
 
     cmlent *repair_mle = new cmlent(&CML, Mtime, uid, CML_Repair_OP, prepend,
                                     Fid, Length, Date, Owner, Mode, prepend);
@@ -1578,10 +1577,10 @@ int cmlent::cancel()
     if (IsToBeRepaired()) {
         if (log->cancelFrozenEntries && IsFrozen()) {
             LOG(0,
-                ("cmlent::cancel: frozen cmlent with local fid, thawing and cancelling\n"));
+                "cmlent::cancel: frozen cmlent with local fid, thawing and cancelling\n");
             Thaw();
         } else {
-            LOG(0, ("cmlent::cancel: to_be_repaired cmlent, skip\n"));
+            LOG(0, "cmlent::cancel: to_be_repaired cmlent, skip\n");
             return 0;
         }
     }
@@ -1591,13 +1590,13 @@ int cmlent::cancel()
      * cancellation and we'll get to it later.
      */
     if (IsFrozen()) {
-        LOG(0, ("cmlent::cancel: cmlent frozen, skip\n"));
+        LOG(0, "cmlent::cancel: cmlent frozen, skip\n");
         RVMLIB_REC_OBJECT(flags); /* called from within transaction */
         flags.cancellation_pending = 1;
         return 0;
     }
 
-    LOG(10, ("cmlent::cancel: age = %d\n", curTime - time));
+    LOG(10, "cmlent::cancel: age = %d\n", curTime - time);
     if (GetLogLevel() >= 10)
         print(GetLogFile());
 
@@ -1850,8 +1849,8 @@ int cmlent::cancelstore()
 int ClientModifyLog::IncReallocFids(int tid)
 {
     reintvol *vol = strbase(reintvol, this, CML);
-    LOG(1, ("ClientModifyLog::IncReallocFids: (%s) and tid = %d\n", vol->name,
-            tid));
+    LOG(1, "ClientModifyLog::IncReallocFids: (%s) and tid = %d\n", vol->name,
+        tid);
 
     int code = 0;
     cml_iterator next(*this, CommitOrder);
@@ -1862,7 +1861,7 @@ int ClientModifyLog::IncReallocFids(int tid)
         if (code != 0)
             break;
     }
-    LOG(0, ("ClientModifyLog::IncReallocFids: (%s)\n", vol->name));
+    LOG(0, "ClientModifyLog::IncReallocFids: (%s)\n", vol->name);
     return (code);
 }
 
@@ -1879,7 +1878,7 @@ void ClientModifyLog::TranslateFid(VenusFid *OldFid, VenusFid *NewFid)
 void ClientModifyLog::IncThread(int tid)
 {
     reintvol *vol = strbase(reintvol, this, CML);
-    LOG(1, ("ClientModifyLog::IncThread: (%s) tid = %d\n", vol->name, tid));
+    LOG(1, "ClientModifyLog::IncThread: (%s) tid = %d\n", vol->name, tid);
 
     /* Initialize "threading" state in dirty fsobj's. */
     {
@@ -1914,7 +1913,7 @@ void ClientModifyLog::IncThread(int tid)
     if (GetLogLevel() >= 10)
         print(GetLogFile());
 
-    LOG(0, ("ClientModifyLog::IncThread: (%s)\n", vol->name));
+    LOG(0, "ClientModifyLog::IncThread: (%s)\n", vol->name);
 }
 
 /* Try to figure out if the cml is reintegrated `out of order', in that case we
@@ -1944,7 +1943,7 @@ int ClientModifyLog::OutOfOrder(int tid)
 void ClientModifyLog::IncPack(char **bufp, int *bufsizep, int tid)
 {
     reintvol *vol = strbase(reintvol, this, CML);
-    LOG(1, ("ClientModifyLog::IncPack: (%s) and tid = %d\n", vol->name, tid));
+    LOG(1, "ClientModifyLog::IncPack: (%s) and tid = %d\n", vol->name, tid);
 
     BUFFER buffer = {};
     buffer.who    = RP2_CLIENT;
@@ -1975,7 +1974,7 @@ void ClientModifyLog::IncPack(char **bufp, int *bufsizep, int tid)
                 mle->pack(&buffer);
     }
 
-    LOG(0, ("ClientModifyLog::IncPack: (%s)\n", vol->name));
+    LOG(0, "ClientModifyLog::IncPack: (%s)\n", vol->name);
 }
 
 #define UNSET_INDEX -2
@@ -2099,11 +2098,11 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
         }
 
         bufsize += sed.Value.SmartFTPD.BytesTransferred;
-        LOG(10, ("ViceReintegrate: transferred %d bytes\n",
-                 sed.Value.SmartFTPD.BytesTransferred));
+        LOG(10, "ViceReintegrate: transferred %d bytes\n",
+            sed.Value.SmartFTPD.BytesTransferred);
 
         /* Purge off stale directory fids, if any. fsobj::Kill is idempotent. */
-        LOG(0, ("ClientModifyLog::COP1: %d stale dirs\n", NumStaleDirs));
+        LOG(0, "ClientModifyLog::COP1: %d stale dirs\n", NumStaleDirs);
 
         /* server may have found more stale dirs */
         if (NumStaleDirs == MaxStaleDirs)
@@ -2112,7 +2111,7 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
         for (unsigned int d = 0; d < NumStaleDirs; d++) {
             VenusFid StaleDir;
             MakeVenusFid(&StaleDir, vol->GetRealmId(), &StaleDirs[d]);
-            LOG(0, ("ClientModifyLog::COP1: stale dir %s\n", FID_(&StaleDir)));
+            LOG(0, "ClientModifyLog::COP1: stale dir %s\n", FID_(&StaleDir));
             fsobj *f = FSDB->Find(&StaleDir);
             if (!f)
                 continue;
@@ -2211,8 +2210,8 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
         (void)m->DHCheck(0, -1, &dh_ix);
         bufsize = 0;
         bufsize += sedvar_bufs[dh_ix].Value.SmartFTPD.BytesTransferred;
-        LOG(10, ("ViceReintegrate: transferred %d bytes\n",
-                 sedvar_bufs[dh_ix].Value.SmartFTPD.BytesTransferred));
+        LOG(10, "ViceReintegrate: transferred %d bytes\n",
+            sedvar_bufs[dh_ix].Value.SmartFTPD.BytesTransferred);
 
         /*
          * Deal with stale directory fids, if any.  If the client
@@ -2228,8 +2227,8 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
                 ARG_UNMARSHALL(NumStaleDirsvar, NumStaleDirs, rep);
                 ARG_UNMARSHALL_ARRAY(StaleDirsvar, NumStaleDirs, StaleDirs,
                                      rep);
-                LOG(0, ("ClientModifyLog::COP1: (replica %d) %d stale dirs\n",
-                        rep, NumStaleDirs));
+                LOG(0, "ClientModifyLog::COP1: (replica %d) %d stale dirs\n",
+                    rep, NumStaleDirs);
 
                 /* server may have found more stale dirs */
                 if (NumStaleDirs == MaxStaleDirs)
@@ -2239,8 +2238,8 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
                 for (unsigned int d = 0; d < NumStaleDirs; d++) {
                     VenusFid StaleDir;
                     MakeVenusFid(&StaleDir, vol->GetRealmId(), &StaleDirs[d]);
-                    LOG(0, ("ClientModifyLog::COP1: stale dir %s\n",
-                            FID_(&StaleDir)));
+                    LOG(0, "ClientModifyLog::COP1: stale dir %s\n",
+                        FID_(&StaleDir));
                     fsobj *f = FSDB->Find(&StaleDir);
                     if (!f)
                         continue;
@@ -2255,8 +2254,8 @@ int ClientModifyLog::COP1(char *buf, int bufsize, ViceVersionVector *UpdateSet,
 Exit:
     if (m)
         m->Put();
-    LOG(0, ("ClientModifyLog::COP1: (%s), %d bytes, returns %d, index = %d\n",
-            vol->name, bufsize, code, Index));
+    LOG(0, "ClientModifyLog::COP1: (%s), %d bytes, returns %d, index = %d\n",
+        vol->name, bufsize, code, Index);
     return (code);
 }
 
@@ -2357,11 +2356,11 @@ int ClientModifyLog::COP1_NR(char *buf, int bufsize,
     }
 
     bufsize += sed.Value.SmartFTPD.BytesTransferred;
-    LOG(10, ("ViceReintegrate: transferred %d bytes\n",
-             sed.Value.SmartFTPD.BytesTransferred));
+    LOG(10, "ViceReintegrate: transferred %d bytes\n",
+        sed.Value.SmartFTPD.BytesTransferred);
 
     /* Purge off stale directory fids, if any. fsobj::Kill is idempotent. */
-    LOG(0, ("ClientModifyLog::COP1_NR: %d stale dirs\n", NumStaleDirs));
+    LOG(0, "ClientModifyLog::COP1_NR: %d stale dirs\n", NumStaleDirs);
 
     /* server may have found more stale dirs */
     if (NumStaleDirs == MaxStaleDirs)
@@ -2370,7 +2369,7 @@ int ClientModifyLog::COP1_NR(char *buf, int bufsize,
     for (unsigned int d = 0; d < NumStaleDirs; d++) {
         VenusFid StaleDir;
         MakeVenusFid(&StaleDir, vol->GetRealmId(), &StaleDirs[d]);
-        LOG(0, ("ClientModifyLog::COP1_NR: stale dir %s\n", FID_(&StaleDir)));
+        LOG(0, "ClientModifyLog::COP1_NR: stale dir %s\n", FID_(&StaleDir));
         fsobj *f = FSDB->Find(&StaleDir);
         if (!f)
             continue;
@@ -2387,9 +2386,8 @@ int ClientModifyLog::COP1_NR(char *buf, int bufsize,
     PutConn(&c);
 
 ExitNonRep:
-    LOG(0,
-        ("ClientModifyLog::COP1_NR: (%s), %d bytes, returns %d, index = %d\n",
-         vol->name, bufsize, code, Index));
+    LOG(0, "ClientModifyLog::COP1_NR: (%s), %d bytes, returns %d, index = %d\n",
+        vol->name, bufsize, code, Index);
     return (code);
 }
 
@@ -2399,7 +2397,7 @@ void ClientModifyLog::IncCommit(ViceVersionVector *UpdateSet, int Tid)
 {
     reintvol *vol = strbase(reintvol, this, CML);
 
-    LOG(1, ("ClientModifyLog::IncCommit: (%s) tid = %d\n", vol->name, Tid));
+    LOG(1, "ClientModifyLog::IncCommit: (%s) tid = %d\n", vol->name, Tid);
 
     CODA_ASSERT(count() > 0);
 
@@ -2424,7 +2422,7 @@ void ClientModifyLog::IncCommit(ViceVersionVector *UpdateSet, int Tid)
     if (vol->IsReplicated())
         ((repvol *)vol)->FlushCOP2();
     vol->flags.resolve_me = 0;
-    LOG(0, ("ClientModifyLog::IncCommit: (%s)\n", vol->name));
+    LOG(0, "ClientModifyLog::IncCommit: (%s)\n", vol->name);
 }
 
 /* Allocate a real fid for a locally created one, and translate all
@@ -2739,7 +2737,7 @@ void cmlent::pack(BUFFER *bufptr)
 /* MUST be called from within transaction! */
 void cmlent::commit(ViceVersionVector *UpdateSet)
 {
-    LOG(1, ("cmlent::commit: (%d)\n", tid));
+    LOG(1, "cmlent::commit: (%d)\n", tid);
 
     reintvol *vol = strbase(reintvol, log, CML);
     repvol *rv    = (repvol *)vol;
@@ -2806,7 +2804,7 @@ void cmlent::commit(ViceVersionVector *UpdateSet)
             AddVVs(&f->stat.VV, UpdateSet);
 
         } else if (FinalCmlent == this) {
-            LOG(10, ("cmlent::commit: FinalCmlent for %s\n", FID_(&f->fid)));
+            LOG(10, "cmlent::commit: FinalCmlent for %s\n", FID_(&f->fid));
             /*
              * if the final update removed the object, don't bother adding the
              * COP2, but do update the version vector as in connected mode.
@@ -2825,8 +2823,8 @@ void cmlent::commit(ViceVersionVector *UpdateSet)
 
     if (vol->IsReplicated() /* FinalMutationForAnyObject */) {
         ((repvol *)vol)->AddCOP2(&sid, UpdateSet);
-        LOG(10, ("cmlent::commit: Add COP2 with sid = 0x%x.%x\n", sid.HostId,
-                 sid.Uniquifier));
+        LOG(10, "cmlent::commit: Add COP2 with sid = 0x%x.%x\n", sid.HostId,
+            sid.Uniquifier);
     }
 
     delete this;
@@ -2921,8 +2919,8 @@ Exit:
     PutConn(&c);
     if (m)
         m->Put();
-    LOG(0, ("cmlent::GetReintegrationHandle: (%s), returns %s\n", vol->name,
-            VenusRetStr(code)));
+    LOG(0, "cmlent::GetReintegrationHandle: (%s), returns %s\n", vol->name,
+        VenusRetStr(code));
     return (code);
 }
 
@@ -2969,8 +2967,8 @@ int cmlent::ValidateReintegrationHandle()
 
 Exit:
     PutConn(&c);
-    LOG(0, ("cmlent::QueryReintegrationHandle: (%s), returns %s, offset %d\n",
-            vol->name, VenusRetStr(code), Offset));
+    LOG(0, "cmlent::QueryReintegrationHandle: (%s), returns %s, offset %d\n",
+        vol->name, VenusRetStr(code), Offset);
     return (code);
 }
 
@@ -3068,8 +3066,8 @@ Exit:
 
     PutConn(&c);
     LOG(0,
-        ("cmlent::WriteReintegrateHandle: (%s), %d bytes, returns %s, new offset %d\n",
-         vol->name, length, VenusRetStr(code), u.u_store.Offset));
+        "cmlent::WriteReintegrateHandle: (%s), %d bytes, returns %s, new offset %d\n",
+        vol->name, length, VenusRetStr(code), u.u_store.Offset);
     return (code);
 }
 
@@ -3144,8 +3142,8 @@ int cmlent::CloseReintegrationHandle(char *buf, int bufsize,
     if (code != 0)
         goto Exit;
 
-    LOG(0 /*10*/, ("ViceCloseReintegrationHandle: transferred %d bytes\n",
-                   sed.Value.SmartFTPD.BytesTransferred));
+    LOG(0 /*10*/, "ViceCloseReintegrationHandle: transferred %d bytes\n",
+        sed.Value.SmartFTPD.BytesTransferred);
 
     /* Fashion the update set. */
     InitVV(UpdateSet);
@@ -3156,8 +3154,8 @@ int cmlent::CloseReintegrationHandle(char *buf, int bufsize,
 
 Exit:
     PutConn(&c);
-    LOG(0, ("cmlent::CloseReintegrationHandle: (%s), %d bytes, returns %s\n",
-            vol->name, bufsize, VenusRetStr(code)));
+    LOG(0, "cmlent::CloseReintegrationHandle: (%s), %d bytes, returns %s\n",
+        vol->name, bufsize, VenusRetStr(code));
     return (code);
 }
 
@@ -3226,7 +3224,7 @@ void RecoverPathName(char *path, VenusFid *fid, ClientModifyLog *CML,
 {
     /* this algorithm is single-volume based */
     CODA_ASSERT(path && fid && CML && starter);
-    LOG(100, ("RecoverPathName: fid = %s\n", FID_(fid)));
+    LOG(100, "RecoverPathName: fid = %s\n", FID_(fid));
 
     VenusFid cfid = *fid;
     char suffix[MAXPATHLEN];
@@ -3246,8 +3244,8 @@ void RecoverPathName(char *path, VenusFid *fid, ClientModifyLog *CML,
 	     */
             fsobj *f = FSDB->Find(&cfid);
             if (f == NULL) {
-                LOG(0, ("RecoverPathName: fid = %s object no cached\n",
-                        FID_(&cfid)));
+                LOG(0, "RecoverPathName: fid = %s object no cached\n",
+                    FID_(&cfid));
                 /* gcc-3.2 barfs about trigraps when it sees ? ? /, by
 		 * splitting it up in two strings that are joined by the
 		 * preprocessor we avoid this warning. */
@@ -3276,7 +3274,7 @@ void RecoverPathName(char *path, VenusFid *fid, ClientModifyLog *CML,
     fsobj *f =
         FSDB->Find(&cfid); /* find the root object of the lowest volume */
     if (f == NULL) {
-        LOG(0, ("RecoverPathName: volume root %s not cached\n", FID_(&cfid)));
+        LOG(0, "RecoverPathName: volume root %s not cached\n", FID_(&cfid));
         /* gcc-3.2 barfs about trigraps when it sees ? ? / */
         sprintf(path,
                 "??"
@@ -3316,7 +3314,7 @@ int reintvol::PurgeMLEs(uid_t uid)
     if (IsReadWrite() && ((reintvol *)this)->IsReintegrating())
         return EACCES;
 
-    LOG(0, ("volent::PurgeMLEs:(%s) (%x.%x)\n", name, realm->Id(), vid));
+    LOG(0, "volent::PurgeMLEs:(%s) (%x.%x)\n", name, realm->Id(), vid);
 
     /*
      * Step 1 was removed on 7/8/05
@@ -3547,8 +3545,8 @@ static void BackupOldFile(const char *name)
 int ClientModifyLog::CheckPoint(char *ckpdir)
 {
     repvol *vol = strbase(repvol, this, CML);
-    LOG(1, ("ClientModifyLog::CheckPoint: (%s), cdir = %s\n", vol->name,
-            (ckpdir ? ckpdir : "")));
+    LOG(1, "ClientModifyLog::CheckPoint: (%s), cdir = %s\n", vol->name,
+        (ckpdir ? ckpdir : ""));
 
     int code = 0, n;
 
@@ -3635,8 +3633,8 @@ int ClientModifyLog::CheckPoint(char *ckpdir)
         code = m->checkpoint(dfp);
     }
     if (code) {
-        LOG(0, ("checkpointing of %s to %s failed (%d)", vol->name, ckpname,
-                code));
+        LOG(0, "checkpointing of %s to %s failed (%d)", vol->name, ckpname,
+            code);
         eprint("checkpointing of %s to %s failed (%d)", vol->name, ckpname,
                code);
     };
@@ -3665,7 +3663,7 @@ int ClientModifyLog::CheckPoint(char *ckpdir)
 void ClientModifyLog::IncAbort(int Tid)
 {
     repvol *vol = strbase(repvol, this, CML);
-    LOG(0, ("ClientModifyLog::IncAbort: (%s) and tid = %d\n", vol->name, Tid));
+    LOG(0, "ClientModifyLog::IncAbort: (%s) and tid = %d\n", vol->name, Tid);
     /* eprint("IncAbort CML for %s and tid %d\n", vol->name, Tid); */
 
     CODA_ASSERT(count() > 0);
@@ -3935,8 +3933,8 @@ unsigned long cmlent::ReintTime(unsigned long bw)
         time = time * 1000.0 / (double)bw;
     }
 
-    LOG(10, ("cmlent::ReintTime: bandwidth = %d bytes/sec, time = %d msec\n",
-             bw, (unsigned long)time));
+    LOG(10, "cmlent::ReintTime: bandwidth = %d bytes/sec, time = %d msec\n", bw,
+        (unsigned long)time);
     if (GetLogLevel() >= 10)
         print(GetLogFile());
 
@@ -4146,5 +4144,5 @@ void ClientModifyLog::ClearToBeRepaired(void)
             Recov_EndTrans(MAXFP);
             num++;
         }
-    LOG(0, ("ClientModifyLog::ClearRepairFlags: cleared %d entries\n", num));
+    LOG(0, "ClientModifyLog::ClearRepairFlags: cleared %d entries\n", num);
 }

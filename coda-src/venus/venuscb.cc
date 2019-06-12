@@ -83,8 +83,8 @@ void CallBackInit()
 callbackserver::callbackserver()
     : vproc("CallBackServer", NULL, VPT_CallBack, CallBackServerStackSize)
 {
-    LOG(100, ("callbackserver::callbackserver(%#x): %-16s : lwpid = %d\n", this,
-              name, lwpid));
+    LOG(100, "callbackserver::callbackserver(%#x): %-16s : lwpid = %d\n", this,
+        name, lwpid);
 
     filter.FromWhom              = ONESUBSYS;
     filter.OldOrNew              = OLDORNEW;
@@ -114,8 +114,8 @@ int callbackserver::operator=(callbackserver &c)
 
 callbackserver::~callbackserver()
 {
-    LOG(100,
-        ("callbackserver::~callbackserver: %-16s : lwpid = %d\n", name, lwpid));
+    LOG(100, "callbackserver::~callbackserver: %-16s : lwpid = %d\n", name,
+        lwpid);
 }
 
 void callbackserver::main(void)
@@ -128,8 +128,8 @@ void callbackserver::main(void)
 
         /* Handle RPC2 errors. */
         if (code <= RPC2_WLIMIT)
-            LOG(1, ("callbackserver::main: GetRequest -> %s\n",
-                    RPC2_ErrorMsg((int)code)));
+            LOG(1, "callbackserver::main: GetRequest -> %s\n",
+                RPC2_ErrorMsg((int)code));
         if (code <= RPC2_ELIMIT) {
             srvent *s = FindServerByCBCid(handle);
             if (s)
@@ -145,8 +145,8 @@ void callbackserver::main(void)
 
             if (s == 0) {
                 LOG(0,
-                    ("callbackserver::main: can't find server (handle = %d)\n",
-                     handle));
+                    "callbackserver::main: can't find server (handle = %d)\n",
+                    handle);
 
                 /* Send a "bad client" reply back to the requestor. */
                 /* Punt Alloc and Free failures! -JJK */
@@ -164,12 +164,12 @@ void callbackserver::main(void)
 
         /*DEBUG*/
         unsigned int *body = (unsigned int *)packet->Body;
-        LOG(100, ("CBPKT: %x %x %x %x\n", body[0], body[1], body[2], body[3]));
+        LOG(100, "CBPKT: %x %x %x %x\n", body[0], body[1], body[2], body[3]);
 
         code = cb_ExecuteRequest(handle, packet, 0);
         if (code <= RPC2_WLIMIT)
-            LOG(1, ("callbackserver::main: ExecuteRequest -> %s\n",
-                    RPC2_ErrorMsg((int)code)));
+            LOG(1, "callbackserver::main: ExecuteRequest -> %s\n",
+                RPC2_ErrorMsg((int)code));
 
         seq++;
     }
@@ -191,12 +191,12 @@ long VENUS_CallBack(RPC2_Handle RPCid, ViceFid *fid)
 
     srvent *s = FindServerByCBCid(RPCid);
     if (!s) {
-        LOG(0, ("Callback from unknown host?\n"));
+        LOG(0, "Callback from unknown host?\n");
         return 0;
     }
 
     MakeVenusFid(&vf, s->realmid, fid);
-    LOG(1, ("CallBack: host = %s, fid = (%s)\n", s->name, FID_(&vf)));
+    LOG(1, "CallBack: host = %s, fid = (%s)\n", s->name, FID_(&vf));
 
     /* Notify Codacon. */
     {
@@ -226,7 +226,7 @@ long VENUS_CallBackFetch(RPC2_Handle RPCid, ViceFid *Fid, SE_Descriptor *BD)
 
     MakeVenusFid(&vf, s->realmid, Fid);
 
-    LOG(1, ("CallBackFetch: host = %s, fid = (%s)\n", s->name, FID_(&vf)));
+    LOG(1, "CallBackFetch: host = %s, fid = (%s)\n", s->name, FID_(&vf));
 
     long code = 0, fd = -1;
 
@@ -281,20 +281,20 @@ long VENUS_CallBackFetch(RPC2_Handle RPCid, ViceFid *Fid, SE_Descriptor *BD)
         }
 
         if ((code = RPC2_InitSideEffect(RPCid, &sid)) <= RPC2_ELIMIT) {
-            LOG(1, ("CallBackFetch: InitSE failed (%d)\n", code));
+            LOG(1, "CallBackFetch: InitSE failed (%d)\n", code);
             goto GetLost;
         }
 
         if ((code = RPC2_CheckSideEffect(RPCid, &sid, SE_AWAITLOCALSTATUS)) <=
             RPC2_ELIMIT) {
-            LOG(1, ("CallBackFetch: CheckSE failed (%d)\n", code));
+            LOG(1, "CallBackFetch: CheckSE failed (%d)\n", code);
             if (code == RPC2_SEFAIL1)
                 code = EIO;
             goto GetLost;
         }
 
-        LOG(100, ("CallBackFetch: transferred %d bytes\n",
-                  sid.Value.SmartFTPD.BytesTransferred));
+        LOG(100, "CallBackFetch: transferred %d bytes\n",
+            sid.Value.SmartFTPD.BytesTransferred);
         if (f->vol->IsReadWrite())
             ((reintvol *)f->vol)->BytesBackFetched +=
                 sid.Value.SmartFTPD.BytesTransferred;
@@ -303,7 +303,7 @@ long VENUS_CallBackFetch(RPC2_Handle RPCid, ViceFid *Fid, SE_Descriptor *BD)
 GetLost:
     if (f && fd != -1)
         f->shadow->Close(fd);
-    LOG(1, ("CallBackFetch: returning %d\n", code));
+    LOG(1, "CallBackFetch: returning %d\n", code);
     return (code);
 }
 
@@ -320,9 +320,9 @@ long VENUS_CallBackConnect(RPC2_Handle RPCid, RPC2_Integer SideEffectType,
         thePeer.RemotePort.Tag != RPC2_PORTBYINETNUMBER)
         CHOKE("CallBackConnect: getpeerinfo returned bogus type!");
 
-    LOG(100, ("CallBackConnect: host = %s, port = %d\n",
-              inet_ntoa(thePeer.RemoteHost.Value.InetAddress),
-              ntohs(thePeer.RemotePort.Value.InetPortNumber)));
+    LOG(100, "CallBackConnect: host = %s, port = %d\n",
+        inet_ntoa(thePeer.RemoteHost.Value.InetAddress),
+        ntohs(thePeer.RemotePort.Value.InetPortNumber));
 
     /* Get the server entry and install the new connid. */
     /* It is NOT a fatal error if the srvent doesn't already exist, because the
@@ -333,7 +333,7 @@ long VENUS_CallBackConnect(RPC2_Handle RPCid, RPC2_Integer SideEffectType,
         return 0;
 
     s->GetRef();
-    LOG(1, ("CallBackConnect: host = %s\n", s->name));
+    LOG(1, "CallBackConnect: host = %s\n", s->name);
     MarinerLog("callback::NewConnection %s\n", s->name);
     s->ServerUp(RPCid);
     PutServer(&s);

@@ -44,7 +44,7 @@ binding::~binding()
 #endif
     if (referenceCount != 0)
         LOG(0,
-            ("binding::~binding:  somebody forgot to decrement before delete\n"));
+            "binding::~binding:  somebody forgot to decrement before delete\n");
 
     if (binder != 0 || bindee != 0) {
         print(GetLogFile());

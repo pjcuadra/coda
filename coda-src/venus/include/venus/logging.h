@@ -35,37 +35,20 @@ extern "C" {
 #endif
 
 /*  *****  Debugging macros.  *****  */
-#ifdef VENUSDEBUG
-#define LOG(level, stmt)              \
-    do {                              \
-        if (GetLogLevel() >= (level)) \
-            dprint stmt;              \
-    } while (0)
-#define LOG_CB_ARGS(level, cb, ...)              \
-    do {                                         \
-        if (GetLogLevel() >= (level))            \
-            LogginCallBackArgs(cb, __VA_ARGS__); \
-    } while (0)
-#define LOG_CB(level, cb)             \
-    do {                              \
-        if (GetLogLevel() >= (level)) \
-            LogginCallBack(cb);       \
-    } while (0)
-#else
-#define LOG(level, stmt)
-#define LOG_CB_ARGS(level, cb, ...)
-#define LOG_CB(level, cb)
+#ifndef VENUSDEBUG
+#define LOG(...)
 #endif /* !VENUSDEBUG */
 
 typedef void (*stamp_callback_t)(FILE *logFile, char *msg);
 typedef void (*logging_args_callback_t)(FILE *logFile, ...);
 typedef void (*logging_callback_t)(FILE *logFile);
 
+void LOG(int level, const char *fmt, ...);
+void LOG(int level, logging_args_callback_t log_cb, ...);
+void LOG(int level, logging_callback_t log_cb);
 void dprint(const char *...);
 void SetLoggingStampCallback(stamp_callback_t stamp_cb);
 void LogInit();
-void LogginCallBackArgs(logging_args_callback_t log_cb, ...);
-void LogginCallBack(logging_callback_t log_cb);
 void DebugOn();
 void DebugOff();
 void SwapLog();

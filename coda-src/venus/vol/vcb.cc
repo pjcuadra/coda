@@ -88,7 +88,7 @@ int reintvol::GetVolAttr(uid_t uid)
     struct MRPC_common_params rpc_common;
     struct in_addr ph_addr;
     int ret_code = 0;
-    LOG(100, ("reintvol::GetVolAttr: %s, vid = 0x%x\n", name, vid));
+    LOG(100, "reintvol::GetVolAttr: %s, vid = 0x%x\n", name, vid);
 
     VOL_ASSERT(this, IsReachable());
 
@@ -236,8 +236,8 @@ int reintvol::GetVolAttr(uid_t uid)
                     continue;
 
                 LOG(1000,
-                    ("volent::GetVolAttr: packing volume %s, vid %p, vvv:\n",
-                     rv->GetName(), rv->GetVolumeId()));
+                    "volent::GetVolAttr: packing volume %s, vid %p, vvv:\n",
+                    rv->GetName(), rv->GetVolumeId());
                 if (GetLogLevel() >= 1000)
                     FPrintVV(GetLogFile(), &rv->VVV);
 
@@ -261,8 +261,8 @@ int reintvol::GetVolAttr(uid_t uid)
 
             VFlagBS.MaxSeqLen = nVols;
 
-            LOG(100, ("volent::GetVolAttr: %s, sending %d version stamps\n",
-                      name, nVols));
+            LOG(100, "volent::GetVolAttr: %s, sending %d version stamps\n",
+                name, nVols);
 
             ARG_MARSHALL_BS(IN_OUT_MODE, RPC2_BoundedBS, VFlagvar, VFlagBS,
                             rpc_common.nservers, VENUS_MAXBSLEN);
@@ -317,8 +317,8 @@ int reintvol::GetVolAttr(uid_t uid)
             }
 
             LOG(10,
-                ("volent::GetVolAttr: ValidateVols (%s), %d vids sent, %d checked\n",
-                 name, nVols, numVFlags));
+                "volent::GetVolAttr: ValidateVols (%s), %d vids sent, %d checked\n",
+                name, nVols, numVFlags);
 
             volent *v;
             Volid volid;
@@ -329,8 +329,8 @@ int reintvol::GetVolAttr(uid_t uid)
                 volid.Volume = VidList[i].Vid;
                 v            = VDB->Find(&volid);
                 if (!v) {
-                    LOG(0, ("volent::GetVolAttr: couldn't find vid 0x%x\n",
-                            VidList[i].Vid));
+                    LOG(0, "volent::GetVolAttr: couldn't find vid 0x%x\n",
+                        VidList[i].Vid);
                     continue;
                 }
 
@@ -339,8 +339,8 @@ int reintvol::GetVolAttr(uid_t uid)
                 switch (VFlags[i]) {
                 case 1: /* OK, callback */
                     if (cbtemp == cbbreaks) {
-                        LOG(1000, ("volent::GetVolAttr: vid 0x%x valid\n",
-                                   GetVolumeId()));
+                        LOG(1000, "volent::GetVolAttr: vid 0x%x valid\n",
+                            GetVolumeId());
                         SetCallBack();
 
                         /* validate cached access rights for the caller */
@@ -358,14 +358,15 @@ int reintvol::GetVolAttr(uid_t uid)
                     }
                     break;
                 case 0: /* OK, no callback */
-                    LOG(0, ("volent::GetVolAttr: vid 0x%x valid, no "
-                            "callback\n",
-                            GetVolumeId()));
+                    LOG(0,
+                        "volent::GetVolAttr: vid 0x%x valid, no "
+                        "callback\n",
+                        GetVolumeId());
                     ClearCallBack();
                     break;
                 default: /* not OK */
-                    LOG(1, ("volent::GetVolAttr: vid 0x%x invalid\n",
-                            GetVolumeId()));
+                    LOG(1, "volent::GetVolAttr: vid 0x%x invalid\n",
+                        GetVolumeId());
                     ClearCallBack();
                     Recov_BeginTrans();
                     RVMLIB_REC_OBJECT(VVV);
@@ -500,7 +501,7 @@ int reintvol::ValidateFSOs()
 {
     int code = 0;
 
-    LOG(100, ("reintvol::ValidateFSOs: vid = 0x%x\n", vid));
+    LOG(100, "reintvol::ValidateFSOs: vid = 0x%x\n", vid);
 
     vproc *vp = VprocSelf();
 
@@ -524,8 +525,8 @@ int reintvol::ValidateFSOs()
         if (HAVEDATA(f) && !DATAVALID(f))
             whatToGet |= RC_DATA;
 
-        LOG(100, ("reintvol::ValidateFSOs: vget(%s, %x, %d)\n", FID_(&f->fid),
-                  whatToGet, f->stat.Length));
+        LOG(100, "reintvol::ValidateFSOs: vget(%s, %x, %d)\n", FID_(&f->fid),
+            whatToGet, f->stat.Length);
 
         fsobj *tf = 0;
         code      = FSDB->Get(&tf, &f->fid, vp->u.u_uid, whatToGet);
@@ -534,8 +535,8 @@ int reintvol::ValidateFSOs()
         if (n)
             FSO_RELE(n);
 
-        LOG(100,
-            ("reintvol::ValidateFSOs: vget returns %s\n", VenusRetStr(code)));
+        LOG(100, "reintvol::ValidateFSOs: vget returns %s\n",
+            VenusRetStr(code));
         if (code == EINCONS)
             k_Purge(&f->fid, 1);
         if (code)

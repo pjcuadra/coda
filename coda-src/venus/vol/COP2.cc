@@ -73,7 +73,7 @@ int cop2ent::deallocs = 0;
 /* Send a buffer-full of UpdateSets. */
 int repvol::COP2(mgrpent *m, RPC2_CountedBS *PiggyBS)
 {
-    LOG(10, ("volent::COP2: \n"));
+    LOG(10, "volent::COP2: \n");
 
     CODA_ASSERT(IsReplicated());
 
@@ -129,7 +129,7 @@ int repvol::FlushCOP2(time_t window)
 {
     CODA_ASSERT(!IsLocalRealm());
     CODA_ASSERT(IsReplicated());
-    LOG(100, ("repvol::FlushCOP2: vol = %x, window = %d\n", vid, window));
+    LOG(100, "repvol::FlushCOP2: vol = %x, window = %d\n", vid, window);
 
     int code = 0;
 
@@ -164,7 +164,7 @@ int repvol::FlushCOP2(time_t window)
         BS.SeqBody = (RPC2_ByteSeq)buf;
         GetCOP2(&BS);
         if (BS.SeqLen == 0) {
-            LOG(1, ("volent::FlushCOP2: vol = %x, No Entries!\n", vid));
+            LOG(1, "volent::FlushCOP2: vol = %x, No Entries!\n", vid);
             if (m)
                 m->Put();
             break;
@@ -190,7 +190,7 @@ int repvol::FlushCOP2(mgrpent *m, RPC2_CountedBS *PiggyBS)
 {
     CODA_ASSERT(!IsLocalRealm());
     CODA_ASSERT(IsReplicated());
-    LOG(100, ("volent::FlushCOP2(Piggy): vol = %x\n", vid));
+    LOG(100, "volent::FlushCOP2(Piggy): vol = %x\n", vid);
 
     int code = 0;
 
@@ -222,7 +222,7 @@ int repvol::FlushCOP2(mgrpent *m, RPC2_CountedBS *PiggyBS)
 void repvol::GetCOP2(RPC2_CountedBS *BS)
 {
     CODA_ASSERT(IsReplicated());
-    LOG(100, ("volent::GetCOP2: vol = %x\n", vid));
+    LOG(100, "volent::GetCOP2: vol = %x\n", vid);
 
     dlist_iterator next(*cop2_list);
     cop2ent *c;
@@ -236,16 +236,16 @@ void repvol::GetCOP2(RPC2_CountedBS *BS)
         htonvv(&c->updateset, (ViceVersionVector *)&BS->SeqBody[BS->SeqLen]);
         BS->SeqLen += sizeof(ViceVersionVector);
 
-        LOG(10, ("GetCOP2, %x.%x %d.%d.%d.%d.%d.%d.%d.%d\n", c->sid.HostId,
-                 c->sid.Uniquifier, c->updateset.Versions.Site0,
-                 c->updateset.Versions.Site1, c->updateset.Versions.Site2,
-                 c->updateset.Versions.Site3, c->updateset.Versions.Site4,
-                 c->updateset.Versions.Site5, c->updateset.Versions.Site6,
-                 c->updateset.Versions.Site7));
+        LOG(10, "GetCOP2, %x.%x %d.%d.%d.%d.%d.%d.%d.%d\n", c->sid.HostId,
+            c->sid.Uniquifier, c->updateset.Versions.Site0,
+            c->updateset.Versions.Site1, c->updateset.Versions.Site2,
+            c->updateset.Versions.Site3, c->updateset.Versions.Site4,
+            c->updateset.Versions.Site5, c->updateset.Versions.Site6,
+            c->updateset.Versions.Site7);
     }
 
-    LOG(100, ("volent::GetCOP2: vol = %x, entries = %d\n", vid,
-              BS->SeqLen / COP2EntrySize));
+    LOG(100, "volent::GetCOP2: vol = %x, entries = %d\n", vid,
+        BS->SeqLen / COP2EntrySize);
 }
 
 cop2ent *repvol::FindCOP2(ViceStoreId *StoreId)
@@ -276,7 +276,7 @@ void repvol::ClearCOP2(RPC2_CountedBS *BS)
     if (BS->SeqLen == 0)
         return;
 
-    LOG(100, ("volent::ClearCOP2: vol = %x\n", vid));
+    LOG(100, "volent::ClearCOP2: vol = %x\n", vid);
 
     if (BS->SeqLen % COP2EntrySize != 0)
         CHOKE("volent::ClearCOP2: bogus SeqLen (%d)", BS->SeqLen);
@@ -311,7 +311,7 @@ void *cop2ent::operator new(size_t len)
 {
     cop2ent *c = 0;
 
-    LOG(100, ("cop2ent::operator new()\n"));
+    LOG(100, "cop2ent::operator new()\n");
     dlink *d = freecop2ents.get();
     if (d == 0) {
         c = (cop2ent *)new char[len];
@@ -324,7 +324,7 @@ void *cop2ent::operator new(size_t len)
 
 cop2ent::cop2ent(ViceStoreId *Sid, ViceVersionVector *UpdateSet)
 {
-    LOG(100, ("cop2ent::cop2ent()\n"));
+    LOG(100, "cop2ent::cop2ent()\n");
     sid       = *Sid;
     updateset = *UpdateSet;
     time      = Vtime();
@@ -360,7 +360,7 @@ void cop2ent::operator delete(void *deadobj)
 {
     cop2ent *c = (cop2ent *)deadobj;
 
-    LOG(100, ("cop2ent::operator delete()\n"));
+    LOG(100, "cop2ent::operator delete()\n");
     if (freecop2ents.count() < MaxFreeCOP2ents)
         freecop2ents.append(c);
     else

@@ -175,8 +175,8 @@ void SetCOPModes(int copmodes)
 
 int srvent::GetConn(connent **cpp, uid_t uid, int Force)
 {
-    LOG(100, ("srvent::GetConn: host = %s, uid = %d, force = %d\n", name, uid,
-              Force));
+    LOG(100, "srvent::GetConn: host = %s, uid = %d, force = %d\n", name, uid,
+        Force);
 
     *cpp       = 0;
     int code   = 0;
@@ -233,12 +233,12 @@ void PutConn(connent **cpp)
     connent *c = *cpp;
     *cpp       = 0;
     if (!c) {
-        LOG(100, ("PutConn: null conn\n"));
+        LOG(100, "PutConn: null conn\n");
         return;
     }
 
-    LOG(100, ("PutConn: host = %s, uid = %d, cid = %d, auth = %d\n",
-              c->srv->Name(), c->uid, c->connid, c->authenticated));
+    LOG(100, "PutConn: host = %s, uid = %d, cid = %d, auth = %d\n",
+        c->srv->Name(), c->uid, c->connid, c->authenticated);
 
     c->PutRef();
 
@@ -278,8 +278,8 @@ void ConnPrint(int fd)
 
 connent::connent(srvent *server, uid_t Uid, RPC2_Handle cid, int authflag)
 {
-    LOG(1, ("connent::connent: host = %s, uid = %d, cid = %d, auth = %d\n",
-            server->Name(), uid, cid, authflag));
+    LOG(1, "connent::connent: host = %s, uid = %d, cid = %d, auth = %d\n",
+        server->Name(), uid, cid, authflag);
 
     /* These members are immutable. */
     server->GetRef();
@@ -304,8 +304,8 @@ connent::~connent()
     deallocs++;
 #endif
 
-    LOG(1, ("connent::~connent: host = %s, uid = %d, cid = %d, auth = %d\n",
-            srv->Name(), uid, connid, authenticated));
+    LOG(1, "connent::~connent: host = %s, uid = %d, cid = %d, auth = %d\n",
+        srv->Name(), uid, connid, authenticated);
 
     CODA_ASSERT(!RefCount());
 
@@ -324,13 +324,13 @@ connent::~connent()
     code   = (int)RPC2_Unbind(connid);
     connid = 0;
     PutServer(&srv);
-    LOG(1, ("connent::~connent: RPC2_Unbind -> %s\n", RPC2_ErrorMsg(code)));
+    LOG(1, "connent::~connent: RPC2_Unbind -> %s\n", RPC2_ErrorMsg(code));
 }
 
 /* Mark this conn as dying. */
 void connent::Suicide(void)
 {
-    LOG(1, ("connent::Suicide\n"));
+    LOG(1, "connent::Suicide\n");
     dying = 1;
 }
 
@@ -343,7 +343,7 @@ void connent::Suicide(void)
 */
 int connent::CheckResult(int code, VolumeId vid, int TranslateEINCOMP)
 {
-    LOG(100, ("connent::CheckResult: code = %d, vid = %x\n", code, vid));
+    LOG(100, "connent::CheckResult: code = %d, vid = %x\n", code, vid);
 
     /* ViceOp succeeded. */
     if (code == 0)
@@ -457,16 +457,16 @@ connent *conn_iterator::operator()()
 
 void Srvr_Wait()
 {
-    LOG(0, ("WAITING(SRVRQ):\n"));
+    LOG(0, "WAITING(SRVRQ):\n");
     START_TIMING();
     VprocWait((char *)&srvent::srvtab_sync);
     END_TIMING();
-    LOG(0, ("WAIT OVER, elapsed = %3.1f\n", elapsed));
+    LOG(0, "WAIT OVER, elapsed = %3.1f\n", elapsed);
 }
 
 void Srvr_Signal()
 {
-    LOG(10, ("SIGNALLING(SRVRQ):\n"));
+    LOG(10, "SIGNALLING(SRVRQ):\n");
     VprocSignal((char *)&srvent::srvtab_sync);
 }
 
@@ -500,7 +500,7 @@ srvent *FindServerByCBCid(RPC2_Handle connid)
 srvent *GetServer(struct in_addr *host, RealmId realmid)
 {
     CODA_ASSERT(host && host->s_addr);
-    LOG(100, ("GetServer: host = %s\n", inet_ntoa(*host)));
+    LOG(100, "GetServer: host = %s\n", inet_ntoa(*host));
 
     srvent *s = FindServer(host);
     if (s) {
@@ -522,7 +522,7 @@ srvent *GetServer(struct in_addr *host, RealmId realmid)
 void PutServer(srvent **spp)
 {
     if (*spp) {
-        LOG(100, ("PutServer: %s\n", (*spp)->name));
+        LOG(100, "PutServer: %s\n", (*spp)->name);
         (*spp)->PutRef();
     }
     *spp = NULL;
@@ -544,8 +544,8 @@ void PutServer(srvent **spp)
 probeslave::probeslave(ProbeSlaveTask Task, void *Arg, void *Result, char *Sync)
     : vproc("ProbeSlave", NULL, VPT_ProbeDaemon, 32768)
 {
-    LOG(100, ("probeslave::probeslave(%#x): %-16s : lwpid = %d\n", this, name,
-              lwpid));
+    LOG(100, "probeslave::probeslave(%#x): %-16s : lwpid = %d\n", this, name,
+        lwpid);
 
     task   = Task;
     arg    = Arg;
@@ -591,7 +591,7 @@ void probeslave::main(void)
 
 void ProbeServers(int Up)
 {
-    LOG(1, ("ProbeServers: %s\n", Up ? "Up" : "Down"));
+    LOG(1, "ProbeServers: %s\n", Up ? "Up" : "Down");
 
     /* Hosts and Connections are arrays of addresses and connents respectively
      * representing the servers to be probed.  HowMany is the current size of
@@ -687,7 +687,7 @@ static void multiBindLogging_CB(FILE *logFile, ...)
 
 void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
 {
-    LOG_CB_ARGS(1, multiBindLogging_CB, HowMany, Hosts);
+    LOG(1, multiBindLogging_CB, HowMany, Hosts);
 
     int ix, slaves = 0;
     char slave_sync = 0;
@@ -720,7 +720,7 @@ void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
 
     /* Reap any slaves we created. */
     while (slave_sync != slaves) {
-        LOG(1, ("MultiBind: waiting (%d, %d)\n", slave_sync, slaves));
+        LOG(1, "MultiBind: waiting (%d, %d)\n", slave_sync, slaves);
         VprocWait(&slave_sync);
     }
 }
@@ -742,7 +742,7 @@ static void multiProbeLogging_CB(FILE *logFile, ...)
 
 void MultiProbe(int HowMany, RPC2_Handle *Handles)
 {
-    LOG_CB_ARGS(1, multiProbeLogging_CB, HowMany, Handles);
+    LOG(1, multiProbeLogging_CB, HowMany, Handles);
 
     /* Make multiple copies of the IN/OUT and OUT parameters. */
     RPC2_Unsigned **secs_ptrs =
@@ -792,11 +792,11 @@ long HandleProbe(int HowMany, RPC2_Handle Handles[], long offset, long rpcval,
         int rc = RPC2_GetPeerInfo(RPCid, &thePeer);
         if (thePeer.RemoteHost.Tag != RPC2_HOSTBYINETADDR ||
             thePeer.RemotePort.Tag != RPC2_PORTBYINETNUMBER) {
-            LOG(0, ("HandleProbe: RPC2_GetPeerInfo return code = %d\n", rc));
-            LOG(0, ("HandleProbe: thePeer.RemoteHost.Tag = %d\n",
-                    thePeer.RemoteHost.Tag));
-            LOG(0, ("HandleProbe: thePeer.RemotePort.Tag = %d\n",
-                    thePeer.RemotePort.Tag));
+            LOG(0, "HandleProbe: RPC2_GetPeerInfo return code = %d\n", rc);
+            LOG(0, "HandleProbe: thePeer.RemoteHost.Tag = %d\n",
+                thePeer.RemoteHost.Tag);
+            LOG(0, "HandleProbe: thePeer.RemotePort.Tag = %d\n",
+                thePeer.RemotePort.Tag);
             return 0;
             /* CHOKE("HandleProbe: getpeerinfo returned bogus type!"); */
         }
@@ -806,7 +806,7 @@ long HandleProbe(int HowMany, RPC2_Handle Handles[], long offset, long rpcval,
         if (!s)
             CHOKE("HandleProbe: no srvent (RPCid = %d, PeerHost = %s)", RPCid,
                   inet_ntoa(thePeer.RemoteHost.Value.InetAddress));
-        LOG(1, ("HandleProbe: (%s, %d)\n", s->name, rpcval));
+        LOG(1, "HandleProbe: (%s, %d)\n", s->name, rpcval);
         if (rpcval < 0) {
             int rc = rpcval;
             s->ServerError(&rc);
@@ -916,7 +916,7 @@ void ServerPrint(FILE *f)
 
 srvent::srvent(struct in_addr *Host, RealmId realm)
 {
-    LOG(1, ("srvent::srvent: host = %s\n", inet_ntoa(*Host)));
+    LOG(1, "srvent::srvent: host = %s\n", inet_ntoa(*Host));
 
     struct hostent *h =
         gethostbyaddr((char *)Host, sizeof(struct in_addr), AF_INET);
@@ -950,7 +950,7 @@ srvent::~srvent()
     deallocs++;
 #endif
 
-    LOG(1, ("srvent::~srvent: host = %s, conn = %d\n", name, connid));
+    LOG(1, "srvent::~srvent: host = %s, conn = %d\n", name, connid);
 
     srvent::srvtab->remove(&tblhandle);
 
@@ -961,15 +961,15 @@ srvent::~srvent()
 
 int srvent::Connect(RPC2_Handle *cidp, int *authp, uid_t uid, int Force)
 {
-    LOG(100, ("srvent::Connect: host = %s, uid = %d, force = %d\n", name, uid,
-              Force));
+    LOG(100, "srvent::Connect: host = %s, uid = %d, force = %d\n", name, uid,
+        Force);
 
     int code = 0;
 
     /* See whether this server is down or already binding. */
     for (;;) {
         if (ServerIsDown() && !Force) {
-            LOG(100, ("srvent::Connect: server (%s) is down\n", name));
+            LOG(100, "srvent::Connect: server (%s) is down\n", name);
             return (ETIMEDOUT);
         }
 
@@ -1027,7 +1027,7 @@ int srvent::Connect(RPC2_Handle *cidp, int *authp, uid_t uid, int Force)
 
 int srvent::GetStatistics(ViceStatistics *Stats)
 {
-    LOG(100, ("srvent::GetStatistics: host = %s\n", name));
+    LOG(100, "srvent::GetStatistics: host = %s\n", name);
 
     int code   = 0;
     connent *c = 0;
@@ -1054,12 +1054,12 @@ Exit:
 
 void srvent::Reset()
 {
-    LOG(1, ("srvent::Reset: host = %s\n", name));
+    LOG(1, "srvent::Reset: host = %s\n", name);
 
     /* Unbind callback connection for this server. */
     if (connid) {
         int code = (int)RPC2_Unbind(connid);
-        LOG(1, ("srvent::Reset: RPC2_Unbind -> %s\n", RPC2_ErrorMsg(code)));
+        LOG(1, "srvent::Reset: RPC2_Unbind -> %s\n", RPC2_ErrorMsg(code));
         connid = 0;
     }
 
@@ -1081,8 +1081,7 @@ void srvent::Reset()
 
 void srvent::ServerError(int *codep)
 {
-    LOG(1,
-        ("srvent::ServerError: %s error (%s)\n", name, RPC2_ErrorMsg(*codep)));
+    LOG(1, "srvent::ServerError: %s error (%s)\n", name, RPC2_ErrorMsg(*codep));
 
     /* Translate the return code. */
     switch (*codep) {
@@ -1142,8 +1141,8 @@ void srvent::ServerError(int *codep)
 
 void srvent::ServerUp(RPC2_Handle newconnid)
 {
-    LOG(1, ("srvent::ServerUp: %s, connid = %d, newconnid = %d\n", name, connid,
-            newconnid));
+    LOG(1, "srvent::ServerUp: %s, connid = %d, newconnid = %d\n", name, connid,
+        newconnid);
 
     switch (connid) {
     case 0:
@@ -1179,7 +1178,7 @@ long srvent::GetLiveness(struct timeval *tp)
     long rc = 0;
     struct timeval t;
 
-    LOG(100, ("srvent::GetLiveness (%s)\n", name));
+    LOG(100, "srvent::GetLiveness (%s)\n", name);
 
     tp->tv_sec = tp->tv_usec = 0;
     t.tv_sec = t.tv_usec = 0;
@@ -1192,8 +1191,8 @@ long srvent::GetLiveness(struct timeval *tp)
     if ((rc = RPC2_GetPeerLiveness(connid, tp, &t)) != RPC2_SUCCESS)
         return (rc);
 
-    LOG(100, ("srvent::GetLiveness: (%s), RPC %ld.%0ld, SE %ld.%0ld\n", name,
-              tp->tv_sec, tp->tv_usec, t.tv_sec, t.tv_usec));
+    LOG(100, "srvent::GetLiveness: (%s), RPC %ld.%0ld, SE %ld.%0ld\n", name,
+        tp->tv_sec, tp->tv_usec, t.tv_sec, t.tv_usec);
 
     if (tp->tv_sec < t.tv_sec ||
         (tp->tv_sec == t.tv_sec && tp->tv_usec < t.tv_usec))
@@ -1216,8 +1215,8 @@ long srvent::GetBandwidth(unsigned long *Bandwidth)
     unsigned long oldbw = bw;
     unsigned long bwmin, bwmax;
 
-    LOG(1, ("srvent::GetBandwidth (%s) lastobs %ld.%06ld\n", name,
-            lastobs.tv_sec, lastobs.tv_usec));
+    LOG(1, "srvent::GetBandwidth (%s) lastobs %ld.%06ld\n", name,
+        lastobs.tv_sec, lastobs.tv_usec);
 
     /* we don't have a real connid if the server is down or "quasi-up" */
     if (connid <= 0)
@@ -1227,7 +1226,7 @@ long srvent::GetBandwidth(unsigned long *Bandwidth)
     if ((rc = RPC2_GetBandwidth(connid, &bwmin, &bw, &bwmax)) != RPC2_SUCCESS)
         return (rc);
 
-    LOG(1, ("srvent:GetBandWidth: --> new BW %d bytes/sec\n", bw));
+    LOG(1, "srvent:GetBandWidth: --> new BW %d bytes/sec\n", bw);
 
     /* update last observation time */
     RPC2_GetLastObs(connid, &lastobs);
@@ -1238,8 +1237,8 @@ long srvent::GetBandwidth(unsigned long *Bandwidth)
         MarinerLog("connection::bandwidth %s %d %d %d\n", name, bwmin, bw,
                    bwmax);
     }
-    LOG(1,
-        ("srvent::GetBandwidth (%s) returns %d bytes/sec\n", name, *Bandwidth));
+    LOG(1, "srvent::GetBandwidth (%s) returns %d bytes/sec\n", name,
+        *Bandwidth);
     return (0);
 }
 
