@@ -46,7 +46,7 @@ extern "C" {
 #include <vice.h>
 
 /* from venus */
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include "venus.private.h"
 #include <venus/recov.h>
 #include <venus/vol.h>

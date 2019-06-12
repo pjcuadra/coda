@@ -63,7 +63,7 @@ extern "C" {
 #include <venusioctl.h>
 
 /* from venus */
-#include "fso_cachefile.h"
+#include <venus/fso/cachefile.h>
 #include "venus.private.h"
 
 /* string with counts */

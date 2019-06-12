@@ -51,7 +51,7 @@ extern "C" {
 #include <vcrcommon.h>
 
 /* from venus */
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <hdb.h>
 #include <venus/local.h>
 #include <venus/mariner.h>

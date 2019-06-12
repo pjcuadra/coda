@@ -17,7 +17,7 @@ listed in the file CREDITS.
 #*/
 
 #include <venus/realmdb.h>
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <venus/rec_dllist.h>
 #include "codaconf.h"
 

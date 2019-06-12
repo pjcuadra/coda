@@ -75,7 +75,7 @@ extern "C" {
 /* from libal */
 
 /* from venus */
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <hdb.h>
 #include <venus/local.h>
 #include "venus.private.h"

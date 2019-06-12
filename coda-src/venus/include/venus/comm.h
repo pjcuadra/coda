@@ -53,7 +53,7 @@ extern "C" {
 #include <inconsist.h>
 
 #include "refcounted.h"
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <venus/recov.h>
 #include <venus/vproc.h>
 

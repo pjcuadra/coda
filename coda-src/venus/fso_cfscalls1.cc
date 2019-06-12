@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 #include <venus/comm.h>
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <venus/mariner.h>
 #include <venus/mgrp.h>
 #include <venus/cb.h>

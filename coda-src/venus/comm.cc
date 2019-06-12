@@ -72,7 +72,7 @@ extern void SFTP_Activate(SFTP_Initializer *initPtr);
 
 /* from venus */
 #include <venus/comm.h>
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <venus/mariner.h>
 #include <venus/user.h>
 #include "venus.private.h"

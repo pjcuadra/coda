@@ -59,7 +59,7 @@ extern "C" {
 #include <coda_getaddrinfo.h>
 
 /* from venus */
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include "venus.private.h"
 #include <venus/cb.h>
 #include <venus/vproc.h>

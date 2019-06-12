@@ -38,7 +38,7 @@ extern "C" {
 #include <venus/user.h>
 #include "parse_realms.h"
 #include <venus/rec_dllist.h>
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 
 #define DEFAULT_ROOTVOLNAME "/"
 

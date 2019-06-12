@@ -17,7 +17,7 @@ listed in the file CREDITS.
 #include <gtest/gtest.h>
 
 /* from coda-src */
-#include <venus/fso_cachefile.h>
+#include <venus/fso/cachefile.h>
 #include <venus/venusconf.h>
 
 using namespace std;

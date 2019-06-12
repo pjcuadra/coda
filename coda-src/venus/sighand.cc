@@ -48,7 +48,7 @@ extern "C" {
 #include <venus/recov.h>
 #include <venus/vol.h>
 #include <venus/worker.h>
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include "codaconf.h"
 #include "daemonizer.h"
 

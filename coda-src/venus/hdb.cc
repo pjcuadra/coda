@@ -71,7 +71,7 @@ extern "C" {
 #include <vice.h>
 
 /* from venus */
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <hdb.h>
 #include <venus/mariner.h>
 #include <venus/tallyent.h>

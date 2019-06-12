@@ -37,7 +37,7 @@ extern "C" {
 }
 #endif
 
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <venus/vol.h>
 #include <venus/worker.h>
 

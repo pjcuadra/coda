@@ -42,7 +42,7 @@ extern "C" {
 #include <olist.h>
 
 /* from venus */
-#include "fso.h"
+#include <venus/fso/fso.h>
 #include "vproc.h"
 
 class msgent;

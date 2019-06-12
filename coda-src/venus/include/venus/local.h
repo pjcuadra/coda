@@ -24,7 +24,7 @@ listed in the file CREDITS.
 #include <rec_dlist.h>
 
 /* from venus */
-#include <venus/fso.h>
+#include <venus/fso/fso.h>
 #include <venus/vol.h>
 #include <lwp/lock.h>
 

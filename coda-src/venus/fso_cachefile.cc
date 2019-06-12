@@ -47,7 +47,7 @@ extern "C" {
 #include <rvmlib.h>
 
 /* from venus */
-#include <venus/fso_cachefile.h>
+#include <venus/fso/cachefile.h>
 #include <venus/recov.h>
 #include <venus/logging.h>
 
