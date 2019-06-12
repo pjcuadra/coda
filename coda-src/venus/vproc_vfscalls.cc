@@ -76,7 +76,7 @@ extern "C" {
 
 /* from venus */
 #include <venus/fso/fso.h>
-#include <hdb.h>
+#include <venus/hdb.h>
 #include <venus/local.h>
 #include "venus.private.h"
 #include <venus/vproc.h>

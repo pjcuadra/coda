@@ -59,7 +59,7 @@ extern "C" {
 
 #include <coda_getservbyname.h>
 #include <venus/comm.h>
-#include <hdb.h>
+#include <venus/hdb.h>
 #include <venus/mariner.h>
 #include <venus/user.h>
 #include "venus.private.h"
