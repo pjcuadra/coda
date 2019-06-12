@@ -34,8 +34,8 @@ extern "C" {
 #include <vcrcommon.h>
 
 /* from venus */
-#include "local.h"
-#include "venusvol.h"
+#include <venus/local.h>
+#include <venus/vol.h>
 
 /* must not be called from within a transaction */
 void reintvol::IncAbort(int tid)

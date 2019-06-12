@@ -43,11 +43,11 @@ extern "C" {
 #include <dlist.h>
 
 /* from venus */
-#include "fso.h"
+#include <venus/fso.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "vproc.h"
-#include "worker.h"
+#include <venus/recov.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
 #include <venus/logging.h>
 
 /* *****  Private constants  ***** */

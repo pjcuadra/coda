@@ -52,17 +52,17 @@ extern "C" {
 /* from vicedep */
 #include <venusioctl.h>
 /* from venus */
-#include "comm.h"
-#include "fso.h"
-#include "hdb.h"
-#include "local.h"
-#include "user.h"
-#include "venusstats.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <hdb.h>
+#include <venus/local.h>
+#include <venus/user.h>
+#include <venus/stats.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vproc.h"
-#include "worker.h"
-#include "realmdb.h"
+#include <venus/vol.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
+#include <venus/realmdb.h>
 
 /* local-repair modification */
 void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
@@ -1031,8 +1031,8 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
             break;
         }
         case _VIOC_WD: {
-            /* 
-		     * Begin logging mutations to this volume. 
+            /*
+		     * Begin logging mutations to this volume.
 		     * This is "pseudo-disconnected" mode, in which
 		     * fetches may be performed but mutations are logged.
 		     */

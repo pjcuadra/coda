@@ -142,19 +142,19 @@ extern "C" {
 
 /* from venus */
 #include <parse_realms.h>
-#include "comm.h"
-#include "fso.h"
-#include "local.h"
-#include "mariner.h"
-#include "mgrp.h"
-#include "user.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <venus/local.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
+#include <venus/user.h>
 #include "venus.private.h"
-#include "venuscb.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "vproc.h"
+#include <venus/cb.h>
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/vproc.h>
 #include "codaconf.h"
-#include "realmdb.h"
+#include <venus/realmdb.h>
 
 #ifdef VENUSDEBUG
 unsigned int volrep::allocs   = 0;

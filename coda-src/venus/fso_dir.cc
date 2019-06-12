@@ -50,9 +50,9 @@ extern "C" {
 
 /* from dir */
 
-#include "fso.h"
-#include "local.h"
-#include "venusrecov.h"
+#include <venus/fso.h>
+#include <venus/local.h>
+#include <venus/recov.h>
 #include "venus.private.h"
 
 /* *****  FSO Directory Interface  ***** */

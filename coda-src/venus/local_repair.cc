@@ -33,12 +33,12 @@ extern "C" {
 #include <vcrcommon.h>
 
 /* venus */
-#include "fso.h"
-#include "local.h"
+#include <venus/fso.h>
+#include <venus/local.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vproc.h"
-#include "worker.h"
+#include <venus/vol.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
 
 /*
   BEGIN_HTML

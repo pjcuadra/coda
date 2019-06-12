@@ -89,15 +89,15 @@ extern "C" {
 #include <venusioctl.h>
 
 /* from venus */
-#include "comm.h"
-#include "mariner.h"
-#include "mgrp.h"
+#include <venus/comm.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
 #include "venus.private.h"
-#include "vproc.h"
-#include "worker.h"
-#include "9pfs.h"
+#include <venus/vproc.h>
+#include <venus/worker.h>
+#include <venus/9pfs.h>
 
-#include "nt_util.h"
+#include <venus/nt_util.h>
 #include "getpeereid.h"
 
 extern int venus_relay_addr;

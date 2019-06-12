@@ -49,15 +49,15 @@ extern "C" {
 #endif
 
 /* from venus */
-#include "fso.h"
-#include "mariner.h"
-#include "mgrp.h"
-#include "venuscb.h"
-#include "vproc.h"
+#include <venus/fso.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
+#include <venus/cb.h>
+#include <venus/vproc.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "worker.h"
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/worker.h>
 
 static const char partial[8]    = "Partial";
 static const char nonpartial[1] = "";

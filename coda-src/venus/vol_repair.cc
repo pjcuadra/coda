@@ -58,16 +58,16 @@ extern "C" {
 #include <repio.h>
 
 /* from venus */
-#include "comm.h"
-#include "fso.h"
-#include "local.h"
-#include "mariner.h"
-#include "mgrp.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <venus/local.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vproc.h"
-#include "worker.h"
-#include "realmdb.h"
+#include <venus/vol.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
+#include <venus/realmdb.h>
 
 /*
  *    New Repair Strategy

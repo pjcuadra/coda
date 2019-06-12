@@ -22,7 +22,7 @@ listed in the file CREDITS.
  *
  *    ToDo:
  *       1. All mutating Vice calls should have the following IN arguments:
- *            NewSid, NewMutator (implicit from connection), NewMtime, 
+ *            NewSid, NewMutator (implicit from connection), NewMtime,
  *            OldVV and DataVersion (for each object), NewStatus (for each object)
  */
 
@@ -42,16 +42,16 @@ extern "C" {
 }
 #endif
 
-#include "comm.h"
-#include "fso.h"
-#include "mariner.h"
-#include "mgrp.h"
-#include "venuscb.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
+#include <venus/cb.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "vproc.h"
-#include "worker.h"
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
 
 /*  *****  Remove  *****  */
 

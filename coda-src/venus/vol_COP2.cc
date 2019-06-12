@@ -55,12 +55,12 @@ extern "C" {
 #include <nettohost.h>
 
 /* from venus */
-#include "comm.h"
-#include "mariner.h"
-#include "mgrp.h"
+#include <venus/comm.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
 #include "venus.private.h"
 #include "coda_assert.h"
-#include "local.h"
+#include <venus/local.h>
 
 static const unsigned int COP2EntrySize =
     (int)(sizeof(ViceStoreId) + sizeof(ViceVersionVector));

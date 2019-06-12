@@ -36,7 +36,7 @@ extern "C" {
 #include <venus/logging.h>
 #endif
 
-#include "tallyent.h"
+#include <venus/tallyent.h>
 
 #ifdef TESTING
 #include <stdlib.h>

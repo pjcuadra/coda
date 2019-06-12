@@ -66,18 +66,18 @@ extern "C" {
 
 /* from venus */
 #include "cml.h"
-#include "comm.h"
-#include "fso.h"
-#include "local.h"
-#include "mariner.h"
-#include "user.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <venus/local.h>
+#include <venus/mariner.h>
+#include <venus/user.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "vproc.h"
-#include "worker.h"
-#include "realmdb.h"
-#include "mgrp.h"
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
+#include <venus/realmdb.h>
+#include <venus/mgrp.h>
 
 static int NullRcRights      = 0;
 static AcRights NullAcRights = { ANYUSER_UID, 0, 0, 0 };

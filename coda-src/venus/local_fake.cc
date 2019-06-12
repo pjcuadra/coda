@@ -37,9 +37,9 @@ extern "C" {
 }
 #endif
 
-#include "fso.h"
-#include "venusvol.h"
-#include "worker.h"
+#include <venus/fso.h>
+#include <venus/vol.h>
+#include <venus/worker.h>
 
 /// Expand an object (typically a conflict).
 /**

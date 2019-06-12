@@ -58,14 +58,14 @@ extern "C" {
 #endif
 
 #include <coda_getservbyname.h>
-#include "comm.h"
-#include "hdb.h"
-#include "mariner.h"
-#include "user.h"
+#include <venus/comm.h>
+#include <hdb.h>
+#include <venus/mariner.h>
+#include <venus/user.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vsg.h"
-#include "worker.h"
+#include <venus/vol.h>
+#include <venus/vsg.h>
+#include <venus/worker.h>
 
 #define CLOCK_SKEW 120 /* seconds */
 

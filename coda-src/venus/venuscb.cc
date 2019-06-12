@@ -52,12 +52,12 @@ extern void rpc2_PrintSEDesc(SE_Descriptor *, FILE *);
 #endif
 
 /* from venus */
-#include "comm.h"
-#include "mariner.h"
+#include <venus/comm.h>
+#include <venus/mariner.h>
 #include "venus.private.h"
-#include "venuscb.h"
-#include "venusvol.h"
-#include "worker.h"
+#include <venus/cb.h>
+#include <venus/vol.h>
+#include <venus/worker.h>
 
 const char CBSubsys[]             = "Vice2-CallBack";
 const int CallBackServerStackSize = 65536;

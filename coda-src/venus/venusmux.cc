@@ -31,7 +31,7 @@ extern "C" {
 }
 #endif
 
-#include "venusmux.h"
+#include <venus/mux.h>
 
 /* interfaces */
 

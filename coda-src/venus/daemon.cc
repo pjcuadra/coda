@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 #include "vice.h"
-#include "vproc.h"
+#include <venus/vproc.h>
 #include "venus.private.h"
 #include <venus/logging.h>
 

@@ -41,15 +41,15 @@ extern "C" {
 #include <vice.h>
 
 /* from venus */
-#include "comm.h"
-#include "fso.h"
-#include "mariner.h"
-#include "mgrp.h"
-#include "venuscb.h"
-#include "venusvol.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
+#include <venus/cb.h>
+#include <venus/vol.h>
 #include "venus.private.h"
-#include "vproc.h"
-#include "worker.h"
+#include <venus/vproc.h>
+#include <venus/worker.h>
 
 int vcbbreaks = 0; /* count of broken volume callbacks */
 

@@ -112,8 +112,8 @@ struct hdb_verify_msg {
 #include <rec_ohash.h>
 
 /* from venus */
-#include "fso.h"
-#include "venusrecov.h"
+#include <venus/fso.h>
+#include <venus/recov.h>
 #include "venus.private.h"
 
 /*

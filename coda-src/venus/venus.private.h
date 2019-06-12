@@ -52,11 +52,9 @@ extern "C" {
 #include <inconsist.h>
 
 /* from venus */
-#include "venusstats.h"
-#include "venusfid.h"
-
-/* from util */
-#include <venusconf.h>
+#include <venus/stats.h>
+#include <venus/fid.h>
+#include <venus/conf.h>
 
 #ifndef O_BINARY
 #define O_BINARY 0

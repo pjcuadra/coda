@@ -16,9 +16,9 @@ listed in the file CREDITS.
 
 #*/
 
-#include "realmdb.h"
-#include "fso.h"
-#include "rec_dllist.h"
+#include <venus/realmdb.h>
+#include <venus/fso.h>
+#include <venus/rec_dllist.h>
 #include "codaconf.h"
 
 /* This is initialized by RealmDBInit() */

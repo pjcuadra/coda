@@ -29,7 +29,7 @@ listed in the file CREDITS.
 
 #include <lwp/lwp.h>
 #include <coda_assert.h>
-#include "archive.h"
+#include <venus/archive.h>
 
 int archive_type = CPIO_NEWC;
 

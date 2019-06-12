@@ -29,10 +29,10 @@ extern "C" {
 #endif
 
 /* from venus */
-#include "comm.h"
+#include <venus/comm.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "vproc.h"
+#include <venus/recov.h>
+#include <venus/vproc.h>
 
 /*
  *    Implementation of the Venus "probe" daemon, which periodically and

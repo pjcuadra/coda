@@ -16,11 +16,11 @@ listed in the file CREDITS.
 #*/
 
 #include <coda_assert.h>
-#include "comm.h"
-#include "mgrp.h"
-#include "user.h"
-#include "vsg.h"
-#include "realmdb.h"
+#include <venus/comm.h>
+#include <venus/mgrp.h>
+#include <venus/user.h>
+#include <venus/vsg.h>
+#include <venus/realmdb.h>
 
 vsgdb *VSGDB;
 

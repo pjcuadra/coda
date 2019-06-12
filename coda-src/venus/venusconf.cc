@@ -36,7 +36,7 @@ extern "C" {
 }
 #endif
 
-#include "venusconf.h"
+#include <venus/conf.h>
 #include "dlist.h"
 
 static VenusConf global_conf;

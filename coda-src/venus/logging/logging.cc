@@ -39,8 +39,8 @@ extern "C" {
 }
 #endif
 
-#include <venusconf.h>
-#include <vproc.h>
+#include <venus/conf.h>
+#include <venus/vproc.h>
 #include <venus/logging.h>
 
 static FILE *logFile;

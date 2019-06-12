@@ -27,7 +27,7 @@ AM_CPPFLAGS = $(RPC2_CFLAGS) \
 	      -I$(top_srcdir)/coda-src/al \
 	      -I$(top_srcdir)/coda-src/partition \
 	      -I$(top_srcdir)/coda-src/vv \
-	      -I$(top_srcdir)/coda-src/venus
+	      -I$(top_srcdir)/coda-src/venus/include
 
 codacon_LDADD = $(top_builddir)/lib-src/base/libbase.la \
 		$(RPC2_LIBS)

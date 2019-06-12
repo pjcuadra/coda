@@ -32,13 +32,13 @@ extern "C" {
 }
 #endif
 
-#include "realm.h"
-#include "realmdb.h"
-#include "comm.h"
-#include "user.h"
+#include <venus/realm.h>
+#include <venus/realmdb.h>
+#include <venus/comm.h>
+#include <venus/user.h>
 #include "parse_realms.h"
-#include "rec_dllist.h"
-#include "fso.h"
+#include <venus/rec_dllist.h>
+#include <venus/fso.h>
 
 #define DEFAULT_ROOTVOLNAME "/"
 

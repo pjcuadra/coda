@@ -43,12 +43,12 @@ extern "C" {
 }
 #endif
 
-#include "sighand.h"
+#include <venus/sighand.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "worker.h"
-#include "fso.h"
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/worker.h>
+#include <venus/fso.h>
 #include "codaconf.h"
 #include "daemonizer.h"
 

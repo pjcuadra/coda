@@ -50,13 +50,13 @@ extern "C" {
 #include <vice.h>
 
 /* from venus */
-#include "local.h"
-#include "user.h"
+#include <venus/local.h>
+#include <venus/user.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "vproc.h"
-#include "worker.h"
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
 
 /* Compatibility with rpc2 < 2.6 */
 #ifndef EVOLUME

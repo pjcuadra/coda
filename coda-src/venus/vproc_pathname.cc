@@ -46,11 +46,11 @@ extern "C" {
 #include <vice.h>
 
 /* from venus */
-#include "fso.h"
+#include <venus/fso.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "vproc.h"
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/vproc.h>
 
 inline void GetComponent(char **pptr_addr, int *plen_addr, char *nextcompptr)
 {

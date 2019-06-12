@@ -45,13 +45,13 @@ extern "C" {
 #include <olist.h>
 
 /* from venus */
-#include "comm.h"
-#include "fso.h"
-#include "mariner.h"
-#include "mgrp.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vproc.h"
+#include <venus/vol.h>
+#include <venus/vproc.h>
 
 #define MAX_REQUEUE 3
 
@@ -256,7 +256,7 @@ resent::resent(VenusFid *Fid)
 #endif
 }
 
-/* 
+/*
  * we don't support assignments to objects of this type.
  * bomb in an obvious way if it inadvertently happens.
  */

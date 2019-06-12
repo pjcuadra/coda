@@ -35,11 +35,11 @@ extern "C" {
 }
 #endif
 
-#include "fso.h"
-#include "mariner.h"
+#include <venus/fso.h>
+#include <venus/mariner.h>
 #include "venus.private.h"
-#include "9pfs.h"
-#include "SpookyV2.h"
+#include <venus/9pfs.h>
+#include <venus/SpookyV2.h>
 
 #define DEBUG(...)                    \
     do {                              \

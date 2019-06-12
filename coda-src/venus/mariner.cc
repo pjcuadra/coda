@@ -59,14 +59,14 @@ extern "C" {
 #include <coda_getaddrinfo.h>
 
 /* from venus */
-#include "fso.h"
+#include <venus/fso.h>
 #include "venus.private.h"
-#include "venuscb.h"
-#include "vproc.h"
-#include "worker.h"
-#include "realmdb.h"
-#include "venusvol.h"
-#include "9pfs.h"
+#include <venus/cb.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
+#include <venus/realmdb.h>
+#include <venus/vol.h>
+#include <venus/9pfs.h>
 
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;

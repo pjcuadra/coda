@@ -26,12 +26,12 @@ extern "C" {
 #endif
 
 #include <lwp/lwp.h>
-#include "comm.h"
-#include "mariner.h"
-#include "mgrp.h"
+#include <venus/comm.h>
+#include <venus/mariner.h>
+#include <venus/mgrp.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vsg.h"
+#include <venus/vol.h>
+#include <venus/vsg.h>
 
 char mgrpent::mgrp_sync;
 

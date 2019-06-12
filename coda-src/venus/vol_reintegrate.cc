@@ -64,11 +64,11 @@ extern "C" {
 #endif
 
 /* from venus */
-#include "local.h"
-#include "user.h"
+#include <venus/local.h>
+#include <venus/user.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vproc.h"
+#include <venus/vol.h>
+#include <venus/vproc.h>
 
 /* must not be called from within a transaction */
 void reintvol::Reintegrate()

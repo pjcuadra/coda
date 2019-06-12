@@ -41,10 +41,10 @@ extern "C" {
 }
 #endif
 
-#include "nt_util.h"
+#include <venus/nt_util.h>
 
 /*
- * NT specific routines 
+ * NT specific routines
  *
  */
 

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock-matchers.h"
-#include <venusconf.h>
+#include <venus/conf.h>
 
 namespace
 {

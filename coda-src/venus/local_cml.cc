@@ -46,11 +46,11 @@ extern "C" {
 #include <inconsist.h>
 
 /* from venus */
-#include "local.h"
-#include "fso.h"
+#include <venus/local.h>
+#include <venus/fso.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "vproc.h"
+#include <venus/vol.h>
+#include <venus/vproc.h>
 
 /* interfaces */
 #include <cml.h>

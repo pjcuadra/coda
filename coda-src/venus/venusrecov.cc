@@ -60,13 +60,13 @@ void rpc2_InitRandom();
 }
 #endif
 
-#include "fso.h"
-#include "hdb.h"
-#include "local.h"
-#include "mariner.h"
+#include <venus/fso.h>
+#include <hdb.h>
+#include <venus/local.h>
+#include <venus/mariner.h>
 #include "venus.private.h"
-#include "venusrecov.h"
-#include "worker.h"
+#include <venus/recov.h>
+#include <venus/worker.h>
 
 /*  *****  Exported Variables  *****  */
 

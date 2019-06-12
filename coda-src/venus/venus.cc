@@ -36,7 +36,7 @@ extern "C" {
 #include <stdlib.h>
 #include <rpc2/codatunnel.h>
 
-#include "archive.h"
+#include <venus/archive.h>
 
 #ifdef __cplusplus
 }
@@ -44,31 +44,31 @@ extern "C" {
 
 /* interfaces */
 #include <vice.h>
-#include <venusconf.h>
+#include <venus/conf.h>
 #include <codaconffileparser.h>
 #include <codaconfcmdlineparser.h>
 
 /* from venus */
-#include "comm.h"
-#include "fso.h"
-#include "hdb.h"
-#include "local.h"
-#include "mariner.h"
-#include "sighand.h"
-#include "user.h"
+#include <venus/comm.h>
+#include <venus/fso.h>
+#include <hdb.h>
+#include <venus/local.h>
+#include <venus/mariner.h>
+#include <venus/sighand.h>
+#include <venus/user.h>
 #include "venus.private.h"
-#include "venuscb.h"
-#include "venusrecov.h"
-#include "venusvol.h"
-#include "vproc.h"
-#include "worker.h"
+#include <venus/cb.h>
+#include <venus/recov.h>
+#include <venus/vol.h>
+#include <venus/vproc.h>
+#include <venus/worker.h>
 #include "coda_assert.h"
 #include "codaconf.h"
-#include "realmdb.h"
+#include <venus/realmdb.h>
 #include "daemonizer.h"
-#include "venusmux.h"
+#include <venus/mux.h>
 
-#include "nt_util.h"
+#include <venus/nt_util.h>
 #ifdef __CYGWIN32__
 //  Not right now ... should go #define main venus_main
 uid_t V_UID;

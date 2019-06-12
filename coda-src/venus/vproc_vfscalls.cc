@@ -75,13 +75,13 @@ extern "C" {
 /* from libal */
 
 /* from venus */
-#include "fso.h"
-#include "hdb.h"
-#include "local.h"
+#include <venus/fso.h>
+#include <hdb.h>
+#include <venus/local.h>
 #include "venus.private.h"
-#include "vproc.h"
-#include "worker.h"
-#include "realmdb.h"
+#include <venus/vproc.h>
+#include <venus/worker.h>
+#include <venus/realmdb.h>
 
 /* ***** VFS Operations  ***** */
 

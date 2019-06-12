@@ -37,14 +37,14 @@ extern "C" {
 #endif
 
 /* from venus */
-#include "fso.h"
-#include "local.h"
-#include "mgrp.h"
-#include "venuscb.h"
-#include "venusrecov.h"
+#include <venus/fso.h>
+#include <venus/local.h>
+#include <venus/mgrp.h>
+#include <venus/cb.h>
+#include <venus/recov.h>
 #include "venus.private.h"
-#include "venusvol.h"
-#include "worker.h"
+#include <venus/vol.h>
+#include <venus/worker.h>
 
 /* MUST be called from within a transaction */
 void fsobj::SetComp(const char *name)
