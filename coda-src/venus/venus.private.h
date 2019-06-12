@@ -88,6 +88,20 @@ extern "C" {
 
 const int FREE_FACTOR = 16;
 
+/*  *****  Misc stuff  *****  */
+#define TRANSLATE_TO_LOWER(s)      \
+    {                              \
+        for (char *c = s; *c; c++) \
+            if (isupper(*c))       \
+                *c = tolower(*c);  \
+    }
+#define TRANSLATE_TO_UPPER(s)      \
+    {                              \
+        for (char *c = s; *c; c++) \
+            if (islower(*c))       \
+                *c = toupper(*c);  \
+    }
+
 /*  *****  Manifest constants for Venus.  *****  */
 #ifdef __CYGWIN32__
 extern uid_t V_UID; /* UID that the venus process runs under. */

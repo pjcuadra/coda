@@ -160,6 +160,27 @@ void testKernDevice()
 #endif
 }
 
+void vproc_logging_stamping_callback(FILE *logFile, char *msg)
+{
+    (VprocSelf())->GetStamp(msg);
+
+    /* Output a newline if we are starting a new block. */
+    static int last_vpid = -1;
+    static int last_seq  = -1;
+    int this_vpid;
+    int this_seq;
+    if (sscanf(msg, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid,
+               &this_seq) != 2) {
+        fprintf(stderr, "Choking in dprint\n");
+        exit(EXIT_FAILURE);
+    }
+    if ((this_vpid != last_vpid || this_seq != last_seq) && (this_vpid != -1)) {
+        fprintf(logFile, "\n");
+        last_vpid = this_vpid;
+        last_seq  = this_seq;
+    }
+}
+
 /* local-repair modification */
 int main(int argc, char **argv)
 {
@@ -246,6 +267,7 @@ int main(int argc, char **argv)
      */
     VprocInit(); /* init LWP/IOMGR support */
     LogInit(); /* move old Venus log and create a new one */
+    SetLoggingStampCallback(vproc_logging_stamping_callback);
 
     LogLevel        = GetVenusConf().get_int_value("loglevel");
     RPC2_Trace      = LogLevel ? 1 : 0;

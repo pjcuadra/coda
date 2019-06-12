@@ -1683,6 +1683,19 @@ binding *CheckForDuplicates(dlist *hdb_bindings_list, void *binder)
     return (NULL);
 }
 
+static void print_fso_bingins(FILE *file, ...)
+{
+    va_list args;
+    va_start(args, file);
+    fsobj *f   = va_arg(args, fsobj *);
+    binding *b = va_arg(args, binding *);
+
+    dprint("fsobj::AttachHdbBinding:\n");
+    f->print(file);
+    b->print(file);
+    va_end(args);
+}
+
 /* Need not be called from within transaction. */
 binding *fsobj::AttachHdbBinding(namectxt *binder)
 {
@@ -1699,10 +1712,7 @@ binding *fsobj::AttachHdbBinding(namectxt *binder)
     b->binder = binder;
     b->bindee = this;
 
-    if (GetLogLevel() >= 1000) {
-        dprint("fsobj::AttachHdbBinding:\n");
-        print(GetLogFile());
-    }
+    LOG_CB_ARGS(1000, print_fso_bingins, this, b);
 
     /* Attach ourselves to the binding. */
     if (!hdb_bindings)
@@ -1710,11 +1720,7 @@ binding *fsobj::AttachHdbBinding(namectxt *binder)
     hdb_bindings->insert(&b->bindee_handle);
     b->IncrRefCount();
 
-    if (GetLogLevel() >= 10) {
-        dprint("fsobj::AttachHdbBinding:\n");
-        print(GetLogFile());
-        b->print(GetLogFile());
-    }
+    LOG_CB_ARGS(10, print_fso_bingins, this, b);
 
     if (IsSymLink())
         DisableReplacement();

@@ -895,18 +895,16 @@ void va_init(struct coda_vattr *vap)
 
 void VPROC_printvattr(struct coda_vattr *vap)
 {
-    if (GetLogLevel() >= 1000) {
-        dprint("\tmode = %#o, uid = %d, gid = %d, rdev = %d\n", vap->va_mode,
-               vap->va_uid, vap->va_gid, vap->va_rdev);
-        dprint(
-            "\tid = %d, nlink = %d, size = %d, blocksize = %d, storage = %d\n",
-            vap->va_fileid, vap->va_nlink, vap->va_size, vap->va_blocksize,
-            vap->va_bytes);
-        dprint("\tatime = <%d, %d>, mtime = <%d, %d>, ctime = <%d, %d>\n",
-               vap->va_atime.tv_sec, vap->va_atime.tv_nsec,
-               vap->va_mtime.tv_sec, vap->va_mtime.tv_nsec,
-               vap->va_ctime.tv_sec, vap->va_ctime.tv_nsec);
-    }
+    LOG(1000, ("\tmode = %#o, uid = %d, gid = %d, rdev = %d\n", vap->va_mode,
+               vap->va_uid, vap->va_gid, vap->va_rdev));
+    LOG(1000,
+        ("\tid = %d, nlink = %d, size = %d, blocksize = %d, storage = %d\n",
+         vap->va_fileid, vap->va_nlink, vap->va_size, vap->va_blocksize,
+         vap->va_bytes));
+    LOG(1000,
+        ("\tatime = <%d, %d>, mtime = <%d, %d>, ctime = <%d, %d>\n",
+         vap->va_atime.tv_sec, vap->va_atime.tv_nsec, vap->va_mtime.tv_sec,
+         vap->va_mtime.tv_nsec, vap->va_ctime.tv_sec, vap->va_ctime.tv_nsec));
 }
 
 long FidToNodeid(VenusFid *fid)

@@ -670,14 +670,24 @@ void DoProbes(int HowMany, struct in_addr *Hosts)
     free(Connections);
 }
 
+static void multiBindLogging_CB(FILE *logFile, ...)
+{
+    va_list args;
+    va_start(args, logFile);
+    int HowMany           = va_arg(args, int);
+    struct in_addr *Hosts = va_arg(args, struct in_addr *);
+
+    dprint("MultiBind: HowMany = %d\n\tHosts = [ ", HowMany);
+    for (int i = 0; i < HowMany; i++)
+        fprintf(GetLogFile(), "%s ", inet_ntoa(Hosts[i]));
+    fprintf(GetLogFile(), "]\n");
+
+    va_end(args);
+}
+
 void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
 {
-    if (GetLogLevel() >= 1) {
-        dprint("MultiBind: HowMany = %d\n\tHosts = [ ", HowMany);
-        for (int i = 0; i < HowMany; i++)
-            fprintf(GetLogFile(), "%s ", inet_ntoa(Hosts[i]));
-        fprintf(GetLogFile(), "]\n");
-    }
+    LOG_CB_ARGS(1, multiBindLogging_CB, HowMany, Hosts);
 
     int ix, slaves = 0;
     char slave_sync = 0;
@@ -715,14 +725,24 @@ void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
     }
 }
 
+static void multiProbeLogging_CB(FILE *logFile, ...)
+{
+    va_list args;
+    va_start(args, logFile);
+    int HowMany          = va_arg(args, int);
+    RPC2_Handle *Handles = va_arg(args, RPC2_Handle *);
+
+    dprint("MultiProbe: HowMany = %d\n\tHandles = [ ", HowMany);
+    for (int i = 0; i < HowMany; i++)
+        fprintf(GetLogFile(), "%x ", Handles[i]);
+    fprintf(GetLogFile(), "]\n");
+
+    va_end(args);
+}
+
 void MultiProbe(int HowMany, RPC2_Handle *Handles)
 {
-    if (GetLogLevel() >= 1) {
-        dprint("MultiProbe: HowMany = %d\n\tHandles = [ ", HowMany);
-        for (int i = 0; i < HowMany; i++)
-            fprintf(GetLogFile(), "%x ", Handles[i]);
-        fprintf(GetLogFile(), "]\n");
-    }
+    LOG_CB_ARGS(1, multiProbeLogging_CB, HowMany, Handles);
 
     /* Make multiple copies of the IN/OUT and OUT parameters. */
     RPC2_Unsigned **secs_ptrs =

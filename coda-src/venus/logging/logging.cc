@@ -40,12 +40,13 @@ extern "C" {
 #endif
 
 #include <venus/conf.h>
-#include <venus/vproc.h>
 #include <venus/logging.h>
 
 static FILE *logFile;
 static int LogLevel  = 0;
 static int LogInited = 0;
+
+static stamp_callback_t scb = NULL;
 
 /* Print a debugging message to the log file. */
 void dprint(const char *fmt...)
@@ -56,23 +57,9 @@ void dprint(const char *fmt...)
         return;
 
     char msg[240];
-    (VprocSelf())->GetStamp(msg);
 
-    /* Output a newline if we are starting a new block. */
-    static int last_vpid = -1;
-    static int last_seq  = -1;
-    int this_vpid;
-    int this_seq;
-    if (sscanf(msg, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid,
-               &this_seq) != 2) {
-        fprintf(stderr, "Choking in dprint\n");
-        exit(EXIT_FAILURE);
-    }
-    if ((this_vpid != last_vpid || this_seq != last_seq) && (this_vpid != -1)) {
-        fprintf(logFile, "\n");
-        last_vpid = this_vpid;
-        last_seq  = this_seq;
-    }
+    if (scb != NULL)
+        scb(logFile, msg);
 
     va_start(ap, fmt);
     vsnprintf(msg + strlen(msg), 240 - strlen(msg), fmt, ap);
@@ -80,6 +67,36 @@ void dprint(const char *fmt...)
 
     fwrite(msg, (int)sizeof(char), (int)strlen(msg), logFile);
     fflush(logFile);
+}
+
+void LogginCallBackArgs(logging_args_callback_t log_cb, ...)
+{
+    if (log_cb == NULL)
+        return;
+
+    if (!LogInited)
+        return;
+
+    va_list args;
+    va_start(args, log_cb);
+    log_cb(logFile, args);
+    va_end(args);
+}
+
+void LogginCallBack(logging_callback_t log_cb)
+{
+    if (log_cb == NULL)
+        return;
+
+    if (!LogInited)
+        return;
+
+    log_cb(logFile);
+}
+
+void SetLoggingStampCallback(stamp_callback_t stamp_cb)
+{
+    scb = stamp_cb;
 }
 
 void LogInit()

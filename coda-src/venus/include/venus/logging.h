@@ -41,46 +41,34 @@ extern "C" {
         if (GetLogLevel() >= (level)) \
             dprint stmt;              \
     } while (0)
+#define LOG_CB_ARGS(level, cb, ...)              \
+    do {                                         \
+        if (GetLogLevel() >= (level))            \
+            LogginCallBackArgs(cb, __VA_ARGS__); \
+    } while (0)
+#define LOG_CB(level, cb)             \
+    do {                              \
+        if (GetLogLevel() >= (level)) \
+            LogginCallBack(cb);       \
+    } while (0)
 #else
 #define LOG(level, stmt)
+#define LOG_CB_ARGS(level, cb, ...)
+#define LOG_CB(level, cb)
 #endif /* !VENUSDEBUG */
 
-/*  *****  Misc stuff  *****  */
-#define TRANSLATE_TO_LOWER(s)      \
-    {                              \
-        for (char *c = s; *c; c++) \
-            if (isupper(*c))       \
-                *c = tolower(*c);  \
-    }
-#define TRANSLATE_TO_UPPER(s)      \
-    {                              \
-        for (char *c = s; *c; c++) \
-            if (islower(*c))       \
-                *c = toupper(*c);  \
-    }
+typedef void (*stamp_callback_t)(FILE *logFile, char *msg);
+typedef void (*logging_args_callback_t)(FILE *logFile, ...);
+typedef void (*logging_callback_t)(FILE *logFile);
 
-/*  *****  Declarations for source files without their own headers.  ***** */
 void dprint(const char *...);
-void rds_printer(char *...);
-void VenusPrint(int argc, const char **argv);
-void VenusPrint(FILE *, int argc, const char **argv);
-void VenusPrint(int, int argc, const char **argv);
-const char *VenusOpStr(int);
-const char *IoctlOpStr(unsigned char nr);
-const char *VenusRetStr(int);
-int binaryfloor(int);
+void SetLoggingStampCallback(stamp_callback_t stamp_cb);
 void LogInit();
+void LogginCallBackArgs(logging_args_callback_t log_cb, ...);
+void LogginCallBack(logging_callback_t log_cb);
 void DebugOn();
 void DebugOff();
-void Terminate();
-void DumpState();
-void RusagePrint(int);
-void VFSPrint(int);
-void RPCPrint(int);
-void MallocPrint(int);
-void StatsInit();
 void SwapLog();
-
 FILE *GetLogFile();
 int GetLogLevel();
 void SetLogLevel(int loglevel);

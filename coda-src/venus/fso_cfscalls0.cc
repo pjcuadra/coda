@@ -264,6 +264,20 @@ TillEndFetching:
     return 0;
 }
 
+static void vvValidationFailureLoggingCallback(FILE *logFile, ...)
+{
+    va_list args;
+    va_start(args, logFile);
+    int *r = va_arg(args, int *);
+    dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n", r[0], r[1],
+           r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]);
+    int *l = va_arg(args, int *);
+    dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n", l[0], l[1],
+           l[2], l[3], l[4], l[5], l[6], l[7], l[8], l[9], l[10]);
+
+    va_end(args);
+}
+
 int fsobj::Fetch(uid_t uid)
 {
     return Fetch(uid, 0, -1);
@@ -459,18 +473,9 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
 
             /* Handle failed validations. */
             if (VV_Cmp(&status.VV, &stat.VV) != VV_EQ) {
-                if (GetLogLevel() >= 1) {
-                    dprint("fsobj::Fetch: failed validation\n");
-                    int *r = ((int *)&status.VV);
-                    dprint(
-                        "\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                        r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8],
-                        r[9], r[10]);
-                    int *l = ((int *)&stat.VV);
-                    dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                           l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7], l[8],
-                           l[9], l[10]);
-                }
+                LOG(1, ("fsobj::Fetch: failed validation\n"));
+                LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
+                            &stat.VV);
                 code = EAGAIN;
             }
         }
@@ -532,16 +537,8 @@ int fsobj::Fetch(uid_t uid, uint64_t pos, int64_t count)
         if (HAVESTATUS(this) && status.DataVersion != stat.DataVersion) {
             LOG(1, ("fsobj::Fetch: failed validation (%d, %d)\n",
                     status.DataVersion, stat.DataVersion));
-            if (GetLogLevel() >= 1) {
-                int *r = ((int *)&status.VV);
-                dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                       r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8],
-                       r[9], r[10]);
-                int *l = ((int *)&stat.VV);
-                dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                       l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7], l[8],
-                       l[9], l[10]);
-            }
+            LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
+                        &stat.VV);
             code = EAGAIN;
         }
 
@@ -1035,18 +1032,9 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
             /* Handle failed validations. */
             if (HAVESTATUS(this) && VV_Cmp(&status.VV, &stat.VV) != VV_EQ) {
-                if (GetLogLevel() >= 1) {
-                    dprint("fsobj::GetAttr: failed validation\n");
-                    int *r = ((int *)&status.VV);
-                    dprint(
-                        "\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                        r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8],
-                        r[9], r[10]);
-                    int *l = ((int *)&stat.VV);
-                    dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                           l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7], l[8],
-                           l[9], l[10]);
-                }
+                LOG(1, ("fsobj::GetAttr: failed validation\n"));
+                LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
+                            &stat.VV);
 
                 Demote();
                 nfailed++;
@@ -1192,16 +1180,8 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
         if (HAVESTATUS(this) && status.DataVersion != stat.DataVersion) {
             LOG(1, ("fsobj::GetAttr: failed validation (%d, %d)\n",
                     status.DataVersion, stat.DataVersion));
-            if (GetLogLevel() >= 1) {
-                int *r = ((int *)&status.VV);
-                dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                       r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8],
-                       r[9], r[10]);
-                int *l = ((int *)&stat.VV);
-                dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n",
-                       l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7], l[8],
-                       l[9], l[10]);
-            }
+            LOG_CB_ARGS(1, vvValidationFailureLoggingCallback, &status.VV,
+                        &stat.VV);
 
             Demote();
 
