@@ -96,7 +96,7 @@ void ProbeDaemon(void)
         }
 
         END_TIMING();
-        // LOG(\1, \2, \3);
+        LOG(10, "ProbeDaemon: elapsed = %3.1f\n", elapsed);
 
         /* Bump sequence number. */
         vp->seq++;
