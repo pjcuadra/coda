@@ -16,11 +16,6 @@ listed in the file CREDITS.
 
 #*/
 
-/*
- * Manifest constants for Venus, plus declarations for source files without
- * their own headers.
- */
-
 #ifndef _VENUS_LOGGING_H_
 #define _VENUS_LOGGING_H_
 
@@ -34,24 +29,25 @@ extern "C" {
 }
 #endif
 
-/*  *****  Debugging macros.  *****  */
 #ifndef VENUSDEBUG
 #define LOG(...)
 #endif /* !VENUSDEBUG */
 
-typedef void (*stamp_callback_t)(FILE *logFile, char *msg);
-typedef void (*logging_args_callback_t)(FILE *logFile, ...);
+typedef void (*logging_stamp_callback_t)(FILE *logFile, char *msg);
+typedef void (*logging_callback_with_args_t)(FILE *logFile, ...);
 typedef void (*logging_callback_t)(FILE *logFile);
 
-void LOG(int level, const char *fmt, ...);
-void LOG(int level, logging_args_callback_t log_cb, ...);
-void LOG(int level, logging_callback_t log_cb);
-void dprint(const char *...);
-void SetLoggingStampCallback(stamp_callback_t stamp_cb);
+void SetLoggingStampCallback(logging_stamp_callback_t stamp_cb);
 void LogInit();
 void DebugOn();
 void DebugOff();
 void SwapLog();
+
+void LOG(int level, const char *fmt, ...);
+void LOG(int level, logging_callback_with_args_t log_cb, ...);
+void LOG(int level, logging_callback_t log_cb);
+
+void dprint(const char *...);
 FILE *GetLogFile();
 int GetLogLevel();
 void SetLogLevel(int loglevel);

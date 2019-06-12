@@ -46,7 +46,7 @@ static FILE *logFile;
 static int LogLevel  = 0;
 static int LogInited = 0;
 
-static stamp_callback_t scb = NULL;
+static logging_stamp_callback_t scb = NULL;
 
 /* Print a debugging message to the log file. */
 void dprint(const char *fmt...)
@@ -69,7 +69,7 @@ void dprint(const char *fmt...)
     fflush(logFile);
 }
 
-static void LogginCallBackArgs(logging_args_callback_t log_cb, ...)
+static void LogginCallBackArgs(logging_callback_with_args_t log_cb, ...)
 {
     if (log_cb == NULL)
         return;
@@ -94,7 +94,7 @@ static void LogginCallBack(logging_callback_t log_cb)
     log_cb(logFile);
 }
 
-void SetLoggingStampCallback(stamp_callback_t stamp_cb)
+void SetLoggingStampCallback(logging_stamp_callback_t stamp_cb)
 {
     scb = stamp_cb;
 }
@@ -172,7 +172,7 @@ void LOG(int level, const char *fmt, ...)
     va_end(args);
 }
 
-void LOG(int level, logging_args_callback_t log_cb, ...)
+void LOG(int level, logging_callback_with_args_t log_cb, ...)
 {
     if (LogLevel < level)
         return;
