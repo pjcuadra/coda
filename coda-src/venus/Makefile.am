@@ -22,8 +22,8 @@ libvenus_la_SOURCES = binding.cc binding.h comm.cc comm.h comm_daemon.cc daemon.
     local_repair.cc local_vol.cc mariner.cc mariner.h mgrp.cc mgrp.h \
     venus.private.h venuscb.cc venuscb.h venusfid.h venusrecov.cc \
     venusrecov.h venusstats.h venusutil.cc venusvol.cc venusvol.h \
-    vol_daemon.cc vol_cml.cc vol_reintegrate.cc vol_repair.cc vol_resolve.cc \
-    vol_vcb.cc vol_COP2.cc vproc.cc vproc.h vproc_pathname.cc vproc_pioctl.cc \
+    vol/daemon.cc vol/cml.cc vol/reintegrate.cc vol/repair.cc vol/resolve.cc \
+    vol/vcb.cc vol/COP2.cc vproc.cc vproc.h vproc_pathname.cc vproc_pioctl.cc \
     vproc_vfscalls.cc vsg.cc vsg.h worker.cc worker.h sighand.cc sighand.h \
     spool.cc tallyent.cc tallyent.h user.cc user.h nt_util.cc nt_util.h \
     realmdb.cc realmdb.h realm.cc realm.h rec_dllist.h refcounted.h archive.c \
