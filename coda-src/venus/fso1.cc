@@ -1674,7 +1674,7 @@ static void print_fso_bingins(Logger *logger, va_list args)
     fsobj *f            = va_arg(args, fsobj *);
     binding *b          = va_arg(args, binding *);
 
-    dprint("fsobj::AttachHdbBinding:\n");
+    LOG(0, "fsobj::AttachHdbBinding:\n");
     f->print(flogger->GetLogFile());
     b->print(flogger->GetLogFile());
 }
@@ -1742,7 +1742,7 @@ void fsobj::DemoteHdbBinding(binding *b)
         CHOKE("fsobj::DemoteHdbBinding: bindee != this");
     }
     if (Logging::GetLogLevel() >= 1000) {
-        dprint("fsobj::DemoteHdbBinding:\n");
+        LOG(0, "fsobj::DemoteHdbBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
     }
@@ -1780,7 +1780,7 @@ void fsobj::DetachHdbBinding(binding *b, int DemoteNameCtxt)
         CHOKE("fsobj::DetachHdbBinding: bindee != this");
     }
     if (Logging::GetLogLevel() >= 1000) {
-        dprint("fsobj::DetachHdbBinding:\n");
+        LOG(0, "fsobj::DetachHdbBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
     }
@@ -1843,7 +1843,7 @@ void fsobj::AttachMleBinding(binding *b)
         CHOKE("fsobj::AttachMleBinding: bindee != 0");
     }
     if (Logging::GetLogLevel() >= 1000) {
-        dprint("fsobj::AttachMleBinding:\n");
+        LOG(0, "fsobj::AttachMleBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
     }
@@ -1874,7 +1874,7 @@ void fsobj::DetachMleBinding(binding *b)
         CHOKE("fsobj::DetachMleBinding: bindee != this");
     }
     if (Logging::GetLogLevel() >= 1000) {
-        dprint("fsobj::DetachMleBinding:\n");
+        LOG(0, "fsobj::DetachMleBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
     }

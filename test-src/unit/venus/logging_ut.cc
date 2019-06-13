@@ -18,7 +18,7 @@ listed in the file CREDITS.
 #include <gtest/gtest.h>
 
 /* from coda-src */
-#include <venus/logging/logging.h>
+#include <venus/logging/venus.h>
 #include <venus/conf.h>
 
 #include <fstream>
@@ -193,6 +193,27 @@ TEST_F(LoggingTest, log_formated_text)
 {
     LOG(1, "%d %s\n", 10, "PASSED DUMMY TEXT");
     assertLastLoggedMessage("", "10 PASSED DUMMY TEXT\n");
+}
+
+static void sprintf_stamping_callback(char *stamp)
+{
+    snprintf(stamp, 100, "%s", "DUMMY_STAMP: ");
+}
+
+TEST_F(LoggingTest, sprintf_stamping_cb)
+{
+    logger->SetStampCallback(sprintf_stamping_callback);
+    LOG(1, "DUMMY\n");
+    assertLastLoggedMessage("DUMMY_STAMP: ", "DUMMY\n");
+}
+
+TEST_F(LoggingTest, above_level)
+{
+    logger->SetStampCallback(sprintf_stamping_callback);
+    LOG(10, "DUMMY\n");
+    assertLastLoggedMessage("DUMMY_STAMP: ", "DUMMY\n");
+    LOG(11, "DUMMY_ABOVE_LEVEL\n");
+    assertLastLoggedMessage("DUMMY_STAMP: ", "DUMMY\n");
 }
 
 } // namespace

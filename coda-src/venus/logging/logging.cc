@@ -37,46 +37,8 @@ extern "C" {
 
 static Logger *defaultLogger = new FileLogger();
 Logger *Logging::logger      = defaultLogger;
-int Logging::LogLevel        = 0;
+uint Logging::LogLevel       = 0;
 bool Logging::LogEnable      = false;
-
-void dprint(const char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    Logging::log(0, fmt, ap);
-    va_end(ap);
-}
-
-void LogInit(logging_stamp_callback_t stamp_cb)
-{
-    FileLogger *logger = NULL;
-    int LogLevel       = GetVenusConf().get_int_value("loglevel");
-
-    FILE *logFile = fopen(GetVenusConf().get_value("logfile"), "a+");
-    if (logFile == NULL) {
-        eprint("LogInit failed");
-        exit(EXIT_FAILURE);
-    }
-
-    Logging::SetDefaultLogger();
-    logger = (FileLogger *)Logging::GetLogger();
-
-    logger->SetLogFile(logFile);
-    logger->SetStampCallback(stamp_cb);
-
-    Logging::SetEnable(true);
-    Logging::SetLogLevel(LogLevel);
-    Logging::SetLogger(logger);
-
-    LOG(0, "Coda Venus, version " PACKAGE_VERSION "\n");
-
-    struct timeval now;
-    gettimeofday(&now, 0);
-    LOG(0, "Logfile initialized with LogLevel = %d at %s\n", LogLevel,
-        ctime((const time_t *)&(now.tv_sec)));
-}
 
 void Logging::DebugOn()
 {
@@ -95,38 +57,18 @@ void Logging::SetDefaultLogger()
     logger = defaultLogger;
 }
 
-void SwapLog()
-{
-    FILE *logFile = GetLogFile();
-    struct timeval now;
-    gettimeofday(&now, 0);
-
-    freopen(GetVenusConf().get_value("logfile"), "a+", logFile);
-    if (!GetVenusConf().get_bool_value(
-            "nofork")) /* only redirect stderr when daemonizing */
-        freopen(GetVenusConf().get_value("errorlog"), "a+", stderr);
-
-    LOG(0, "New Logfile started at %s", ctime((time_t *)&now.tv_sec));
-}
-
-FILE *GetLogFile()
-{
-    FileLogger *logger = (FileLogger *)Logging::GetLogger();
-    return logger->GetLogFile();
-}
-
 int Logging::GetLogLevel()
 {
     return LogLevel;
 }
 
-void Logging::SetLogLevel(int loglevel)
+void Logging::SetLogLevel(uint loglevel)
 {
     LogLevel = loglevel;
     GetVenusConf().set_int("loglevel", loglevel);
 }
 
-void Logging::log(int level, ...)
+void Logging::log(uint level, ...)
 {
     const char *fmt;
     if (!LogEnable)
@@ -142,7 +84,7 @@ void Logging::log(int level, ...)
     va_end(args);
 }
 
-void Logging::log(int level, logging_callback_with_args_t log_cb, ...)
+void Logging::log(uint level, logging_callback_with_args_t log_cb, ...)
 {
     va_list args;
 
@@ -154,7 +96,7 @@ void Logging::log(int level, logging_callback_with_args_t log_cb, ...)
     va_end(args);
 }
 
-void Logging::log(int level, logging_callback_t log_cb)
+void Logging::log(uint level, logging_callback_t log_cb)
 {
     if (LogLevel < level)
         return;

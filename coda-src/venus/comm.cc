@@ -670,15 +670,15 @@ void DoProbes(int HowMany, struct in_addr *Hosts)
     free(Connections);
 }
 
-static void multiBindLogging_CB(Logger *logger, va_list args)
+static void multiBindLogging_CB(va_list args)
 {
     int HowMany           = va_arg(args, int);
     struct in_addr *Hosts = va_arg(args, struct in_addr *);
 
-    dprint("MultiBind: HowMany = %d\n\tHosts = [ ", HowMany);
+    LOG(0, "MultiBind: HowMany = %d\n\tHosts = [ ", HowMany);
     for (int i = 0; i < HowMany; i++)
-        fprintf(GetLogFile(), "%s ", inet_ntoa(Hosts[i]));
-    fprintf(GetLogFile(), "]\n");
+        LOG(0, "%s ", inet_ntoa(Hosts[i]));
+    LOG(0, "]\n");
 }
 
 void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
@@ -721,15 +721,15 @@ void MultiBind(int HowMany, struct in_addr *Hosts, connent **Connections)
     }
 }
 
-static void multiProbeLogging_CB(Logger *logger, va_list args)
+static void multiProbeLogging_CB(va_list args)
 {
     int HowMany          = va_arg(args, int);
     RPC2_Handle *Handles = va_arg(args, RPC2_Handle *);
 
-    dprint("MultiProbe: HowMany = %d\n\tHandles = [ ", HowMany);
+    LOG(0, "MultiProbe: HowMany = %d\n\tHandles = [ ", HowMany);
     for (int i = 0; i < HowMany; i++)
-        fprintf(GetLogFile(), "%x ", Handles[i]);
-    fprintf(GetLogFile(), "]\n");
+        LOG(0, "%x ", Handles[i]);
+    LOG(0, "]\n");
 }
 
 void MultiProbe(int HowMany, RPC2_Handle *Handles)

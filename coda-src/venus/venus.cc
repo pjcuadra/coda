@@ -67,6 +67,7 @@ extern "C" {
 #include <venus/realmdb.h>
 #include "daemonizer.h"
 #include <venus/mux.h>
+#include <venus/logging/venus.h>
 
 #include <venus/nt_util.h>
 #ifdef __CYGWIN32__
@@ -164,12 +165,20 @@ void vproc_logging_stamping_callback(char *stamp)
 {
     (VprocSelf())->GetStamp(stamp);
 
+    /* Output a newline if we are starting a new block. */
+    static int last_vpid = -1;
+    static int last_seq  = -1;
     int this_vpid;
     int this_seq;
     if (sscanf(stamp, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid,
                &this_seq) != 2) {
-        fprintf(stderr, "Choking in dprint\n");
+        fprintf(stderr, "Choking in timestamp callback\n");
         exit(EXIT_FAILURE);
+    }
+    if ((this_vpid != last_vpid || this_seq != last_seq) && (this_vpid != -1)) {
+        LOG(0, "\n");
+        last_vpid = this_vpid;
+        last_seq  = this_seq;
     }
 }
 

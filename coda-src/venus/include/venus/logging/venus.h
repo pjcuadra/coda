@@ -16,32 +16,23 @@ listed in the file CREDITS.
 
 #*/
 
+#ifndef _VENUS_LOGGING_H_
+#define _VENUS_LOGGING_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
-#include <stdarg.h>
 
 #ifdef __cplusplus
 }
 #endif
 
-#include <venus/conf.h>
 #include <venus/logging/logging.h>
-#include <venus/logging/filelogger.h>
 
-void FileLogger::stamped_log(const char *stamp, const char *fmt, va_list args)
-{
-    char msg[240];
+void LogInit(logging_stamp_callback_t stamp_cb);
+void SwapLog();
+FILE *GetLogFile();
 
-    strcpy(msg, stamp);
-    vsnprintf(msg + strlen(stamp), 240 - strlen(stamp), fmt, args);
-
-    fwrite(msg, (int)sizeof(char), (int)strlen(msg), logFile);
-    fflush(logFile);
-}
+#endif /* _VENUS_LOGGING_H_ */

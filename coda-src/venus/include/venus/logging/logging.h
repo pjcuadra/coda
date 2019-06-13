@@ -16,8 +16,8 @@ listed in the file CREDITS.
 
 #*/
 
-#ifndef _VENUS_LOGGING_H_
-#define _VENUS_LOGGING_H_
+#ifndef _LOGGING_H_
+#define _LOGGING_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,22 +33,19 @@ extern "C" {
 
 #define LOG(...) Logging::log(__VA_ARGS__)
 
-void LogInit(logging_stamp_callback_t stamp_cb);
-void SwapLog();
-
 class Logging {
     static Logger *logger;
     static logging_stamp_callback_t stamp_fn;
-    static int LogLevel;
+    static uint LogLevel;
     static bool LogEnable;
 
 public:
-    static void log(int level, ...);
-    static void log(int level, logging_callback_with_args_t log_cb, ...);
-    static void log(int level, logging_callback_t log_cb);
+    static void log(uint level, ...);
+    static void log(uint level, logging_callback_with_args_t log_cb, ...);
+    static void log(uint level, logging_callback_t log_cb);
     static void SetStampCallback(logging_stamp_callback_t stamp_cb);
     static int GetLogLevel();
-    static void SetLogLevel(int loglevel);
+    static void SetLogLevel(uint loglevel);
     static void SetEnable(bool enable) { Logging::LogEnable = enable; }
 
     static void DebugOn();
@@ -59,7 +56,4 @@ public:
     static Logger *GetLogger() { return logger; }
 };
 
-void dprint(const char *fmt, ...);
-FILE *GetLogFile();
-
-#endif /* _VENUS_LOGGING_H_ */
+#endif /* _LOGGING_H_ */

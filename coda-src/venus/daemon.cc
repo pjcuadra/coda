@@ -40,7 +40,7 @@ extern "C" {
 #include "vice.h"
 #include <venus/vproc.h>
 #include "venus.private.h"
-#include <venus/logging/logging.h>
+#include <venus/logging/venus.h>
 
 static struct TM_Elem *DaemonList;
 

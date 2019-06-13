@@ -173,10 +173,10 @@ int CacheFile::ValidContainer()
         tstat.st_size == (off_t)length;
 
     if (!valid && Logging::GetLogLevel() >= 0) {
-        dprint("CacheFile::ValidContainer: %s invalid\n", name);
-        dprint("\t(%u, %u), (%u, %u), (%o, %o), (%d, %d)\n", tstat.st_uid,
-               (uid_t)V_UID, tstat.st_gid, (gid_t)V_GID,
-               (tstat.st_mode & ~S_IFMT), V_MODE, tstat.st_size, length);
+        LOG(0, "CacheFile::ValidContainer: %s invalid\n", name);
+        LOG(0, "\t(%u, %u), (%u, %u), (%o, %o), (%d, %d)\n", tstat.st_uid,
+            (uid_t)V_UID, tstat.st_gid, (gid_t)V_GID, (tstat.st_mode & ~S_IFMT),
+            V_MODE, tstat.st_size, length);
     }
     return (valid);
 }
