@@ -388,10 +388,10 @@ extern struct CommQueueStruct CommQueue;
 #define START_COMMSTATS()            \
     RPCPktStatistics startCS, endCS; \
     GetCSS(&startCS);
-#define END_COMMSTATS()            \
-    if (GetLogLevel() >= 1000) {   \
-        GetCSS(&endCS);            \
-        SubCSSs(&endCS, &startCS); \
+#define END_COMMSTATS()                   \
+    if (Logging::GetLogLevel() >= 1000) { \
+        GetCSS(&endCS);                   \
+        SubCSSs(&endCS, &startCS);        \
     }
 #define MULTI_START_MESSAGE(viceop)                                \
     START_COMMSYNC();                                              \

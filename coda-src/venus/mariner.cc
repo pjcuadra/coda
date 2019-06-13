@@ -528,11 +528,11 @@ void mariner::main(void)
                 "\tset:volstate, clear:volstate, fd <fd>pathstat <pathname>\n"
                 "\tfidstat <fid>, rpc2stat, print <args>\n");
         } else if (STREQ(argv[0], "debugon")) {
-            DebugOn();
-            Write("GetLogLevel() is now %d\n", GetLogLevel());
+            Logging::DebugOn();
+            Write("Logging::GetLogLevel() is now %d\n", Logging::GetLogLevel());
         } else if (STREQ(argv[0], "debugoff")) {
-            DebugOff();
-            Write("GetLogLevel() is now %d\n", GetLogLevel());
+            Logging::DebugOff();
+            Write("Logging::GetLogLevel() is now %d\n", Logging::GetLogLevel());
         } else if (STREQ(argv[0], "dumpcore")) {
             CHOKE("Telnet");
         } else if (STREQ(argv[0], "quit")) {

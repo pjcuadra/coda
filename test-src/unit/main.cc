@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 #include <gtest/gtest.h>
+#include <venus/logging/logging.h>
+#include <venus/conf.h>
 
 int main(int argc, char **argv)
 {

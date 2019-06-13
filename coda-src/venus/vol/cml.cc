@@ -1597,7 +1597,7 @@ int cmlent::cancel()
     }
 
     LOG(10, "cmlent::cancel: age = %d\n", curTime - time);
-    if (GetLogLevel() >= 10)
+    if (Logging::GetLogLevel() >= 10)
         print(GetLogFile());
 
     /* Parameters for possible utimes to be done AFTER cancelling this record. */
@@ -1910,7 +1910,7 @@ void ClientModifyLog::IncThread(int tid)
                 m->thread();
     }
 
-    if (GetLogLevel() >= 10)
+    if (Logging::GetLogLevel() >= 10)
         print(GetLogFile());
 
     LOG(0, "ClientModifyLog::IncThread: (%s)\n", vol->name);
@@ -3935,7 +3935,7 @@ unsigned long cmlent::ReintTime(unsigned long bw)
 
     LOG(10, "cmlent::ReintTime: bandwidth = %d bytes/sec, time = %d msec\n", bw,
         (unsigned long)time);
-    if (GetLogLevel() >= 10)
+    if (Logging::GetLogLevel() >= 10)
         print(GetLogFile());
 
     return ((unsigned long)time);

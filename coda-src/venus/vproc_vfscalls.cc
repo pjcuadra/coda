@@ -117,7 +117,7 @@ void vproc::vget(struct venus_cnode *vpp, VenusFid *vfid, int what)
     VenusFid fid = *vfid;
     fsobj *f     = 0;
 
-    if (u.u_nc && GetLogLevel() >= 100)
+    if (u.u_nc && Logging::GetLogLevel() >= 100)
         u.u_nc->print(GetLogFile());
 
     /* return early if we're called to prefetch data */

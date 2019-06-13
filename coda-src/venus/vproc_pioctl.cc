@@ -1610,9 +1610,9 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
             memcpy(&on, data->in, sizeof(uint32_t));
             on &= 0xff;
             if (on)
-                DebugOn();
+                Logging::DebugOn();
             else
-                DebugOff();
+                Logging::DebugOff();
 
             break;
         }

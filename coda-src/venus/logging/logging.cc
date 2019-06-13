@@ -16,14 +16,6 @@ listed in the file CREDITS.
 
 #*/
 
-/*
- *
- *     Utility routines used by Venus.
- *
- *    ToDo:
- *
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,97 +32,72 @@ extern "C" {
 #endif
 
 #include <venus/conf.h>
-#include <venus/logging.h>
+#include <venus/logging/logging.h>
+#include <venus/logging/filelogger.h>
 
-static FILE *logFile;
-static int LogLevel  = 0;
-static int LogInited = 0;
+static Logger *defaultLogger = new FileLogger();
+Logger *Logging::logger      = defaultLogger;
+int Logging::LogLevel        = 0;
+bool Logging::LogEnable      = false;
 
-static logging_stamp_callback_t scb = NULL;
-
-/* Print a debugging message to the log file. */
-void dprint(const char *fmt...)
+void dprint(const char *fmt, ...)
 {
     va_list ap;
 
-    if (!LogInited)
-        return;
-
-    char msg[240];
-
-    if (scb != NULL)
-        scb(logFile, msg);
-
     va_start(ap, fmt);
-    vsnprintf(msg + strlen(msg), 240 - strlen(msg), fmt, ap);
+    Logging::log(0, fmt, ap);
     va_end(ap);
-
-    fwrite(msg, (int)sizeof(char), (int)strlen(msg), logFile);
-    fflush(logFile);
 }
 
-static void LogginCallBackArgs(logging_callback_with_args_t log_cb, ...)
+void LogInit(logging_stamp_callback_t stamp_cb)
 {
-    if (log_cb == NULL)
-        return;
+    FileLogger *logger = NULL;
+    int LogLevel       = GetVenusConf().get_int_value("loglevel");
 
-    if (!LogInited)
-        return;
-
-    va_list args;
-    va_start(args, log_cb);
-    log_cb(logFile, args);
-    va_end(args);
-}
-
-static void LogginCallBack(logging_callback_t log_cb)
-{
-    if (log_cb == NULL)
-        return;
-
-    if (!LogInited)
-        return;
-
-    log_cb(logFile);
-}
-
-void SetLoggingStampCallback(logging_stamp_callback_t stamp_cb)
-{
-    scb = stamp_cb;
-}
-
-void LogInit()
-{
-    logFile = fopen(GetVenusConf().get_value("logfile"), "a+");
+    FILE *logFile = fopen(GetVenusConf().get_value("logfile"), "a+");
     if (logFile == NULL) {
         eprint("LogInit failed");
         exit(EXIT_FAILURE);
     }
-    LogInited = 1;
-    LOG(0, "Coda Venus, version " PACKAGE_VERSION "\n");
 
-    LogLevel = GetVenusConf().get_int_value("loglevel");
+    Logging::SetDefaultLogger();
+    logger = (FileLogger *)Logging::GetLogger();
+
+    logger->SetLogFile(logFile);
+    logger->SetStampCallback(stamp_cb);
+
+    Logging::SetEnable(true);
+    Logging::SetLogLevel(LogLevel);
+    Logging::SetLogger(logger);
+
+    LOG(0, "Coda Venus, version " PACKAGE_VERSION "\n");
 
     struct timeval now;
     gettimeofday(&now, 0);
     LOG(0, "Logfile initialized with LogLevel = %d at %s\n", LogLevel,
-        ctime((time_t *)&now.tv_sec));
+        ctime((const time_t *)&(now.tv_sec)));
 }
 
-void DebugOn()
+void Logging::DebugOn()
 {
     LogLevel = ((LogLevel == 0) ? 1 : LogLevel * 10);
     LOG(0, "LogLevel is now %d.\n", LogLevel);
 }
 
-void DebugOff()
+void Logging::DebugOff()
 {
     LogLevel = 0;
     LOG(0, "LogLevel is now %d.\n", LogLevel);
 }
 
+void Logging::SetDefaultLogger()
+{
+    logger = defaultLogger;
+}
+
 void SwapLog()
 {
+    FILE *logFile = GetLogFile();
     struct timeval now;
     gettimeofday(&now, 0);
 
@@ -144,48 +111,53 @@ void SwapLog()
 
 FILE *GetLogFile()
 {
-    return logFile;
+    FileLogger *logger = (FileLogger *)Logging::GetLogger();
+    return logger->GetLogFile();
 }
 
-int GetLogLevel()
+int Logging::GetLogLevel()
 {
     return LogLevel;
 }
 
-void SetLogLevel(int loglevel)
+void Logging::SetLogLevel(int loglevel)
 {
     LogLevel = loglevel;
     GetVenusConf().set_int("loglevel", loglevel);
 }
 
-void LOG(int level, const char *fmt, ...)
+void Logging::log(int level, ...)
 {
-    if (!LogInited)
+    const char *fmt;
+    if (!LogEnable)
         return;
 
     if (LogLevel < level)
         return;
-    va_list args;
 
-    va_start(args, fmt);
-    dprint(fmt, args);
+    va_list args;
+    va_start(args, level);
+    fmt = va_arg(args, const char *);
+    logger->log(fmt, args);
     va_end(args);
 }
 
-void LOG(int level, logging_callback_with_args_t log_cb, ...)
+void Logging::log(int level, logging_callback_with_args_t log_cb, ...)
 {
+    va_list args;
+
     if (LogLevel < level)
         return;
-    va_list args;
 
     va_start(args, log_cb);
-    LogginCallBackArgs(log_cb, args);
+    logger->LoggingCallBackArgs(log_cb, args);
     va_end(args);
 }
 
-void LOG(int level, logging_callback_t log_cb)
+void Logging::log(int level, logging_callback_t log_cb)
 {
     if (LogLevel < level)
         return;
-    LogginCallBack(log_cb);
+
+    logger->LoggingCallBack(log_cb);
 }

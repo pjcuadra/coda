@@ -264,18 +264,14 @@ TillEndFetching:
     return 0;
 }
 
-static void vvValidationFailureLoggingCallback(FILE *logFile, ...)
+static void vvValidationFailureLoggingCallback(Logger *logger, va_list args)
 {
-    va_list args;
-    va_start(args, logFile);
     int *r = va_arg(args, int *);
     dprint("\tremote = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n", r[0], r[1],
            r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]);
     int *l = va_arg(args, int *);
     dprint("\tlocal = [%x %x %x %x %x %x %x %x] [%x %x] [%x]\n", l[0], l[1],
            l[2], l[3], l[4], l[5], l[6], l[7], l[8], l[9], l[10]);
-
-    va_end(args);
 }
 
 int fsobj::Fetch(uid_t uid)
@@ -1007,7 +1003,8 @@ int fsobj::GetAttr(uid_t uid, RPC2_BoundedBS *acl)
 
             ARG_UNMARSHALL_BS(myshavar, mysha, dh_ix);
 
-            if (GetLogLevel() >= 10 && mysha.SeqLen == SHA_DIGEST_LENGTH) {
+            if (Logging::GetLogLevel() >= 10 &&
+                mysha.SeqLen == SHA_DIGEST_LENGTH) {
                 char printbuf[2 * SHA_DIGEST_LENGTH + 1];
                 ViceSHAtoHex(VenusSHA, printbuf, sizeof(printbuf));
                 dprint("mysha(%d, %d) = %s\n.", mysha.MaxSeqLen, mysha.SeqLen,

@@ -642,7 +642,7 @@ int mgrpent::RVVCheck(ViceVersionVector **RVVs, int EqReq)
     for (int j = 0; j < VSG_MEMBERS; j++)
         if (!rocc.hosts[j].s_addr || rocc.retcodes[j])
             RVVs[j] = 0;
-    if (GetLogLevel() >= 100)
+    if (Logging::GetLogLevel() >= 100)
         VVPrint(GetLogFile(), RVVs);
 
     int dom_cnt = 0;

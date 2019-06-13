@@ -160,24 +160,16 @@ void testKernDevice()
 #endif
 }
 
-void vproc_logging_stamping_callback(FILE *logFile, char *msg)
+void vproc_logging_stamping_callback(char *stamp)
 {
-    (VprocSelf())->GetStamp(msg);
+    (VprocSelf())->GetStamp(stamp);
 
-    /* Output a newline if we are starting a new block. */
-    static int last_vpid = -1;
-    static int last_seq  = -1;
     int this_vpid;
     int this_seq;
-    if (sscanf(msg, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid,
+    if (sscanf(stamp, "[ %*c(%d) : %d : %*02d:%*02d:%*02d ] ", &this_vpid,
                &this_seq) != 2) {
         fprintf(stderr, "Choking in dprint\n");
         exit(EXIT_FAILURE);
-    }
-    if ((this_vpid != last_vpid || this_seq != last_seq) && (this_vpid != -1)) {
-        fprintf(logFile, "\n");
-        last_vpid = this_vpid;
-        last_seq  = this_seq;
     }
 }
 
@@ -210,7 +202,7 @@ int main(int argc, char **argv)
 
         // Cygwin runs as a service and doesn't need to daemonize.
 #ifndef __CYGWIN__
-    if (!GetVenusConf().get_bool_value("nofork") && GetLogLevel() == 0)
+    if (!GetVenusConf().get_bool_value("nofork") && Logging::GetLogLevel() == 0)
         parent_fd = daemonize();
 #endif
 
@@ -266,8 +258,8 @@ int main(int argc, char **argv)
      * hasn't yet been called.
      */
     VprocInit(); /* init LWP/IOMGR support */
-    LogInit(); /* move old Venus log and create a new one */
-    SetLoggingStampCallback(vproc_logging_stamping_callback);
+    LogInit(
+        vproc_logging_stamping_callback); /* move old Venus log and create a new one */
 
     LogLevel        = GetVenusConf().get_int_value("loglevel");
     RPC2_Trace      = LogLevel ? 1 : 0;

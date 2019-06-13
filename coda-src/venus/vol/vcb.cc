@@ -238,7 +238,7 @@ int reintvol::GetVolAttr(uid_t uid)
                 LOG(1000,
                     "volent::GetVolAttr: packing volume %s, vid %p, vvv:\n",
                     rv->GetName(), rv->GetVolumeId());
-                if (GetLogLevel() >= 1000)
+                if (Logging::GetLogLevel() >= 1000)
                     FPrintVV(GetLogFile(), &rv->VVV);
 
                 VidList[nVols].Vid = rv->GetVolumeId();
@@ -391,7 +391,7 @@ RepExit:
 /* collate version stamp and callback status out parameters from servers */
 void reintvol::UpdateVCBInfo(RPC2_Integer VS, CallBackStatus CBStatus)
 {
-    if (GetLogLevel() >= 100) {
+    if (Logging::GetLogLevel() >= 100) {
         fprintf(GetLogFile(),
                 "reintvol::UpdateVCBInfo: vid %08x Current VVV:\n", vid);
         FPrintVV(GetLogFile(), &VVV);
@@ -433,7 +433,7 @@ void repvol::CollateVCB(mgrpent *m, RPC2_Integer *sbufs, CallBackStatus *cbufs)
     unsigned int i            = 0;
     CallBackStatus collatedCB = CallBackSet;
 
-    if (GetLogLevel() >= 100) {
+    if (Logging::GetLogLevel() >= 100) {
         fprintf(GetLogFile(), "repvol::CollateVCB: vid %08x Current VVV:\n",
                 vid);
         FPrintVV(GetLogFile(), &VVV);

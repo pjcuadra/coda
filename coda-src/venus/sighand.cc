@@ -186,7 +186,7 @@ static void SigControl(int sig)
         found = fscanf(fp, "%d %d %d", &loglevel, &rpc2level, &lwplevel);
 
         if (found > 0 && loglevel >= 0)
-            SetLogLevel(loglevel);
+            Logging::SetLogLevel(loglevel);
 
         if (found > 1 && rpc2level >= 0) {
             RPC2_DebugLevel = rpc2level;
@@ -196,7 +196,7 @@ static void SigControl(int sig)
         if (found > 2 && lwplevel >= 0)
             lwp_debug = lwplevel;
 
-        LOG(0, "LogLevel is now %d.\n", GetLogLevel());
+        LOG(0, "LogLevel is now %d.\n", Logging::GetLogLevel());
         LOG(0, "RPC2_DebugLevel is now %d.\n", RPC2_DebugLevel);
         LOG(0, "lwp_debug is now %d.\n", lwp_debug);
     }

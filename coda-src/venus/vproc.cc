@@ -471,7 +471,7 @@ int vproc::operator=(vproc &vp)
 
 vproc::~vproc()
 {
-    if (GetLogLevel() >= 1)
+    if (Logging::GetLogLevel() >= 1)
         print(GetLogFile());
 
     if (!idle)

@@ -298,7 +298,7 @@ int repvol::ConnectedRepair(VenusFid *RepairFid, char *RepairFile, uid_t uid,
         status.VV          = tvv;
 
         /* A little debugging help. */
-        if (GetLogLevel() >= 1) {
+        if (Logging::GetLogLevel() >= 1) {
             fprintf(GetLogFile(), "Repairing %s:\n", FID_(rFid));
             fprintf(GetLogFile(),
                     "\tIV = %d, VT = %d, LC = %d, LE = %d, DV = %d, DA = %d\n",

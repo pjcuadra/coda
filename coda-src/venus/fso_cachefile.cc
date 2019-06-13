@@ -49,7 +49,7 @@ extern "C" {
 /* from venus */
 #include <venus/fso/cachefile.h>
 #include <venus/recov.h>
-#include <venus/logging.h>
+#include <venus/logging/logging.h>
 
 #ifndef fdatasync
 #define fdatasync(fd) fsync(fd)
@@ -172,7 +172,7 @@ int CacheFile::ValidContainer()
 #endif
         tstat.st_size == (off_t)length;
 
-    if (!valid && GetLogLevel() >= 0) {
+    if (!valid && Logging::GetLogLevel() >= 0) {
         dprint("CacheFile::ValidContainer: %s invalid\n", name);
         dprint("\t(%u, %u), (%u, %u), (%o, %o), (%d, %d)\n", tstat.st_uid,
                (uid_t)V_UID, tstat.st_gid, (gid_t)V_GID,

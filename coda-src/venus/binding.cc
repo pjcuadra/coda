@@ -19,7 +19,7 @@ listed in the file CREDITS.
 /* from venus */
 #include <venus/binding.h>
 #include "venus.private.h"
-#include <venus/logging.h>
+#include <venus/logging/logging.h>
 
 #ifdef VENUSDEBUG
 int binding::allocs   = 0;

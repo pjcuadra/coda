@@ -302,7 +302,7 @@ void fsobj::dir_Print()
         CHOKE("fsobj::dir_Print: no data");
     }
 
-    if (GetLogLevel() >= 1000) {
+    if (Logging::GetLogLevel() >= 1000) {
         LOG(1000, "fsobj::dir_Print: %s, %d, %d\n", data.dir->udcf->Name(),
             data.dir->udcf->Length(), data.dir->udcfvalid);
 

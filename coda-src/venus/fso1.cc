@@ -78,6 +78,7 @@ extern "C" {
 #include <venus/worker.h>
 #include <venus/realmdb.h>
 #include <venus/mgrp.h>
+#include <venus/logging/filelogger.h>
 
 static int NullRcRights      = 0;
 static AcRights NullAcRights = { ANYUSER_UID, 0, 0, 0 };
@@ -533,7 +534,7 @@ void fsobj::Recover()
         CHOKE("fsobj::Recover: bogus VnodeType (%d)", stat.VnodeType);
     }
 
-    if (GetLogLevel() >= 1)
+    if (Logging::GetLogLevel() >= 1)
         print(GetLogFile());
     return;
 
@@ -1447,8 +1448,7 @@ void fsobj::AttachChild(fsobj *child)
         CHOKE("fsobj::AttachChild: not dir");
     }
 
-    LOG(100,
-        ("fsobj::AttachChild: (%s), (%s)\n", FID_(&fid), FID_(&child->fid)));
+    LOG(100, "fsobj::AttachChild: (%s), (%s)\n", FID_(&fid), FID_(&child->fid));
 
     DisableReplacement();
 
@@ -1473,8 +1473,7 @@ void fsobj::DetachChild(fsobj *child)
         CHOKE("fsobj::DetachChild: not dir");
     }
 
-    LOG(100,
-        ("fsobj::DetachChild: (%s), (%s)\n", FID_(&fid), FID_(&child->fid)));
+    LOG(100, "fsobj::DetachChild: (%s), (%s)\n", FID_(&fid), FID_(&child->fid));
 
     DemoteHdbBindings(); /* in case an expansion would no longer be satisfied! */
 
@@ -1604,14 +1603,14 @@ void fsobj::EnableReplacement()
         FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]);
 
 #ifdef VENUSDEBUG
-    if (GetLogLevel() >= 10000)
+    if (Logging::GetLogLevel() >= 10000)
         FSDB->prioq->print(GetLogFile());
 #endif
 
     FSDB->prioq->insert(&prio_handle);
 
 #ifdef VENUSDEBUG
-    if (GetLogLevel() >= 10000 && !(FSDB->prioq->IsOrdered())) {
+    if (Logging::GetLogLevel() >= 10000 && !(FSDB->prioq->IsOrdered())) {
         print(GetLogFile());
         FSDB->prioq->print(GetLogFile());
         CHOKE("fsobj::EnableReplacement: !IsOrdered after insert");
@@ -1630,7 +1629,7 @@ void fsobj::DisableReplacement()
         FID_(&fid), priority, flags.random, HoardPri, FSDB->LastRef[ix]);
 
 #ifdef VENUSDEBUG
-    if (GetLogLevel() >= 10000)
+    if (Logging::GetLogLevel() >= 10000)
         FSDB->prioq->print(GetLogFile());
 #endif
 
@@ -1640,7 +1639,7 @@ void fsobj::DisableReplacement()
     }
 
 #ifdef VENUSDEBUG
-    if (GetLogLevel() >= 10000 && !(FSDB->prioq->IsOrdered())) {
+    if (Logging::GetLogLevel() >= 10000 && !(FSDB->prioq->IsOrdered())) {
         print(GetLogFile());
         FSDB->prioq->print(GetLogFile());
         CHOKE("fsobj::DisableReplacement: !IsOrdered after remove");
@@ -1669,17 +1668,15 @@ binding *CheckForDuplicates(dlist *hdb_bindings_list, void *binder)
     return (NULL);
 }
 
-static void print_fso_bingins(FILE *file, ...)
+static void print_fso_bingins(Logger *logger, va_list args)
 {
-    va_list args;
-    va_start(args, file);
-    fsobj *f   = va_arg(args, fsobj *);
-    binding *b = va_arg(args, binding *);
+    FileLogger *flogger = (FileLogger *)logger;
+    fsobj *f            = va_arg(args, fsobj *);
+    binding *b          = va_arg(args, binding *);
 
     dprint("fsobj::AttachHdbBinding:\n");
-    f->print(file);
-    b->print(file);
-    va_end(args);
+    f->print(flogger->GetLogFile());
+    b->print(flogger->GetLogFile());
 }
 
 /* Need not be called from within transaction. */
@@ -1744,7 +1741,7 @@ void fsobj::DemoteHdbBinding(binding *b)
             b->print(GetLogFile());
         CHOKE("fsobj::DemoteHdbBinding: bindee != this");
     }
-    if (GetLogLevel() >= 1000) {
+    if (Logging::GetLogLevel() >= 1000) {
         dprint("fsobj::DemoteHdbBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
@@ -1782,7 +1779,7 @@ void fsobj::DetachHdbBinding(binding *b, int DemoteNameCtxt)
             b->print(GetLogFile());
         CHOKE("fsobj::DetachHdbBinding: bindee != this");
     }
-    if (GetLogLevel() >= 1000) {
+    if (Logging::GetLogLevel() >= 1000) {
         dprint("fsobj::DetachHdbBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
@@ -1845,7 +1842,7 @@ void fsobj::AttachMleBinding(binding *b)
         b->print(GetLogFile());
         CHOKE("fsobj::AttachMleBinding: bindee != 0");
     }
-    if (GetLogLevel() >= 1000) {
+    if (Logging::GetLogLevel() >= 1000) {
         dprint("fsobj::AttachMleBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
@@ -1876,7 +1873,7 @@ void fsobj::DetachMleBinding(binding *b)
             b->print(GetLogFile());
         CHOKE("fsobj::DetachMleBinding: bindee != this");
     }
-    if (GetLogLevel() >= 1000) {
+    if (Logging::GetLogLevel() >= 1000) {
         dprint("fsobj::DetachMleBinding:\n");
         print(GetLogFile());
         b->print(GetLogFile());
