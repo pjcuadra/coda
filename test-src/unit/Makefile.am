@@ -15,6 +15,7 @@ GTEST_DIR = $(top_builddir)/external-src/googletest/googletest
 
 unit_LDADD = $(top_builddir)/coda-src/util/libutil.la \
              $(top_builddir)/lib-src/base/libbase.la \
+             $(top_builddir)/coda-src/dir/libcodadir.la \
              $(top_builddir)/coda-src/venus/libvenus.la \
              $(GTEST_DIR)/lib/libgtest.la \
              $(RVM_RPC2_LIBS)

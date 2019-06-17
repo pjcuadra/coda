@@ -67,6 +67,7 @@ class msgent : public olink {
     friend int k_Purge(uid_t);
     friend int k_Replace(VenusFid *, VenusFid *);
     friend class fsobj;
+    friend class vfs;
 
     char msg_buf[VC_MAXMSGSIZE];
     int return_fd;
@@ -102,6 +103,7 @@ class worker : public vproc {
     friend class vproc;
     friend class fsobj;
     friend int GetKernelModuleVersion();
+    friend class vfs;
 
     static int muxfd;
     static int nworkers;
@@ -191,10 +193,6 @@ public:
 };
 
 extern msgent *FindMsg(olist &, u_long);
-extern int k_Purge();
-extern int k_Purge(VenusFid *, int = 0);
-extern int k_Purge(uid_t);
-extern int k_Replace(VenusFid *, VenusFid *);
 extern void VFSMount();
 extern void VFSUnmount();
 extern void WorkerInit();

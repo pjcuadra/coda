@@ -792,8 +792,8 @@ int plan9server::recv_attach(unsigned char *buf, size_t len, uint16_t tag)
     root->aname    = aname;
     root->userid   = uid == (uid_t)~0 ? getuserid(uname) : uid;
 
-    conn->u.u_uid = root->userid;
-    conn->root(&root->cnode);
+    conn->u.u_uid   = root->userid;
+    conn->u.u_error = vfs::root(&root->cnode);
 
     if (add_fid(fid, &root->cnode, root) == NULL) {
         int errcode = errno;
@@ -882,8 +882,9 @@ int plan9server::recv_walk(unsigned char *buf, size_t len, uint16_t tag)
         if (strcmp(wname, "..") != 0 ||
             !FID_EQ(&current.c_fid, &fm->root->cnode.c_fid)) {
             conn->u.u_uid = fm->root->userid;
-            conn->lookup(&current, wname, &child,
-                         CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
+            conn->u.u_error =
+                vfs::lookup(&current, wname, &child,
+                            CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
 
             if (conn->u.u_error) {
                 ::free(wname);
@@ -995,9 +996,9 @@ int plan9server::recv_open(unsigned char *buf, size_t len, uint16_t tag)
     conn->u.u_uid = fm->root->userid;
     if (cnode.c_type == C_VLNK) {
         struct venus_cnode tmp;
-        conn->vget(&tmp, &cnode.c_fid, RC_STATUS | RC_DATA);
+        conn->u.u_error = vfs::vget(&tmp, &cnode.c_fid, RC_STATUS | RC_DATA);
     } else {
-        conn->open(&cnode, flags);
+        conn->u.u_error = vfs::open(&cnode, flags);
     }
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
@@ -1009,7 +1010,7 @@ int plan9server::recv_open(unsigned char *buf, size_t len, uint16_t tag)
     fm = find_fid(fid);
     if (!fm) {
         if (cnode.c_type != C_VLNK)
-            conn->close(&cnode, flags);
+            conn->u.u_error = vfs::close(&cnode, flags);
         return send_error(tag, "fid unknown or out of range", EBADF);
     }
     fm->open_flags = flags;
@@ -1105,23 +1106,24 @@ int plan9server::recv_create(unsigned char *buf, size_t len, uint16_t tag)
 
     if (perm & P9_DMDIR) {
         /* create a directory */
-        conn->mkdir(&fm->cnode, name, &va, &child);
+        conn->u.u_error = vfs::mkdir(&fm->cnode, name, &va, &child);
     } else if (perm & P9_DMSYMLINK) {
         /* create a symlink */
-        conn->symlink(&fm->cnode, extension, &va, name);
-        conn->lookup(&fm->cnode, name, &child,
-                     CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
+        conn->u.u_error = vfs::symlink(&fm->cnode, extension, &va, name);
+        conn->u.u_error = vfs::lookup(&fm->cnode, name, &child,
+                                      CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
     } else if (perm & P9_DMLINK) {
         /* create a hardlink */
         uint32_t src_fid = strtol(extension, NULL, 10); //undocumented in 9P
         struct fidmap *src_fm = find_fid(src_fid); //fidmap of link src
         if (!src_fm)
             return send_error(tag, "source fid unknown or out of range", EBADF);
-        conn->link(&src_fm->cnode, &fm->cnode, name);
-        child = src_fm->cnode;
+        conn->u.u_error = vfs::link(&src_fm->cnode, &fm->cnode, name);
+        child           = src_fm->cnode;
     } else {
         /* create a regular file */
-        conn->create(&fm->cnode, name, &va, excl, flags, &child);
+        conn->u.u_error =
+            vfs::create(&fm->cnode, name, &va, excl, flags, &child);
     }
 
     if (conn->u.u_error) {
@@ -1131,7 +1133,7 @@ int plan9server::recv_create(unsigned char *buf, size_t len, uint16_t tag)
     }
 
     if (child.c_type != C_VLNK)
-        conn->open(&child, flags);
+        conn->u.u_error = vfs::open(&child, flags);
 
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
@@ -1143,7 +1145,7 @@ int plan9server::recv_create(unsigned char *buf, size_t len, uint16_t tag)
     fm = find_fid(fid);
     if (!fm) {
         if (child.c_type != C_VLNK)
-            conn->close(&child, flags);
+            conn->u.u_error = vfs::close(&child, flags);
         return send_error(tag, "fid unknown or out of range", EBADF);
     }
     /* fid is replaced by the newly created file/directory/link */
@@ -1326,9 +1328,11 @@ int plan9server::recv_remove(unsigned char *buf, size_t len, uint16_t tag)
     if (!errcode) {
         conn->u.u_uid = fm->root->userid;
         if (fm->cnode.c_type == C_VDIR)
-            conn->rmdir(&parent_cnode, name); /* remove a directory */
+            conn->u.u_error =
+                vfs::rmdir(&parent_cnode, name); /* remove a directory */
         else
-            conn->remove(&parent_cnode, name); /* remove a regular file */
+            conn->u.u_error =
+                vfs::remove(&parent_cnode, name); /* remove a regular file */
 
         if (conn->u.u_error)
             errcode = conn->u.u_error;
@@ -1506,7 +1510,8 @@ int plan9server::recv_wstat(unsigned char *buf, size_t len, uint16_t tag)
 
         /* attempt rename */
         DEBUG("--- renaming %s to %s\n", name, stat.name);
-        conn->rename(&parent_cnode, name, &parent_cnode, stat.name);
+        conn->u.u_error =
+            vfs::rename(&parent_cnode, name, &parent_cnode, stat.name);
         if (conn->u.u_error) {
             errcode = conn->u.u_error;
             strerr  = VenusRetStr(errcode);
@@ -1554,7 +1559,7 @@ int plan9server::recv_wstat(unsigned char *buf, size_t len, uint16_t tag)
        * vattr so we just ignore them */
 
         /* attempt setattr */
-        conn->setattr(&fm->cnode, &attr);
+        conn->u.u_error = vfs::setattr(&fm->cnode, &attr);
         if (conn->u.u_error) {
             errcode = conn->u.u_error;
             strerr  = VenusRetStr(errcode);
@@ -1617,8 +1622,9 @@ int plan9server::pack_dirent(unsigned char **buf, size_t *len,
     struct plan9_stat stat;
     int rc = 0;
 
-    conn->u.u_uid = root->userid;
-    conn->lookup(parent, name, &child, CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
+    conn->u.u_uid   = root->userid;
+    conn->u.u_error = vfs::lookup(parent, name, &child,
+                                  CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
     if (conn->u.u_error)
         return conn->u.u_error;
 
@@ -1749,8 +1755,8 @@ ssize_t plan9server::plan9_read(struct fidmap *fm, unsigned char *buf,
         cstring.cs_buf    = (char *)buf;
         cstring.cs_maxlen = count;
 
-        conn->u.u_uid = fm->root->userid;
-        conn->readlink(&fm->cnode, &cstring);
+        conn->u.u_uid   = fm->root->userid;
+        conn->u.u_error = vfs::readlink(&fm->cnode, &cstring);
 
         n = conn->u.u_error ? -1 : cstring.cs_len;
     }
@@ -1786,8 +1792,8 @@ int plan9server::plan9_stat(struct venus_cnode *cnode, struct attachment *root,
     stat->n_gid     = root->userid;
     stat->n_muid    = root->userid;
 
-    conn->u.u_uid = root->userid;
-    conn->getattr(cnode, &attr);
+    conn->u.u_uid   = root->userid;
+    conn->u.u_error = vfs::getattr(cnode, &attr);
 
     /* check for getattr errors if we're not called from filldir */
     if (conn->u.u_error)
@@ -1804,7 +1810,7 @@ int plan9server::plan9_stat(struct venus_cnode *cnode, struct attachment *root,
         cstring.cs_buf    = target_string;
         cstring.cs_maxlen = PATH_MAX;
         conn->u.u_uid     = root->userid;
-        conn->readlink(cnode, &cstring);
+        conn->u.u_error   = vfs::readlink(cnode, &cstring);
         if (conn->u.u_error)
             return -1;
         stat->extension = strdup(cstring.cs_buf);
@@ -1835,8 +1841,8 @@ int plan9server::recv_getattr(unsigned char *buf, size_t len, uint16_t tag)
     if (!fm)
         return send_error(tag, "fid unknown or out of range", EBADF);
 
-    conn->u.u_uid = fm->root->userid;
-    conn->getattr(&fm->cnode, &attr);
+    conn->u.u_uid   = fm->root->userid;
+    conn->u.u_error = vfs::getattr(&fm->cnode, &attr);
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
         const char *errstr = VenusRetStr(errcode);
@@ -1992,7 +1998,7 @@ int plan9server::recv_setattr(unsigned char *buf, size_t len, uint16_t tag)
 
     /* attempt setattr */
     conn->u.u_uid = fm->root->userid;
-    conn->setattr(&fm->cnode, &attr);
+    vfs::setattr(&fm->cnode, &attr);
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
         const char *errstr = VenusRetStr(errcode);
@@ -2075,9 +2081,9 @@ int plan9server::recv_lopen(unsigned char *buf, size_t len, uint16_t tag)
     conn->u.u_uid = fm->root->userid;
     if (cnode.c_type == C_VLNK) {
         struct venus_cnode tmp;
-        conn->vget(&tmp, &cnode.c_fid, RC_STATUS | RC_DATA);
+        conn->u.u_error = vfs::vget(&tmp, &cnode.c_fid, RC_STATUS | RC_DATA);
     } else {
-        conn->open(&cnode, coda_flags);
+        conn->u.u_error = vfs::open(&cnode, coda_flags);
     }
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
@@ -2089,7 +2095,7 @@ int plan9server::recv_lopen(unsigned char *buf, size_t len, uint16_t tag)
     fm = find_fid(fid);
     if (!fm) {
         if (cnode.c_type != C_VLNK)
-            conn->close(&cnode, coda_flags);
+            conn->u.u_error = vfs::close(&cnode, coda_flags);
         return send_error(tag, "fid unknown or out of range", EBADF);
     }
     fm->open_flags = coda_flags;
@@ -2165,8 +2171,8 @@ int plan9server::recv_lcreate(unsigned char *buf, size_t len, uint16_t tag)
     struct plan9_qid qid;
 
     /* Attempt to create a regular file */
-    conn->u.u_uid = fm->root->userid;
-    conn->create(&fm->cnode, name, &va, excl, flags, &child);
+    conn->u.u_uid   = fm->root->userid;
+    conn->u.u_error = vfs::create(&fm->cnode, name, &va, excl, flags, &child);
 
     if (conn->u.u_error) {
         errcode = conn->u.u_error;
@@ -2174,7 +2180,7 @@ int plan9server::recv_lcreate(unsigned char *buf, size_t len, uint16_t tag)
         goto err_out;
     }
 
-    conn->open(&child, flags);
+    conn->u.u_error = vfs::open(&child, flags);
 
     if (conn->u.u_error) {
         errcode = conn->u.u_error;
@@ -2185,9 +2191,9 @@ int plan9server::recv_lcreate(unsigned char *buf, size_t len, uint16_t tag)
     /* create yields, reobtain fidmap reference */
     fm = find_fid(fid);
     if (!fm) {
-        conn->close(&child, flags);
-        errcode = EBADF;
-        errstr  = "fid unknown or out of range";
+        conn->u.u_error = vfs::close(&child, flags);
+        errcode         = EBADF;
+        errstr          = "fid unknown or out of range";
         goto err_out;
     }
     /* fid is replaced by the newly created file */
@@ -2264,9 +2270,9 @@ int plan9server::recv_symlink(unsigned char *buf, size_t len, uint16_t tag)
 
     conn->u.u_uid = fm->root->userid;
     /* create a symlink and get a cnode for it */
-    conn->symlink(&fm->cnode, target, &va, name);
-    conn->lookup(&fm->cnode, name, &child,
-                 CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
+    conn->u.u_error = vfs::symlink(&fm->cnode, target, &va, name);
+    conn->u.u_error = vfs::lookup(&fm->cnode, name, &child,
+                                  CLU_CASE_SENSITIVE | CLU_TRAVERSE_MTPT);
 
     if (conn->u.u_error) {
         errcode = conn->u.u_error;
@@ -2354,8 +2360,8 @@ int plan9server::recv_mkdir(unsigned char *buf, size_t len, uint16_t tag)
     struct plan9_qid qid;
 
     /* Attempt to create the directory */
-    conn->u.u_uid = fm->root->userid;
-    conn->mkdir(&fm->cnode, name, &va, &child);
+    conn->u.u_uid   = fm->root->userid;
+    conn->u.u_error = vfs::mkdir(&fm->cnode, name, &va, &child);
 
     if (conn->u.u_error) {
         errcode = conn->u.u_error;
@@ -2467,8 +2473,8 @@ int plan9server::recv_readlink(unsigned char *buf, size_t len, uint16_t tag)
     cstring.cs_len    = 0;
     cstring.cs_maxlen = CODA_MAXPATHLEN;
 
-    conn->u.u_uid = fm->root->userid;
-    conn->readlink(&fm->cnode, &cstring);
+    conn->u.u_uid   = fm->root->userid;
+    conn->u.u_error = vfs::readlink(&fm->cnode, &cstring);
 
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
@@ -2505,8 +2511,8 @@ int plan9server::recv_statfs(unsigned char *buf, size_t len, uint16_t tag)
 
     struct coda_statfs c_statfs;
 
-    conn->u.u_uid = fm->root->userid;
-    conn->statfs(&c_statfs);
+    conn->u.u_uid   = fm->root->userid;
+    conn->u.u_error = vfs::statfs(&c_statfs);
 
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
@@ -2608,9 +2614,11 @@ int plan9server::recv_unlinkat(unsigned char *buf, size_t len, uint16_t tag)
     /* Attempt unlinkat operation */
     conn->u.u_uid = dirfm->root->userid;
     if (flags == P9_DOTL_AT_REMOVEDIR)
-        conn->rmdir(&dirfm->cnode, name); /* remove a directory */
+        conn->u.u_error =
+            vfs::rmdir(&dirfm->cnode, name); /* remove a directory */
     else
-        conn->remove(&dirfm->cnode, name); /* remove a regular file */
+        conn->u.u_error =
+            vfs::remove(&dirfm->cnode, name); /* remove a regular file */
 
     if (conn->u.u_error)
         goto err_out;
@@ -2661,8 +2669,8 @@ int plan9server::recv_link(unsigned char *buf, size_t len, uint16_t tag)
         return send_error(tag, "Source fid unknown or out of range", EBADF);
 
     /* create the hardlink */
-    conn->u.u_uid = dfm->root->userid;
-    conn->link(&src_fm->cnode, &dfm->cnode, name);
+    conn->u.u_uid   = dfm->root->userid;
+    conn->u.u_error = vfs::link(&src_fm->cnode, &dfm->cnode, name);
 
     if (conn->u.u_error) {
         int errcode        = conn->u.u_error;
@@ -2728,8 +2736,8 @@ int plan9server::recv_rename(unsigned char *buf, size_t len, uint16_t tag)
     }
 
     /* attempt rename */
-    conn->u.u_uid = fm->root->userid;
-    conn->rename(&old_parent, old_name, &dfm->cnode, name);
+    conn->u.u_uid   = fm->root->userid;
+    conn->u.u_error = vfs::rename(&old_parent, old_name, &dfm->cnode, name);
     if (conn->u.u_error) {
         errcode = conn->u.u_error;
         errstr  = VenusRetStr(errcode);
@@ -2803,7 +2811,8 @@ int plan9server::recv_renameat(unsigned char *buf, size_t len, uint16_t tag)
 
     /* attempt rename */
     conn->u.u_uid = newdirfm->root->userid;
-    conn->rename(&olddirfm->cnode, oldname, &newdirfm->cnode, newname);
+    conn->u.u_error =
+        vfs::rename(&olddirfm->cnode, oldname, &newdirfm->cnode, newname);
     if (conn->u.u_error) {
         errcode = conn->u.u_error;
         errstr  = VenusRetStr(errcode);
@@ -3134,8 +3143,8 @@ int plan9server::del_fid(uint32_t fid)
 
         fids.remove(&fm->link);
         if (fm->open_flags && fm->cnode.c_type != C_VLNK) {
-            conn->u.u_uid = fm->root->userid;
-            conn->close(&fm->cnode, fm->open_flags);
+            conn->u.u_uid   = fm->root->userid;
+            conn->u.u_error = vfs::close(&fm->cnode, fm->open_flags);
         }
 
         if (--fm->root->refcount == 0) {

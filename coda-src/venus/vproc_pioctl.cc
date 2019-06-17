@@ -239,8 +239,9 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                 arg++;
 
                 /* Disallow special names. */
-                verifyname(link_name,
-                           NAME_NO_DOTS | NAME_NO_CONFLICT | NAME_NO_EXPANSION);
+                u.u_error =
+                    vfs::verifyname(link_name, NAME_NO_DOTS | NAME_NO_CONFLICT |
+                                                   NAME_NO_EXPANSION);
                 if (u.u_error)
                     break;
 
@@ -325,7 +326,8 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                 char *target_name = (char *)data->in;
 
                 /* Disallow deletion of special names. */
-                verifyname(target_name, NAME_NO_DOTS | NAME_NO_CONFLICT);
+                u.u_error = vfs::verifyname(target_name,
+                                            NAME_NO_DOTS | NAME_NO_CONFLICT);
                 if (u.u_error)
                     break;
 
@@ -383,7 +385,7 @@ void vproc::do_ioctl(VenusFid *fid, unsigned char nr, struct ViceIoctl *data)
                 fsobj *target_fso = 0;
                 char *target_name = (char *)data->in;
                 int out_size = 0; /* needed since data->out_size is a short! */
-                verifyname(target_name, NAME_NO_DOTS);
+                u.u_error    = vfs::verifyname(target_name, NAME_NO_DOTS);
 
                 /* Verify that parent is a directory. */
                 if (!f->IsDir()) {

@@ -61,8 +61,17 @@ extern "C" {
 #include <venus/comm.h>
 #include <venus/recov.h>
 #include <venus/realmdb.h>
-#include "venus.private.h"
 #include <venus/vsg.h>
+
+/* Replica Control Rights. */
+/* Note that we presently do not distinguish between read and write rights. */
+/* We may well do so in the future, however. */
+#define RC_STATUSREAD 1
+#define RC_STATUSWRITE 2
+#define RC_STATUS (RC_STATUSREAD | RC_STATUSWRITE)
+#define RC_DATAREAD 4
+#define RC_DATAWRITE 8
+#define RC_DATA (RC_DATAREAD | RC_DATAWRITE)
 
 /* Forward declarations. */
 class ClientModifyLog;

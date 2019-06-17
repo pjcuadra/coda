@@ -60,6 +60,8 @@ extern "C" {
 #include <venus/vol.h>
 #include <venus/vproc.h>
 #include <venus/worker.h>
+#include <venus/vfs.h>
+#include <venusioctl.h>
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -158,9 +160,7 @@ int fsobj::OpenPioctlFile(void)
     vp->u.u_pid      = saved_ctxt.u_pid;
     vp->u.u_pgid     = saved_ctxt.u_pgid;
 
-    vp->ioctl(&vnp, nr, &vidata, 0);
-
-    int error = vp->u.u_error;
+    int error = vfs::ioctl(&vnp, nr, &vidata, 0);
     vp->u     = saved_ctxt;
 
     /* write pioctl output */

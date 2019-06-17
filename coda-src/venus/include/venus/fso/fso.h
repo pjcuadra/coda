@@ -121,6 +121,7 @@ class fsdb {
     friend void RecovInit();
     friend class volent;
     friend class repvol;
+    friend class vfs;
 
     int MagicNumber;
     int DataVersion;
@@ -359,6 +360,7 @@ class fsobj {
     friend class plan9server;
     friend void RecoverPathName(char *, VenusFid *, ClientModifyLog *,
                                 cmlent *);
+    friend class vfs;
 
     int MagicNumber;
 
@@ -477,7 +479,6 @@ class fsobj {
     int CheckRcRights(int);
     void SetRcRights(int);
     void ClearRcRights();
-    int IsValid(int);
     void SetAcRights(uid_t uid, long my_rights, long any_rights);
     void DemoteAcRights(uid_t);
     void PromoteAcRights(uid_t);
@@ -646,6 +647,7 @@ public:
     void GetPath(char *, int scope = PATH_VOLUME);
 
     ViceVersionVector *VV() { return (&stat.VV); }
+    int IsValid(int);
     int IsFile() { return (stat.VnodeType == (int)File); }
     int IsDir() { return (stat.VnodeType == (int)Directory); }
     int IsSymLink() { return (stat.VnodeType == (int)SymbolicLink); }
@@ -711,6 +713,17 @@ public:
 
     void FetchProgressIndicator(unsigned long offset);
 
+    void AddActiveSegment(uint64_t start, int64_t len)
+    {
+        active_segments.AddChunk(start, len);
+    }
+    void RemoveActiveSegment(uint64_t start, int64_t len)
+    {
+        active_segments.ReverseRemove(start, len);
+    }
+
+    FsoFlags getFlags() { return flags; }
+
     size_t Size(void) { return stat.Length; }
 };
 
@@ -751,7 +764,7 @@ void FSOD_ReclaimFSOs(void);
 #define UNREACHABLE(f) ((f)->vol->IsUnreachable())
 #define REACHABLE(f) ((f)->vol->IsReachable())
 #define RESOLVING(f) ((f)->vol->IsResolving())
-#define DIRTY(f) ((f)->flags.dirty)
+#define DIRTY(f) ((f)->getFlags().dirty)
 #define HAVESTATUS(f) ((f)->state != FsoRunt)
 #define STATUSVALID(f) ((f)->IsValid(RC_STATUS))
 #define HAVEDATA(f) ((f)->data.havedata != 0)
@@ -767,7 +780,7 @@ void FSOD_ReclaimFSOs(void);
 #define ACTIVE(f) (WRITING(f) || READING(f)) // was EXECUTING(f)
 #define BUSY(f) ((f)->refcnt > 0 || EXECUTING(f))
 #define HOARDABLE(f) ((f)->HoardPri > 0)
-#define ISVASTRO(f) ((f)->flags.vastro)
+#define ISVASTRO(f) ((f)->getFlags().vastro)
 #define FETCHABLE(f)                           \
     (!DYING(f) && REACHABLE(f) && !DIRTY(f) && \
      (!HAVESTATUS(f) || !WRITING(f) || ISVASTRO(f)) && !f->IsLocalObj())

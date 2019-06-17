@@ -97,7 +97,7 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
 
     /* Initialize the parent (i.e., the root of the expansion). */
     {
-        vget(&pvp, &u.u_cdir);
+        u.u_error = vfs::vget(&pvp, &u.u_cdir);
         if (u.u_error)
             goto Exit;
 
@@ -134,7 +134,7 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
         }
 
         /* Now lookup the object in the directory. */
-        lookup(&pvp, comp, &vp, CLU_CASE_SENSITIVE);
+        u.u_error = vfs::lookup(&pvp, comp, &vp, CLU_CASE_SENSITIVE);
         if (u.u_error)
             goto Exit;
 
@@ -193,7 +193,7 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
             string.cs_buf    = linkdata;
             string.cs_maxlen = linklen;
             string.cs_len    = 0;
-            readlink(&vp, &string);
+            u.u_error        = vfs::readlink(&vp, &string);
             if (u.u_error) {
                 linklen = 0;
                 goto Exit;
@@ -234,7 +234,7 @@ int vproc::namev(char *path, int flags, struct venus_cnode *vpp)
                 comp[0] = '\0';
 
                 /* Release the parent and reset it to the VenusRoot. */
-                vget(&pvp, &rootfid);
+                u.u_error = vfs::vget(&pvp, &rootfid);
                 if (u.u_error)
                     goto Exit;
             } else if (linkdata[0] == '/') {
@@ -399,36 +399,4 @@ const char *vproc::expansion(const char *path)
         return SYSTYPE;
 
     return NULL;
-}
-
-void vproc::verifyname(char *name, int flags)
-{
-    int length;
-
-    /* Disallow '', '.', and '..' */
-    if (flags & NAME_NO_DOTS) {
-        if (!name[0] || /* "" */
-            (name[1] == '.' && (!name[2] || /* "." */
-                                (name[2] == '.' && !name[3])))) { /* ".." */
-            u.u_error = EINVAL;
-            return;
-        }
-    }
-
-    length = strlen(name);
-
-    /* Disallow names of the form "@XXXXXXXX.YYYYYYYY.ZZZZZZZZ@RRRRRRRR". */
-    if ((flags & NAME_NO_CONFLICT) && length > 27 && name[0] == '@' &&
-        name[9] == '.' && name[18] == '.' && name[27] == '@') {
-        u.u_error = EINVAL;
-        return;
-    }
-
-    /* Disallow names ending in @sys or @cpu. */
-    if ((flags & NAME_NO_EXPANSION) && expansion(name) != NULL) {
-        u.u_error = EINVAL;
-        return;
-    }
-
-    return;
 }

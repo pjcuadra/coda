@@ -22,6 +22,8 @@ listed in the file CREDITS.
 #include <venus/vsg.h>
 #include <venus/realmdb.h>
 
+#include "venus.private.h"
+
 vsgdb *VSGDB;
 
 #ifdef VENUSDEBUG
