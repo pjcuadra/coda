@@ -51,9 +51,10 @@ extern "C" {
 /* from vv */
 
 #include "refcounted.h"
-#include <venus/fso/fso.h>
 #include <venus/recov.h>
 #include <venus/vproc.h>
+#include <venus/logging/logging.h>
+#include <venus/logging/venus.h>
 
 /* Forward declarations. */
 class connent;

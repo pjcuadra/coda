@@ -41,7 +41,7 @@ extern "C" {
 
 /* from venus */
 #include <venus/hdb.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include "venus.private.h"
 #include <venus/vproc.h>
 

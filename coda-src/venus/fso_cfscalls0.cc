@@ -58,6 +58,7 @@ extern "C" {
 #include <venus/recov.h>
 #include <venus/vol.h>
 #include <venus/worker.h>
+#include <venus/vicerpc2.h>
 
 static const char partial[8]    = "Partial";
 static const char nonpartial[1] = "";
@@ -184,7 +185,8 @@ int fsobj::FetchFileRPC(connent *con, ViceStatus *status, uint64_t offset,
                         int64_t len, RPC2_CountedBS *PiggyBS,
                         SE_Descriptor *sed)
 {
-    int code = 0;
+    ViceRPC2 *rpc2 = ViceRPC2::getInstance();
+    int code       = 0;
     char prel_str[256];
     const char *partial_sel   = nonpartial;
     int inconok               = !vol->IsReplicated();
@@ -200,11 +202,12 @@ int fsobj::FetchFileRPC(connent *con, ViceStatus *status, uint64_t offset,
     UNI_START_MESSAGE(viceop);
 
     if (fetchpartial_support) {
-        code = ViceFetchPartial(con->connid, MakeViceFid(&fid), &stat.VV,
-                                inconok, status, 0, offset, len, PiggyBS, sed);
+        code = rpc2->fetchPartial(con->connid, MakeViceFid(&fid), &stat.VV,
+                                  inconok, status, 0, offset, len, PiggyBS,
+                                  sed);
     } else {
-        code = ViceFetch(con->connid, MakeViceFid(&fid), &stat.VV, inconok,
-                         status, 0, offset, PiggyBS, sed);
+        code = rpc2->fetch(con->connid, MakeViceFid(&fid), &stat.VV, inconok,
+                           status, 0, offset, PiggyBS, sed);
     }
 
     UNI_END_MESSAGE(viceop);

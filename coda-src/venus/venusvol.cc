@@ -147,7 +147,7 @@ extern "C" {
 #include <venus/local.h>
 #include <venus/mariner.h>
 #include <venus/mgrp.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include "venus.private.h"
 #include <venus/cb.h>
 #include <venus/recov.h>

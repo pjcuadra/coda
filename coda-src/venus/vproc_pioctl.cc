@@ -56,7 +56,7 @@ extern "C" {
 #include <venus/fso/fso.h>
 #include <venus/hdb.h>
 #include <venus/local.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include <venus/stats.h>
 #include "venus.private.h"
 #include <venus/vol.h>

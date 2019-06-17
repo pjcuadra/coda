@@ -18,7 +18,7 @@ listed in the file CREDITS.
 #include <coda_assert.h>
 #include <venus/comm.h>
 #include <venus/mgrp.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include <venus/vsg.h>
 #include <venus/realmdb.h>
 

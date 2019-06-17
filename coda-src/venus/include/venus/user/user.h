@@ -46,8 +46,7 @@ extern "C" {
 #include <olist.h>
 
 /* from venus */
-#include "comm.h"
-#include "venus.private.h"
+#include <venus/comm.h>
 
 class userent {
     friend void UserInit();
@@ -74,6 +73,11 @@ class userent {
 
     long DemandHoardWalkTime; /* time of last demand hoard walk for this user */
 
+    long SetTokens(SecretToken *, ClearToken *);
+
+    int CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv, int *retry_cnt);
+
+protected:
     /* Constructors, destructors, and private utility routines. */
     userent(RealmId realmid, uid_t userid);
     userent(userent &); /* not supported! */
@@ -81,22 +85,25 @@ class userent {
     ~userent();
 
 public:
-    long SetTokens(SecretToken *, ClearToken *);
-    long GetTokens(SecretToken *, ClearToken *);
-    int TokensValid();
-    void CheckTokenExpiry();
-    void Invalidate();
-    void Reset();
-    int CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv, int *retry_cnt);
-    int Connect(RPC2_Handle *, int *, struct in_addr *);
+    virtual long GetTokens(SecretToken *, ClearToken *);
+    virtual int TokensValid();
+    virtual void Invalidate();
+    virtual void Reset();
+    virtual int Connect(RPC2_Handle *, int *, struct in_addr *);
     int GetWaitForever();
-    void SetWaitForever(int);
+    virtual void SetWaitForever(int);
+    virtual void CheckTokenExpiry();
 
     uid_t GetUid() { return (uid); }
 
     void print();
     void print(FILE *);
     void print(int);
+
+    virtual userent *instanceOf(RealmId realmid, uid_t userid)
+    {
+        return new userent(realmid, userid);
+    }
 };
 
 class user_iterator : public olist_iterator {

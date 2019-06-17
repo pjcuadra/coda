@@ -54,7 +54,7 @@ extern int global_kernfd;
 #endif
 
 /* interfaces */
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include <vice.h>
 
 /* from util */

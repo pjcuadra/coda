@@ -35,7 +35,7 @@ extern "C" {
 #include <venus/realm.h>
 #include <venus/realmdb.h>
 #include <venus/comm.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include "parse_realms.h"
 #include <venus/rec_dllist.h>
 #include <venus/fso/fso.h>

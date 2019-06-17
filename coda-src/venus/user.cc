@@ -61,16 +61,21 @@ extern "C" {
 #include <venus/comm.h>
 #include <venus/hdb.h>
 #include <venus/mariner.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include "venus.private.h"
 #include <venus/vol.h>
 #include <venus/vsg.h>
 #include <venus/worker.h>
+#include <venus/vicerpc2.h>
+#include <venus/rpc2.h>
+#include <venus/user/userfactory.h>
 
 #define CLOCK_SKEW 120 /* seconds */
 
 olist *userent::usertab;
 uid_t userent::PrimaryUser = UNSET_PRIMARYUSER;
+
+userent *UserFactory::prototype = NULL;
 
 void UserInit()
 {
@@ -94,7 +99,7 @@ userent *Realm::GetUser(uid_t uid)
     }
 
     /* allocate a new user entry */
-    u = new userent(Id(), uid);
+    u = UserFactory::create(Id(), uid);
     userent::usertab->insert(&u->tblhandle);
     return u;
 }
@@ -412,6 +417,7 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
     int64_t len     = -1;
     VenusFid fid    = NullFid;
     int code        = 0;
+    ViceRPC2 *rpc2  = ViceRPC2::getInstance();
 
     /* If it's known don't get it again */
     if (sv->fetchpartial_support) {
@@ -453,8 +459,8 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
 
     /* Perform the RPC */
     UNI_START_MESSAGE(ViceFetchPartial_OP);
-    code = ViceFetchPartial(*cid, MakeViceFid(&fid), &vv, inconok, &status, 0,
-                            offset, len, &PiggyBS, sed);
+    code = rpc2->fetchPartial(*cid, MakeViceFid(&fid), &vv, inconok, &status, 0,
+                              offset, len, &PiggyBS, sed);
     UNI_END_MESSAGE(ViceFetchPartial_OP);
     MarinerLog(
         "userent::CheckFetchPartialSupport: ViceFetchPartial test returned %d\n",
@@ -495,6 +501,9 @@ int userent::CheckFetchPartialSupport(RPC2_Handle *cid, srvent *sv,
 
 int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
 {
+    RPC2 *rpc2         = RPC2::getInstance();
+    ViceRPC2 *vicerpc2 = ViceRPC2::getInstance();
+
     LOG(100, "userent::Connect: addr = %s, uid = %d, tokensvalid = %d\n",
         inet_ntoa(*host), uid, tokensvalid);
 
@@ -530,8 +539,8 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
         ssid.Tag            = RPC2_SUBSYSBYID;
         ssid.Value.SubsysId = SUBSYS_SRV;
         LOG(1, "userent::Connect: RPC2_CreateMgrp(%s)\n", inet_ntoa(*host));
-        code = (int)RPC2_CreateMgrp(cid, &mcid, &pid, &ssid, sl,
-                                    clear.HandShakeKey, RPC2_XOR, SMARTFTP);
+        code = (int)rpc2->createMgrp(cid, &mcid, &pid, &ssid, sl,
+                                     clear.HandShakeKey, RPC2_XOR, SMARTFTP);
         LOG(1, "userent::Connect: RPC2_CreateMgrp -> %s\n",
             RPC2_ErrorMsg(code));
     } else {
@@ -584,7 +593,7 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
     RetryConnect:
 
         LOG(1, "userent::Connect: RPC2_NewBinding(%s)\n", inet_ntoa(*host));
-        code = (int)RPC2_NewBinding(&hid, &pid, &ssid, &bparms, cid);
+        code = (int)rpc2->bind(&hid, &pid, &ssid, &bparms, cid);
         LOG(1, "userent::Connect: RPC2_NewBinding -> %s\n",
             RPC2_ErrorMsg(code));
 
@@ -615,7 +624,7 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
         LOG(1, "userent::Connect: NewConnectFS(%s)\n", sname);
         MarinerLog("fetch::NewConnectFS %s\n", sname);
         UNI_START_MESSAGE(ViceNewConnectFS_OP);
-        code = (int)ViceNewConnectFS(*cid, VICE_VERSION, &vc);
+        code = (int)vicerpc2->connectFS(*cid, VICE_VERSION, &vc);
         UNI_END_MESSAGE(ViceNewConnectFS_OP);
         MarinerLog("fetch::newconnectfs done\n");
         UNI_RECORD_STATS(ViceNewConnectFS_OP);
@@ -626,7 +635,7 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
         /* Check of retry */
         if (support_test_code == ERETRY) {
             /* some other RPC2 error code */
-            RPC2_Unbind(*cid);
+            rpc2->unbind(*cid);
             goto RetryConnect;
         }
 
@@ -636,7 +645,7 @@ int userent::Connect(RPC2_Handle *cid, int *auth, struct in_addr *host)
         }
 
         if (code) {
-            int unbind_code = (int)RPC2_Unbind(*cid);
+            int unbind_code = (int)rpc2->unbind(*cid);
             LOG(1, "userent::Connect: RPC2_Unbind -> %s\n",
                 RPC2_ErrorMsg(unbind_code));
             return (code);
