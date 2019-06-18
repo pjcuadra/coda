@@ -20,15 +20,15 @@ libvenus_la_SOURCES = binding.cc binding.h comm.cc comm.h comm_daemon.cc daemon.
     fso_cfscalls1.cc fso_cfscalls2.cc fso_daemon.cc fso_dir.cc hdb.cc hdb.h \
     hdb_daemon.cc local.h local_cml.cc local_fake.cc local_fso.cc \
     local_repair.cc local_vol.cc mariner.cc mariner.h mgrp.cc mgrp.h \
-    venus.private.h venuscb.cc venuscb.h venusfid.h venusrecov.cc \
-    venusrecov.h venusstats.h venusutil.cc venusvol.cc venusvol.h \
+    venus.private.h venuscb.cc venuscb.h venusfid.h \
+    include/venus/recov/recov.h venusstats.h venusutil.cc venusvol.cc venusvol.h \
     vol/daemon.cc vol/cml.cc vol/reintegrate.cc vol/repair.cc vol/resolve.cc \
     vol/vcb.cc vol/COP2.cc vproc.cc vproc.h vproc_pathname.cc vproc_pioctl.cc \
     vsg.cc vsg.h worker.cc worker.h sighand.cc sighand.h \
     spool.cc tallyent.cc tallyent.h user.cc user.h nt_util.cc nt_util.h \
     realmdb.cc realmdb.h realm.cc realm.h rec_dllist.h refcounted.h archive.c \
     archive.h 9pfs.cc 9pfs.h SpookyV2.cc SpookyV2.h venusmux.cc venusmux.h \
-    venusconf.cc venusconf.h logging/logging.cc logging/logger.cc logging/filelogger.cc logging/venus.cc rpc2/vicerpc2.cc rpc2/rpc2.cc vfs.cc
+    venusconf.cc venusconf.h logging/logging.cc logging/logger.cc logging/filelogger.cc logging/venus.cc rpc2/vicerpc2.cc rpc2/rpc2.cc vfs.cc recov/recov.cc recov/rvmrecov.cc include/venus/recov/rvmrecov.h
 
 venus_SOURCES = venus.cc $(venus_shared_sources)
 vutil_SOURCES = vutil.cc

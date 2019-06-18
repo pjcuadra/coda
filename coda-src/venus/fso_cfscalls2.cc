@@ -53,10 +53,10 @@ extern "C" {
 #include <venus/fso/fso.h>
 #include <venus/local.h>
 #include <venus/mariner.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include <venus/cb.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/vol.h>
 #include <venus/vproc.h>
 #include <venus/worker.h>

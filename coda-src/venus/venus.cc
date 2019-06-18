@@ -58,7 +58,7 @@ extern "C" {
 #include <venus/user/user.h>
 #include "venus.private.h"
 #include <venus/cb.h>
-#include <venus/recov.h>
+#include <venus/recov/rvmrecov.h>
 #include <venus/vol.h>
 #include <venus/vproc.h>
 #include <venus/worker.h>
@@ -283,7 +283,8 @@ int main(int argc, char **argv)
 
     DIR_Init(GetVenusConf().get_int_value("rvmtype") == VM ? DIR_DATA_IN_VM :
                                                              DIR_DATA_IN_RVM);
-    RecovInit(); /* set up RVM and recov daemon */
+    Recov::setImplementation(new RvmRecov());
+
     CommInit(); /* set up RPC2, {connection,server,mgroup} lists, probe daemon */
     UserInit(); /* fire up user daemon */
     VSGDBInit(); /* init VSGDB */

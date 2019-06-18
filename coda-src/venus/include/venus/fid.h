@@ -19,7 +19,19 @@ listed in the file CREDITS.
 #ifndef _VENUSFID_H_
 #define _VENUSFID_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <codadir.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 typedef struct {
     RealmId Realm;

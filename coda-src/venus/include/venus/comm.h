@@ -41,6 +41,7 @@ extern "C" {
 
 /* interfaces */
 #include <callback.h>
+// #include <vice.h>
 
 /* from util */
 #include <olist.h>
@@ -49,9 +50,11 @@ extern "C" {
 #include <rec_ohash.h>
 
 /* from vv */
+// #include <inconsist.h>
 
 #include "refcounted.h"
-#include <venus/recov.h>
+
+#include <venus/recov/recov.h>
 #include <venus/vproc.h>
 #include <venus/logging/logging.h>
 #include <venus/logging/venus.h>

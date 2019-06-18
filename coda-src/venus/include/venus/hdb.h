@@ -50,7 +50,7 @@ extern "C" {
 
 /* from venus */
 #include <venus/fso/fso.h>
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include "venus.private.h"
 
 /*
@@ -104,7 +104,6 @@ class hdb {
     friend class hdbent;
     friend class hdb_iterator;
     friend class namectxt;
-    friend void RecovInit();
 
     static uid_t PrimaryUser;
 
@@ -166,6 +165,8 @@ public:
 
     void SetDemandWalkTime();
     long GetDemandWalkTime();
+
+    unsigned int GetMaxHDBEntries() { return MaxHDBEs; }
 
     void print() { print(stdout); }
     void print(FILE *fp)

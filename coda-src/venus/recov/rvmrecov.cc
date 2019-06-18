@@ -60,38 +60,28 @@ void rpc2_InitRandom();
 }
 #endif
 
+#include <rvmlib.h>
+
 #include <venus/fso/fso.h>
 #include <venus/hdb.h>
 #include <venus/local.h>
 #include <venus/mariner.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/worker.h>
-
-/*  *****  Exported Variables  *****  */
+#include <venus/recov/rvmrecov.h>
 
 int RecovInited        = 0;
 RecovVenusGlobals *rvg = 0;
 int TransCount         = 0;
 float TransElapsed     = 0.0;
 
-static int InitMetaData = UNSET_IMD, InitNewInstance = UNSET_IMD;
-static const char *VenusLogDevice        = NULL;
-static unsigned long VenusLogDeviceSize  = UNSET_VLDS;
-static const char *VenusDataDevice       = NULL;
-static unsigned long VenusDataDeviceSize = UNSET_VDDS;
-static unsigned int CacheFiles           = 0;
-static unsigned int MLEs                 = 0;
-static unsigned int HDBEs                = 0;
-static int detect_reintegration_retry    = 0;
-static int RdsChunkSize                  = UNSET_RDSCS;
-static int RdsNlists                     = UNSET_RDSNL;
-int CMFP                                 = UNSET_CMFP;
-int DMFP                                 = UNSET_DMFP;
-int MAXFP                                = UNSET_MAXFP;
-int WITT                                 = UNSET_WITT;
-unsigned long MAXFS                      = UNSET_MAXFS;
-unsigned long MAXTS                      = UNSET_MAXTS;
+int CMFP            = UNSET_CMFP;
+int DMFP            = UNSET_DMFP;
+int MAXFP           = UNSET_MAXFP;
+int WITT            = UNSET_WITT;
+unsigned long MAXFS = UNSET_MAXFS;
+unsigned long MAXTS = UNSET_MAXTS;
 
 #ifndef MAX
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -129,18 +119,11 @@ static char *Recov_RvgAddr          = 0;
 static rvm_length_t Recov_RvgLength = 0;
 static char *Recov_RdsAddr          = 0;
 static rvm_length_t Recov_RdsLength = 0;
-static int Recov_TimeToFlush        = 0;
 static rvm_statistics_t Recov_Statistics;
 
-/*  *****  Private Functions  *****  */
-
-static void Recov_CheckParms();
-static void Recov_InitRVM();
-static void Recov_InitRDS();
-static void Recov_LoadRDS();
-static void Recov_GetStatistics();
-
-int CleanShutDown;
+static int detect_reintegration_retry = 0;
+static int RdsChunkSize               = UNSET_RDSCS;
+static int RdsNlists                  = UNSET_RDSNL;
 
 /* Crude formula for estimating recoverable data requirements! */
 /* (assuming worst case 4k chunk size for VASTRO object bitmaps) */
@@ -153,66 +136,9 @@ int CleanShutDown;
      (CacheFiles / 512) * sizeof(volrep) + HDBEs * (sizeof(hdbent) + 128) + \
      64 * 1024 * 1024)
 
-/*  *****  Recovery Module  *****  */
+int CleanShutDown;
 
-int RecovVenusGlobals::validate()
-{
-    if (recov_MagicNumber != RecovMagicNumber)
-        return (0);
-    if (recov_VersionNumber != RecovVersionNumber)
-        return (0);
-
-    if (recov_CleanShutDown != 0 && recov_CleanShutDown != 1)
-        return (0);
-
-    if (!VALID_REC_PTR(recov_FSDB))
-        return (0);
-    if (!VALID_REC_PTR(recov_VDB))
-        return (0);
-    if (!VALID_REC_PTR(recov_REALMDB))
-        return (0);
-    if (!VALID_REC_PTR(recov_HDB))
-        return (0);
-
-    return (1);
-}
-
-void RecovVenusGlobals::print()
-{
-    print(stdout);
-}
-
-void RecovVenusGlobals::print(FILE *fp)
-{
-    print(fileno(fp));
-}
-
-/* local-repair modification */
-void RecovVenusGlobals::print(int fd)
-{
-    fdprint(fd, "RVG values: what they are (what they should be)\n");
-    fdprint(fd, "Magic = %x(%x), Version = %d(%d), CleanShutDown= %d(0 or 1)\n",
-            recov_MagicNumber, RecovMagicNumber, recov_VersionNumber,
-            RecovVersionNumber, recov_CleanShutDown);
-    fdprint(fd, "The following pointers should be between %p and %p:\n",
-            recov_HeapAddr, recov_HeapAddr + recov_HeapLength);
-    fdprint(fd, "Ptrs = [%p %p %p %p], Heap = [%p] HeapLen = %x\n", recov_FSDB,
-            recov_VDB, recov_HDB, recov_REALMDB, recov_HeapAddr,
-            recov_HeapLength);
-
-    fdprint(fd, "UUID = %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-            ntohl(recov_UUID.fields.time_low),
-            ntohs(recov_UUID.fields.time_mid),
-            ntohs(recov_UUID.fields.time_hi_version),
-            recov_UUID.fields.clock_seq_hi_variant,
-            recov_UUID.fields.clock_seq_low, recov_UUID.fields.node[0],
-            recov_UUID.fields.node[1], recov_UUID.fields.node[2],
-            recov_UUID.fields.node[3], recov_UUID.fields.node[4],
-            recov_UUID.fields.node[5]);
-    fdprint(fd, "StoreId = %d\n", recov_StoreId);
-}
-
-static void RecovNewInstance(void)
+void RvmRecov::createNewInstance()
 {
     /* We need to initialize the random number generator before first use */
     rpc2_InitRandom();
@@ -229,7 +155,7 @@ static void RecovNewInstance(void)
     Recov_EndTrans(0);
 }
 
-static void RecovLoadConfiguration()
+void RvmRecov::loadConfiguration()
 {
     CacheFiles          = GetVenusConf().get_int_value("cachefiles");
     MLEs                = GetVenusConf().get_int_value("cml_entries");
@@ -246,12 +172,15 @@ static void RecovLoadConfiguration()
     InitMetaData = GetVenusConf().get_bool_value("initmetadata");
 }
 
-void RecovInit(void)
+RvmRecov::RvmRecov()
 {
-    /* Configuration */
-    RecovLoadConfiguration();
-    Recov_CheckParms();
+    loadConfiguration();
+    checkConfigurationParms();
+    initMemorySpace();
+}
 
+void RvmRecov::initMemorySpace()
+{
     if (RvmType == VM) {
         if ((rvg = (RecovVenusGlobals *)malloc(sizeof(RecovVenusGlobals))) == 0)
             CHOKE("RecovInit: malloc failed");
@@ -260,43 +189,43 @@ void RecovInit(void)
         rvg->recov_VersionNumber = RecovVersionNumber;
         rvg->recov_LastInit      = Vtime();
 
-        RecovNewInstance();
+        createNewInstance();
 
         RecovInited = 1;
         return;
     }
 
     /* Initialize the RVM package. */
-    Recov_InitRVM();
-    Recov_InitRDS();
-    Recov_LoadRDS();
+    initRVM();
+    initRDS();
+    loadRDS();
 
     /* Read-in bounds for bounded recoverable data structures. */
     if (!InitMetaData) {
         int override = 0;
-        if (MLEs != VDB->MaxMLEs) {
+        if (MLEs != VDB->GetMaxMLEs()) {
             eprint(
                 "Ignoring requested # of cml entries (%ld), "
                 "using rvm value (%ld)",
-                MLEs, VDB->MaxMLEs);
+                MLEs, VDB->GetMaxMLEs());
             override = 1;
-            MLEs     = VDB->MaxMLEs;
+            MLEs     = VDB->GetMaxMLEs();
         }
-        if (CacheFiles != FSDB->MaxFiles) {
+        if (CacheFiles != FSDB->GetMaxFiles()) {
             eprint(
                 "Ignoring requested # of cache files (%ld), "
                 "using rvm value (%ld)",
-                CacheFiles, FSDB->MaxFiles);
+                CacheFiles, FSDB->GetMaxFiles());
             override   = 1;
-            CacheFiles = FSDB->MaxFiles;
+            CacheFiles = FSDB->GetMaxFiles();
         }
-        if (HDBEs != HDB->MaxHDBEs) {
+        if (HDBEs != HDB->GetMaxHDBEntries()) {
             eprint(
                 "Ignoring requested # of hoard entries (%ld), "
                 "using rvm value (%ld)",
-                HDBEs, HDB->MaxHDBEs);
+                HDBEs, HDB->GetMaxHDBEntries());
             override = 1;
-            HDBEs    = HDB->MaxHDBEs;
+            HDBEs    = HDB->GetMaxHDBEntries();
         }
         if (override)
             eprint("\t(restart venus with the -init flag to reset RVM values)");
@@ -311,7 +240,7 @@ void RecovInit(void)
     RECOVD_Init();
 }
 
-static void Recov_CheckParms()
+void RvmRecov::checkConfigurationParms()
 {
     unsigned int PartialCacheFilesRatio =
         GetVenusConf().get_int_value("partialcachefilesratio");
@@ -406,7 +335,7 @@ static void Recov_CheckParms()
  * and HDBEs. They have been moved to venus.cc:DefaultCmdlineParms --JH */
 }
 
-static void Recov_InitRVM()
+void RvmRecov::initRVM()
 {
     rvm_return_t ret;
     char *logdev = strdup(VenusLogDevice);
@@ -477,7 +406,7 @@ static void Recov_InitRVM()
     }
 }
 
-static void Recov_InitRDS()
+void RvmRecov::initRDS()
 {
     rvm_return_t ret;
     rvm_length_t devsize;
@@ -525,7 +454,7 @@ static void Recov_InitRDS()
     eprint("...done");
 }
 
-static void Recov_LoadRDS()
+void RvmRecov::loadRDS()
 {
     rvm_return_t ret;
     char *datadev;
@@ -584,7 +513,7 @@ static void Recov_LoadRDS()
     if (InitMetaData || InitNewInstance ||
         (detect_reintegration_retry && !detecting_retries) ||
         (!detect_reintegration_retry && detecting_retries))
-        RecovNewInstance();
+        createNewInstance();
 
     /* Plumb the heap here? */
     if (GetVenusConf().get_bool_value("rdstrace")) {
@@ -594,25 +523,25 @@ static void Recov_LoadRDS()
 }
 
 /* Venus transaction handling */
-void _Recov_BeginTrans(const char file[], int line)
+void RvmRecov::beginTrans(const char file[], int line)
 {
     _rvmlib_begin_transaction(no_restore, file, line);
 }
 
-void Recov_EndTrans(int time)
+void RvmRecov::endTrans(int time)
 {
     rvmlib_end_transaction(no_flush, 0);
-    Recov_SetBound(time);
+    setBound(time);
 }
 
 /* Bounds the (non)persistence of committed no_flush transactions. */
-void Recov_SetBound(int bound)
+void RvmRecov::setBound(int bound)
 {
-    if (bound < Recov_TimeToFlush)
-        Recov_TimeToFlush = bound;
+    if (bound < Recov::getTimeToFlush())
+        Recov::setTimeToFlush(bound);
 }
 
-static void Recov_GetStatistics()
+void RvmRecov::getStatistics()
 {
     if (RvmType == VM)
         return;
@@ -622,22 +551,29 @@ static void Recov_GetStatistics()
         CHOKE("Recov_GetStatistics: rvm_statistics failed (%d)", ret);
 }
 
-void RecovFlush(int Force)
+void RvmRecov::flush(int Force)
 {
+    getStatistics();
+    time_t WorkerIdleTime = GetWorkerIdleTime();
+    unsigned long FlushSize =
+        RVM_OFFSET_TO_LENGTH(Recov_Statistics.no_flush_length);
     if (RvmType == VM)
         return;
 
-    Recov_GetStatistics();
-    int FlushCount = (int)Recov_Statistics.n_no_flush;
-    unsigned long FlushSize =
-        RVM_OFFSET_TO_LENGTH(Recov_Statistics.no_flush_length);
+    if (Recov::getTimeToFlush() > 0 && FlushSize < MAXFS &&
+        WorkerIdleTime < WITT)
+        return;
 
+    if (FlushSize < MAXFS)
+        return;
+
+    int FlushCount     = (int)Recov_Statistics.n_no_flush;
     const char *reason = (Force) ? "F" :
-                                   (Recov_TimeToFlush <= 0) ?
+                                   (Recov::getTimeToFlush() <= 0) ?
                                    "T" :
                                    (FlushSize >= MAXFS) ? "S" : "I";
 
-    Recov_TimeToFlush = MAXFP;
+    Recov::setTimeToFlush(MAXFP);
     if (FlushSize == 0)
         return;
 
@@ -653,17 +589,20 @@ void RecovFlush(int Force)
         FlushSize, elapsed);
 }
 
-void RecovTruncate(int Force)
+void RvmRecov::truncate(int Force)
 {
+    time_t WorkerIdleTime = GetWorkerIdleTime();
+    getStatistics();
+    unsigned long TruncateSize =
+        RVM_OFFSET_TO_LENGTH(Recov_Statistics.log_written);
+    if (TruncateSize < MAXTS && WorkerIdleTime < WITT)
+        return;
+
     if (RvmType == VM)
         return;
 
-    Recov_GetStatistics();
     int TruncateCount = (int)Recov_Statistics.n_flush_commit +
                         (int)Recov_Statistics.n_no_flush_commit;
-    unsigned long TruncateSize =
-        RVM_OFFSET_TO_LENGTH(Recov_Statistics.log_written);
-
     const char *reason = (Force) ? "F" : (TruncateSize >= MAXTS) ? "S" : "I";
 
     if (TruncateSize == 0)
@@ -683,7 +622,7 @@ void RecovTruncate(int Force)
         TruncateCount, TruncateSize, elapsed);
 }
 
-void RecovTerminate()
+RvmRecov::~RvmRecov()
 {
     if (RvmType == VM)
         return;
@@ -691,7 +630,7 @@ void RecovTerminate()
         return;
 
     /* Record clean shutdown indication if possible. */
-    Recov_GetStatistics();
+    getStatistics();
     int n_uncommit = (int)Recov_Statistics.n_uncommit;
     if (n_uncommit == 0) {
         /* N.B.  Can't use rvmlib macros here, since we're likely being called in the */
@@ -706,7 +645,7 @@ void RecovTerminate()
                                 sizeof(rvg->recov_CleanShutDown));
             CODA_ASSERT(ret == RVM_SUCCESS);
             rvg->recov_CleanShutDown = 1;
-            ret                      = rvm_end_transaction(&tid, flush);
+            ret = rvm_end_transaction(&tid, rvm_mode_t::flush);
             CODA_ASSERT(ret == RVM_SUCCESS);
         }
 
@@ -731,7 +670,7 @@ void RecovTerminate()
     }
 }
 
-void RecovPrint(int fd)
+void RvmRecov::print(int fd)
 {
     if (RvmType == VM)
         return;
@@ -748,7 +687,7 @@ void RecovPrint(int fd)
             ctime((time_t *)&rvg->recov_LastInit));
 
     fdprint(fd, "***RVM Statistics***\n");
-    Recov_GetStatistics();
+    getStatistics();
     rvm_return_t ret = rvm_print_statistics(&Recov_Statistics, GetLogFile());
     fflush(GetLogFile());
     if (ret != RVM_SUCCESS)
@@ -768,24 +707,6 @@ void RecovPrint(int fd)
     // Unfortunately, heap_header_t is in rds_private.h
 }
 
-/*  *****  RVM String Routines  *****  */
-
-RPC2_String Copy_RPC2_String(RPC2_String &src)
-{
-    int len = (int)strlen((char *)src) + 1;
-
-    RPC2_String tgt = (RPC2_String)rvmlib_rec_malloc(len);
-    rvmlib_set_range(tgt, len);
-    memcpy(tgt, src, len);
-
-    return (tgt);
-}
-
-void Free_RPC2_String(RPC2_String &STR)
-{
-    rvmlib_rec_free(STR);
-}
-
 /*  *****  recov_daemon.c  *****  */
 
 static const int RecovDaemonInterval = 5;
@@ -794,49 +715,8 @@ static const int RecovDaemonStackSize =
 
 static char recovdaemon_sync;
 
-void RECOVD_Init(void)
-{
-    (void)new vproc("RecovDaemon", &RecovDaemon, VPT_RecovDaemon,
-                    RecovDaemonStackSize);
-}
-
-void RecovDaemon(void)
-{
-    /* Hack!!!  Vproc must yield before data members become valid! */
-    /* suspect interaction between LWP creation/dispatch and C++ initialization. */
-    VprocYield();
-
-    vproc *vp = VprocSelf();
-    RegisterDaemon(RecovDaemonInterval, &recovdaemon_sync);
-
-    for (;;) {
-        VprocWait(&recovdaemon_sync);
-
-        /* First task is to get statistics. */
-        Recov_GetStatistics();
-        time_t WorkerIdleTime = GetWorkerIdleTime();
-
-        /* Consider truncating. */
-        unsigned long TruncateSize =
-            RVM_OFFSET_TO_LENGTH(Recov_Statistics.log_written);
-        if (TruncateSize >= MAXTS || WorkerIdleTime >= WITT)
-            RecovTruncate();
-
-        /* Consider flushing. */
-        Recov_TimeToFlush -= RecovDaemonInterval;
-        unsigned long FlushSize =
-            RVM_OFFSET_TO_LENGTH(Recov_Statistics.no_flush_length);
-        if (Recov_TimeToFlush <= 0 || FlushSize >= MAXFS ||
-            WorkerIdleTime >= WITT)
-            RecovFlush();
-
-        /* Bump sequence number. */
-        vp->seq++;
-    }
-}
-
 /* MUST be called from within a transaction */
-void Recov_GenerateStoreId(ViceStoreId *sid)
+void RvmRecov::generateStoreId(ViceStoreId *sid)
 {
     /* VenusGenID, is randomly chosen whenever rvm is reinitialized, it
      * should be a 128-bit UUID (re-generated whenever rvm is reinitialized).
@@ -853,6 +733,21 @@ void Recov_GenerateStoreId(ViceStoreId *sid)
 
     RVMLIB_REC_OBJECT(rvg->recov_StoreId);
     rvg->recov_StoreId++;
+}
+
+void *RvmRecov::malloc(size_t size)
+{
+    return rvmlib_rec_malloc(size);
+}
+
+void RvmRecov::free(void *ptr)
+{
+    rvmlib_rec_free(ptr);
+}
+
+void RvmRecov::recordRange(void *ptr, size_t size)
+{
+    rvmlib_set_range(ptr, size);
 }
 
 rvm_type_t GetRvmType()

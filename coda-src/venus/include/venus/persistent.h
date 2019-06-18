@@ -29,7 +29,7 @@ listed in the file CREDITS.
 /* RVM doesn't cooperate nicely with inheritance and virtual functions */
 
 #include <rvmlib.h>
-#include <venusrecov.h>
+#include <venus/recov/recov.h>
 #include <coda_assert.h>
 
 class PersistentObject {

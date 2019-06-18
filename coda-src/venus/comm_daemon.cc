@@ -31,7 +31,7 @@ extern "C" {
 /* from venus */
 #include <venus/comm.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/vproc.h>
 
 /*

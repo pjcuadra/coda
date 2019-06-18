@@ -31,14 +31,13 @@ extern "C" {
 
 #include <stdio.h>
 #include <rpc2/rpc2.h>
-#include <rvmlib.h>
 
 #ifdef __cplusplus
 }
 #endif
 
 /* from venus */
-#include "venus.private.h"
+// #include "venus.private.h"
 
 /* Forward declarations. */
 struct RecovVenusGlobals;
@@ -113,22 +112,53 @@ extern unsigned long MAXTS;
 
 /*  *****  Functions  *****  */
 
-#define Recov_BeginTrans() _Recov_BeginTrans(__FILE__, __LINE__)
-void _Recov_BeginTrans(const char file[], int line);
-void Recov_EndTrans(int);
-void Recov_SetBound(int);
-void RecovInit();
-void RecovFlush(int = 0); /* XXX - parameter is now redundant! */
-void RecovTruncate(int = 0); /* XXX - parameter is now redundant! */
-void RecovTerminate();
-void RecovPrint(int);
+#define Recov_BeginTrans() Recov::getInstance()->beginTrans(__FILE__, __LINE__)
+#define Recov_EndTrans Recov::getInstance()->endTrans
+#define Recov_SetBound Recov::getInstance()->setBound
+#define RecovFlush Recov::getInstance()->flush
+#define RecovTruncate Recov::getInstance()->truncate
+#define RecovTerminate Recov::getInstance()->endTrans
+#define Recov_GenerateStoreId Recov::getInstance()->generateStoreId
+#define RecovPrint Recov::getInstance()->print
+#define RecovTerminate()             \
+    {                                \
+        delete Recov::getInstance(); \
+    }
+
+class Recov {
+    static Recov *impl;
+    static int TimeToFlush;
+
+public:
+    static Recov *getInstance()
+    {
+        CODA_ASSERT(impl);
+        return impl;
+    }
+
+    static void setImplementation(Recov *impl) { Recov::impl = impl; }
+
+    void setTimeToFlush(int ttf);
+    int getTimeToFlush();
+
+    virtual void *malloc(size_t size)                    = 0;
+    virtual void free(void *ptr)                         = 0;
+    virtual void recordRange(void *ptr, size_t size)     = 0;
+    virtual void beginTrans(const char file[], int line) = 0;
+    virtual void endTrans(int)                           = 0;
+    virtual void setBound(int bound)                     = 0;
+    virtual void flush(int = 0)                          = 0;
+    virtual void truncate(int = 0)                       = 0;
+    virtual void print(int)                              = 0;
+    virtual void generateStoreId(ViceStoreId *sid)       = 0;
+    virtual void getStatistics()                         = 0;
+};
+
 RPC2_String Copy_RPC2_String(RPC2_String &);
 void Free_RPC2_String(RPC2_String &);
+
 void RECOVD_Init(void);
 void RecovDaemon(void);
-rvm_type_t GetRvmType();
-
-void Recov_GenerateStoreId(ViceStoreId *sid);
 
 #define VALID_REC_PTR(rec_ptr)                   \
     ((char *)(rec_ptr) >= rvg->recov_HeapAddr && \

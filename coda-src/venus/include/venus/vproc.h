@@ -63,6 +63,7 @@ extern "C" {
 #include <venus/fso/cachefile.h>
 #include <venus/fid.h>
 #include <venus/vfs.h>
+// #include "venus.private.h"
 
 /* string with counts */
 struct coda_string {

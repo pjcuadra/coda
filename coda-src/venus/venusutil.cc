@@ -69,7 +69,7 @@ extern "C" {
 #include "venus.private.h"
 #include <venus/cb.h>
 #include "venusioctl.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/stats.h>
 #include <venus/vol.h>
 #include <venus/vproc.h>

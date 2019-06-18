@@ -55,7 +55,7 @@ extern "C" {
 #include <venus/cb.h>
 #include <venus/vproc.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/rvmrecov.h>
 #include <venus/vol.h>
 #include <venus/worker.h>
 #include <venus/vicerpc2.h>

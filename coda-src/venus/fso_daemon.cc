@@ -45,7 +45,7 @@ extern "C" {
 /* from venus */
 #include <venus/fso/fso.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/vproc.h>
 #include <venus/worker.h>
 #include <venus/logging/logging.h>

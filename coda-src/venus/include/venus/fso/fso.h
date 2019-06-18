@@ -76,7 +76,7 @@ extern int global_kernfd;
 #include <venus/hdb.h>
 #include <venus/mariner.h>
 #include <venus/realmdb.h>
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/vproc.h>
 #include <venus/fso/cachefile.h>
 #include "venus.private.h"

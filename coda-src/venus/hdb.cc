@@ -75,9 +75,9 @@ extern "C" {
 #include <venus/hdb.h>
 #include <venus/mariner.h>
 #include <venus/tallyent.h>
-#include <venus/user.h>
+#include <venus/user/user.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/vol.h>
 #include <venus/vproc.h>
 #include <venus/worker.h>
@@ -1046,7 +1046,7 @@ void *hdbent::operator new(size_t len)
     hdbent *h = 0;
 
     CODA_ASSERT(HDB->htab.count() <
-                HDB->MaxHDBEs); /* fix this to be more graceful */
+                HDB->GetMaxHDBEntries()); /* fix this to be more graceful */
 
     if (HDB->freelist.count() > 0)
         h = strbase(hdbent, HDB->freelist.get(), tbl_handle);

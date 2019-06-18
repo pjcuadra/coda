@@ -48,7 +48,7 @@ extern "C" {
 #include <venus/mgrp.h>
 #include <venus/cb.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/vol.h>
 #include <venus/vproc.h>
 #include <venus/worker.h>

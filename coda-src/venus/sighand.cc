@@ -45,7 +45,7 @@ extern "C" {
 
 #include <venus/sighand.h>
 #include "venus.private.h"
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/vol.h>
 #include <venus/worker.h>
 #include <venus/fso/fso.h>

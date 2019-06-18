@@ -59,8 +59,9 @@ extern "C" {
 
 /* from venus */
 #include <venus/comm.h>
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include <venus/realmdb.h>
+// #include "venus.private.h"
 #include <venus/vsg.h>
 
 /* Replica Control Rights. */
@@ -501,7 +502,6 @@ class vdb {
     friend class repvol_iterator;
     friend class volrep_iterator;
     friend class fsobj;
-    friend void RecovInit();
 
     friend class Realm;
 

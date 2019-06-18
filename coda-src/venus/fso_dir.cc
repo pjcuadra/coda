@@ -52,7 +52,7 @@ extern "C" {
 
 #include <venus/fso/fso.h>
 #include <venus/local.h>
-#include <venus/recov.h>
+#include <venus/recov/recov.h>
 #include "venus.private.h"
 
 /* *****  FSO Directory Interface  ***** */
